@@ -1,0 +1,29 @@
+# Loonix-tunes ignore
+*.log
+bin/
+obj/
+.DS_Store/target
+**/*.rs.bk
+Cargo.lock
+node_modules
+/target
+.skill
+.backup
+.vst3
+
+# --- Windows Build Dependencies ---
+# (DIBUTUHKAN - tidak diignore)
+!packaging/windows/*.dll
+!packaging/windows/libs/*.lib
+
+# Jaga-jaga kalau ada file exe nyasar di luar folder target/
+*.exe
+*.lib
+
+# Editor & OS
+*.swp
+*.swo
+.DS_Store
+
+# Build output
+dist/

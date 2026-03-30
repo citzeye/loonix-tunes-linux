@@ -1,0 +1,151 @@
+/* --- LOONIX-TUNES src/audio/dsp/normalizer.rs | Fixed Gain + Transition Smoothing --- */
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, OnceLock};
+
+use super::DspProcessor;
+
+static NORMALIZER_ENABLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
+static NORMALIZER_SMOOTHING: OnceLock<Arc<AtomicU32>> = OnceLock::new();
+
+fn get_enabled_arc() -> Arc<AtomicBool> {
+    NORMALIZER_ENABLED
+        .get_or_init(|| Arc::new(AtomicBool::new(false)))
+        .clone()
+}
+
+fn get_smoothing_arc() -> Arc<AtomicU32> {
+    NORMALIZER_SMOOTHING
+        .get_or_init(|| Arc::new(AtomicU32::new(0.002_f32.to_bits())))
+        .clone()
+}
+
+/// Get the shared smoothing atomic for lock-free updates from UI.
+pub fn get_normalizer_smoothing_arc() -> Arc<AtomicU32> {
+    get_smoothing_arc()
+}
+
+/// Smoothing presets for cross-track transition speed.
+pub enum SmoothingPreset {
+    Slow,     // ~1.5s transition
+    Balanced, // ~0.8s transition
+    Fast,     // ~0.3s transition
+}
+
+impl SmoothingPreset {
+    pub fn to_factor(&self) -> f32 {
+        match self {
+            SmoothingPreset::Slow => 0.001,
+            SmoothingPreset::Balanced => 0.002,
+            SmoothingPreset::Fast => 0.005,
+        }
+    }
+
+    pub fn from_factor(f: f32) -> &'static str {
+        if f <= 0.0015 {
+            "Slow"
+        } else if f <= 0.0035 {
+            "Balanced"
+        } else {
+            "Fast"
+        }
+    }
+}
+
+pub struct AudioNormalizer {
+    fixed_gain: f32,
+    current_gain: f32,
+}
+
+unsafe impl Send for AudioNormalizer {}
+unsafe impl Sync for AudioNormalizer {}
+
+impl AudioNormalizer {
+    pub fn new(enabled: bool, _target_lufs: f32) -> Self {
+        get_enabled_arc().store(enabled, Ordering::SeqCst);
+        Self {
+            fixed_gain: 1.0,
+            current_gain: 1.0,
+        }
+    }
+
+    /// Set the target gain (from scanner). The normalizer will smoothly
+    /// transition to this value over the configured smoothing period.
+    pub fn set_fixed_gain(&mut self, gain: f32) {
+        self.fixed_gain = gain.clamp(0.01, 128.0);
+        // On track change, snap current_gain to old fixed_gain is already there.
+        // The smoothing will ramp from current_gain -> new fixed_gain.
+    }
+
+    pub fn get_fixed_gain(&self) -> f32 {
+        self.fixed_gain
+    }
+
+    pub fn get_current_gain(&self) -> f32 {
+        self.current_gain
+    }
+
+    /// Force snap to fixed_gain immediately (no smoothing).
+    pub fn snap_to_target(&mut self) {
+        self.current_gain = self.fixed_gain;
+    }
+}
+
+impl DspProcessor for AudioNormalizer {
+    #[inline(always)]
+    fn process(&mut self, input: &[f32], output: &mut [f32]) {
+        let enabled = get_enabled_arc().load(Ordering::Relaxed);
+        if !enabled {
+            output.copy_from_slice(input);
+            return;
+        }
+
+        // Read smoothing factor from shared atomic (lock-free)
+        let smoothing = f32::from_bits(get_smoothing_arc().load(Ordering::Relaxed));
+
+        // If already at target and target is 1.0, bypass entirely
+        let at_target = (self.current_gain - self.fixed_gain).abs() < 0.001
+            && (self.fixed_gain - 1.0).abs() < f32::EPSILON;
+        if at_target {
+            output.copy_from_slice(input);
+            return;
+        }
+
+        // If already at target (but not 1.0), apply without smoothing overhead
+        let needs_ramp = (self.current_gain - self.fixed_gain).abs() >= 0.001;
+
+        if !needs_ramp {
+            // At target gain - just apply gain + soft clip, no ramp
+            let g = self.current_gain;
+            for i in 0..input.len() {
+                output[i] = soft_clip(input[i] * g);
+            }
+        } else {
+            // Ramp current_gain towards fixed_gain sample by sample
+            let target = self.fixed_gain;
+            for i in 0..input.len() {
+                self.current_gain += (target - self.current_gain) * smoothing;
+                output[i] = soft_clip(input[i] * self.current_gain);
+            }
+        }
+    }
+
+    fn reset(&mut self) {
+        // On reset (e.g. seek), snap to target to avoid ramping artifacts
+        self.current_gain = self.fixed_gain;
+    }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn as_any_ref(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Soft limiter/clipper using tanh saturation.
+/// Smoothly saturates signal near +/-0.99 to prevent digital clipping.
+#[inline(always)]
+fn soft_clip(sample: f32) -> f32 {
+    (0.99 * sample.tanh()).clamp(-0.99, 0.99)
+}

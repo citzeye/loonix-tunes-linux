@@ -1,0 +1,27 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Ui.qml</file>
+        <file>ui/Tab.qml</file>
+        <file>ui/TabMusic.qml</file>
+        <file>ui/TabCustom.qml</file>
+        <file>ui/Eq.qml</file>
+        <file>ui/Fx.qml</file>
+        <file>ui/TrackInfo.qml</file>
+        <file>ui/LoonixDrawer.qml</file>
+        <file>ui/HeaderMenu.qml</file>
+        <file>ui/Playlist.qml</file>
+        <file>ui/qmldir</file>
+        <file>ui/components/SettingHeader.qml</file>
+        <file>ui/components/SettingFooter.qml</file>
+        <file>ui/components/SettingSlider.qml</file>
+        <file>ui/components/SettingSwitch.qml</file>
+        <file>ui/components/SettingDropdown.qml</file>
+        <file>ui/components/CollapsibleSection.qml</file>
+        <file alias="fonts/KodeMono-VariableFont_wght.ttf">../assets/fonts/KodeMono-VariableFont_wght.ttf</file>
+        <file alias="fonts/SymbolsNerdFont-Regular.ttf">../assets/fonts/SymbolsNerdFont-Regular.ttf</file>
+        <file alias="fonts/twemoji.ttf">../assets/fonts/twemoji.ttf</file>
+        <file alias="fonts/Oswald-Regular.ttf">../assets/fonts/Oswald-Regular.ttf</file>
+        <file>ui/vst/vstwindow.qml</file>
+        <file>ui/preferences/SettingButton.qml</file>
+    </qresource>
+</RCC>

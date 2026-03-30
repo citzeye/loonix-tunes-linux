@@ -1,0 +1,28 @@
+#include <windows.h>
+
+// Ikon aplikasi (pastiin ada file icon.ico di folder yang sama nanti)
+IDI_ICON1 ICON DISCARDABLE "icon.ico"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     0,1,0,0
+PRODUCTVERSION  0,1,0,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName",      "citz"
+            VALUE "FileDescription",  "Loonix-Tunes: High-Res Cross-Platform Player"
+            VALUE "FileVersion",      "1.0.0"
+            VALUE "InternalName",     "loonix-tunes"
+            VALUE "LegalCopyright",   "GPLv3"
+            VALUE "OriginalFilename", "loonix-tunes.exe"
+            VALUE "ProductName",      "Loonix-Tunes"
+            VALUE "ProductVersion",   "1.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END

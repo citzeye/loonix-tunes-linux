@@ -1,0 +1,16 @@
+{
+  "instant_fx": {
+    "bass_booster": { "enabled": false, "gain": 6.0, "cutoff": 180.0 },
+    "surround": { "enabled": false, "width": 1.8 },
+    "crystalizer": { "enabled": false, "amount": 0.2 }
+  },
+  "master_fx": {
+    "reverb": { "enabled": false, "mode": "stage" },
+    "compressor": { "enabled": false, "threshold": -18.0 },
+    "pitch_shifter": { "enabled": false, "semitones": 0.0 },
+    "middle_clarity": { "enabled": false, "amount": 0.0 },
+    "stereo_width": { "enabled": false, "amount": 1.0 },
+    "stereo_enhance": { "enabled": false, "amount": 0.0 },
+    "headphone_crossfeed": { "enabled": false, "amount": 0.0 }
+  }
+}

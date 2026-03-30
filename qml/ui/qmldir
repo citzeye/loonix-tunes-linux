@@ -1,0 +1,15 @@
+module ui
+Tab 1.0 Tab.qml
+TabMusic 1.0 TabMusic.qml
+TabFavorites 1.0 TabFavorites.qml
+TabQueue 1.0 TabQueue.qml
+TabCustom 1.0 TabCustom.qml
+Fx 1.0 Fx.qml
+Eq 1.0 Eq.qml
+TrackInfo 1.0 TrackInfo.qml
+LoonixDrawer 1.0 LoonixDrawer.qml
+HeaderMenu 1.0 HeaderMenu.qml
+TabContextMenu 1.0 TabContextMenu.qml
+PlaylistContextMenu 1.0 PlaylistContextMenu.qml
+Playlist 1.0 Playlist.qml
+Preferences 1.0 Preferences.qml

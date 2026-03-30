@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Loonix-Tunes
+Comment=High-performance native audio player
+# Cukup tulis nama binarinya. Sistem bakal nyari di $PATH.
+Exec=loonix-tunes %U
+# Nama ikon tanpa extension, sistem bakal nyari di folder icons standard
+Icon=loonix-tunes
+Terminal=false
+Type=Application
+Categories=Audio;Music;Player;
+MimeType=audio/mpeg;audio/flac;audio/ogg;audio/x-wav;

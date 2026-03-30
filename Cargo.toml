@@ -1,0 +1,60 @@
+[package]
+name = "loonix-tunes"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+# --- CORE AUDIO ENGINE (Universal) ---
+ffmpeg-next = "8.0"
+cpal = "0.15"
+ringbuf = "0.4"
+biquad = "0.4"
+dasp = "0.11"
+freeverb = "0.1"
+soxr = "0.6"
+crossbeam = "0.8"
+arc-swap = "1.6"
+memmap2 = "0.9"
+parking_lot = "0.12"
+
+# --- LINUX ONLY: Native PipeWire, DBus & UI ---
+[target.'cfg(target_os = "linux")'.dependencies]
+pipewire = "0.9"
+libspa = "0.9"
+zbus = "5.6.1" # Tambahin ini biar dbus_service.rs gak nangis
+qmetaobject = "0.2.10"
+glib = { version = "0.19", features = ["v2_68"] }
+x11 = "2.20"
+
+# --- WINDOWS ONLY: UI (tanpa glib) ---
+[target.'cfg(target_os = "windows")'.dependencies]
+qmetaobject = { version = "0.2.10", default-features = false }
+
+# --- ANDROID ONLY: UI ---
+[target.'cfg(target_os = "android")'.dependencies]
+qmetaobject = { version = "0.2.10", default-features = false }
+
+# --- DESKTOP ONLY (Linux + Windows): VST3 & Trash ---
+[target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
+trash = "3.0"
+libloading = "0.8"
+walkdir = "2.4"
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+vst3-sys = { git = "https://github.com/robbert-vdh/vst3-sys.git", package = "vst3-sys" }
+clap-sys = { git = "https://github.com/micahrj/clap-sys.git", package = "clap-sys" }
+
+# --- UI & UTILS (Universal) ---
+cstr = "0.2"
+dirs = "6.0.0"
+rand = "0.8"
+rfd = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+confy = "0.6"
+url = "2.5.8"
+crossbeam-channel = "0.5.15"
+# cbindgen biasanya buat build-dep, tapi kalau lo butuh runtime gak apa-apa tetap di sini
+
+[build-dependencies]
+winres = "0.1"
