@@ -78,25 +78,25 @@ jobs:
       - name: Setup MSVC Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup Fake pkg-config & VCPKG Libraries
+      - name: Setup VCPKG & Fake pkg-config
         shell: pwsh
         run: |
-          # 1. Install vcpkg
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git ${{ github.workspace }}\vcpkg
-          & ${{ github.workspace }}\vcpkg\bootstrap-vcpkg.bat
+          # 1. Paksa pake vcpkg global dan tentuin root-nya biar gak nyasar
+          $vcpkg_exe = "C:\vcpkg\vcpkg.exe"
+          & $vcpkg_exe install libsoxr:x64-windows rubberband:x64-windows --vcpkg-root="C:\vcpkg"
 
-          # 2. Suruh mesin Windows download & compile SoXR + Rubberband otomatis
-          & ${{ github.workspace }}\vcpkg\vcpkg install libsoxr:x64-windows rubberband:x64-windows
+          # 2. Pastiin folder tujuan ada dulu biar Copy-Item gak ngamuk
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\libs"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\include"
 
-          # 3. Copy file .lib dan headers hasil compile ke folder packaging lo
-          $vcpkg_dir = "$env:VCPKG_INSTALLATION_ROOT\packages"
-          Copy-Item -Path "$vcpkg_dir\libsoxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-          Copy-Item -Path "$vcpkg_dir\libsoxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
+          # 3. Copy file hasil compile (Path vcpkg default di GitHub runner)
+          Copy-Item -Path "C:\vcpkg\packages\libsoxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+          Copy-Item -Path "C:\vcpkg\packages\libsoxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
 
-          Copy-Item -Path "$vcpkg_dir\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-          Copy-Item -Path "$vcpkg_dir\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
+          Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+          Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
 
-          # 4. Bikin identitas palsu pkg-config
+          # 4. Hack pkg-config (sama kayak tadi)
           choco install pkgconfiglite --no-progress
           $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
           New-Item -ItemType Directory -Force -Path $pc_dir
