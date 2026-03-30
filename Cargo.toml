@@ -67,7 +67,7 @@ assets = [
     ["packaging/linux/icon.png", "/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png", "644"],
 ]
 
-[package.metadata.rpm]
+[package.metadata.generate-rpm]
 package = "loonix-tunes"
 maintainer = "citzeye <citz@loonix-tunes.com>"
 license = "GPLv3"
