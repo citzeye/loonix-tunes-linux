@@ -28,7 +28,7 @@ jobs:
           mkdir -p AppDir
           cp target/release/loonix-tunes AppDir/
           cp packaging/linux/loonix-tunes.desktop AppDir/
-          cp packaging/linux/icon.png AppDir/
+          cp packaging/linux/icon.png AppDir/loonix-tunes.png
 
           export PATH=/usr/lib/qt6/bin:$PATH
           ./linuxdeployqt AppDir/loonix-tunes.desktop -appimage -qmake=/usr/lib/qt6/bin/qmake

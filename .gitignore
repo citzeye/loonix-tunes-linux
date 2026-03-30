@@ -14,12 +14,12 @@ node_modules
 # --- Windows Build Dependencies ---
 # (DIBUTUHKAN - tidak diignore)
 !packaging/windows/*.dll
+!packaging/windows/libs/
 !packaging/windows/libs/*.lib
 !packaging/windows/include/
 
 # Jaga-jaga kalau ada file exe nyasar di luar folder target/
 *.exe
-*.lib
 
 # Editor & OS
 *.swp
