@@ -20,18 +20,35 @@ jobs:
       - name: Build Rust
         run: cargo build --release
 
-      - name: Bundle AppImage
+      - name: Package Linux
         run: |
-          wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage -O linuxdeployqt
-          chmod +x linuxdeployqt
+          # 1. Wajib install libfuse2 buat jalanin AppImage di Ubuntu baru
+          sudo apt-get install -y libfuse2
 
-          mkdir -p AppDir
-          cp target/release/loonix-tunes AppDir/
-          cp packaging/linux/loonix-tunes.desktop AppDir/
-          cp packaging/linux/icon.png AppDir/loonix-tunes.png
+          # 2. Bikin struktur folder standar Linux
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
-          export PATH=/usr/lib/qt6/bin:$PATH
-          ./linuxdeployqt AppDir/loonix-tunes.desktop -appimage -qmake=/usr/lib/qt6/bin/qmake
+          # 3. Copy binary (Pake wildcard * biar aman dari typo strip/underscore)
+          cp target/release/loonix*tunes AppDir/usr/bin/loonix-tunes
+          chmod +x AppDir/usr/bin/loonix-tunes
+
+          # 4. Copy Desktop file & Icon (Pastikan file ini ada di repo lo!)
+          cp packaging/linux/loonix-tunes.desktop AppDir/usr/share/applications/
+          cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png
+
+          # 5. Jalankan linuxdeployqt
+          wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+
+          # Kita pake --appimage-extract-and-run biar gak butuh FUSE level kernel
+          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/share/applications/loonix-tunes.desktop -bundle-libs -appimage -always-set-rpath
+
+          # 6. Siapkan folder portable buat di-upload
+          mkdir -p loonix-tunes-portable
+          cp -r AppDir/usr/bin/* loonix-tunes-portable/
+          cp -r AppDir/usr/lib loonix-tunes-portable/ 2>/dev/null || true
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
@@ -41,18 +58,6 @@ jobs:
 
       - name: Create Portable Tarball
         run: |
-          mkdir -p loonix-tunes-portable
-          cp -r AppDir/usr/bin/* loonix-tunes-portable/
-          cp -r AppDir/usr/lib loonix-tunes-portable/
-          cp -r AppDir/usr/plugins loonix-tunes-portable/ 2>/dev/null || true
-
-          echo '#!/bin/sh
-          HERE="$(dirname "$(readlink -f "$0")")"
-          export LD_LIBRARY_PATH="$HERE/lib:$LD_LIBRARY_PATH"
-          export QT_QPA_PLATFORM_PLUGIN_PATH="$HERE/plugins"
-          exec "$HERE/loonix-tunes" "$@"' > loonix-tunes-portable/loonix-tunes.sh
-
-          chmod +x loonix-tunes-portable/loonix-tunes.sh
           tar -czvf loonix-tunes-linux-x64-portable.tar.gz loonix-tunes-portable/
 
       - name: Upload Tarball Artifact
