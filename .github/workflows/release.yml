@@ -38,12 +38,12 @@ jobs:
           cp packaging/linux/loonix-tunes.desktop AppDir/usr/share/applications/
           cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png
 
-          # 5. Jalankan linuxdeployqt
+          # 5. Jalankan linuxdeployqt (Tanpa flag -bundle-libs)
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
-          # Kita pake --appimage-extract-and-run biar gak butuh FUSE level kernel
-          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/share/applications/loonix-tunes.desktop -bundle-libs -appimage -always-set-rpath
+          # Gunakan --appimage-extract-and-run dan arahkan qmake ke Qt6
+          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/share/applications/loonix-tunes.desktop -appimage -always-set-rpath -qmake=$(which qmake6 || which qmake)
 
           # 6. Siapkan folder portable buat di-upload
           mkdir -p loonix-tunes-portable
