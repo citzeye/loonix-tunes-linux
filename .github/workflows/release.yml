@@ -3,7 +3,7 @@ name: Birthday Release Build
 on:
   push:
     tags:
-      - 'v*' # Trigger: git tag v1.0.0 && git push origin v1.0.0
+      - "v*" # Trigger: git tag v1.0.0 && git push origin v1.0.0
 
 jobs:
   # --- BUILD LINUX (APPIMAGE) ---
@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-declarative-dev ffmpeg libavcodec-dev libavutil-dev libswresample-dev pipewire libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev ffmpeg libavcodec-dev libavutil-dev libswresample-dev pipewire libpipewire-0.3-dev libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev libdbus-1-dev
 
       - name: Build Rust
         run: cargo build --release
@@ -38,7 +36,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: loonix-tunes-appimage
-          path: '*.AppImage'
+          path: "*.AppImage"
 
       - name: Create Portable Tarball
         run: |
@@ -60,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: loonix-tunes-tarball
-          path: '*.tar.gz'
+          path: "*.tar.gz"
 
   # --- BUILD WINDOWS (ZIP) ---
   windows-release:
@@ -75,12 +73,15 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.5.0'
+          version: "6.5.0"
 
       - name: Build Rust
         shell: bash
+        env:
+          FFMPEG_DIR: ${{ github.workspace }}/packaging/windows
         run: |
           export LIB="$GITHUB_WORKSPACE/packaging/windows/libs;$LIB"
+          export INCLUDE="$GITHUB_WORKSPACE/packaging/windows/include;$INCLUDE"
           cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Deploy Windows
@@ -98,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: loonix-tunes-windows
-          path: '*.zip'
+          path: "*.zip"
 
   # --- PUBLISH EVERYTHING ---
   publish:
