@@ -14,7 +14,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-declarative-dev ffmpeg libavcodec-dev libavutil-dev libswresample-dev pipewire libpipewire-0.3-dev libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev libdbus-1-dev
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libavdevice-dev libavutil-dev libswresample-dev pipewire libpipewire-0.3-dev libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev libdbus-1-dev
 
       - name: Build Rust
         run: cargo build --release
@@ -76,12 +76,11 @@ jobs:
           version: "6.5.0"
 
       - name: Build Rust
-        shell: bash
-        env:
-          FFMPEG_DIR: ${{ github.workspace }}/packaging/windows
+        shell: pwsh
         run: |
-          export LIB="$GITHUB_WORKSPACE/packaging/windows/libs;$LIB"
-          export INCLUDE="$GITHUB_WORKSPACE/packaging/windows/include;$INCLUDE"
+          $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
+          $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
+          $env:LIB = "${{ github.workspace }}\packaging\windows\libs;" + $env:LIB
           cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Deploy Windows
