@@ -22,7 +22,7 @@ fn main() {
     #[cfg(target_os = "linux")]
     {
         if std::env::var("WAYLAND_DISPLAY").is_ok() {
-            println!("[System] Wayland terdeteksi! Memaksa Qt menggunakan XCB untuk kompatibilitas VST3.");
+            println!("[System] Wayland terdeteksi! Memaksa Qt menggunakan XCB.");
             std::env::set_var("QT_QPA_PLATFORM", "xcb");
         }
     }
@@ -111,11 +111,6 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/preferences/CollapsibleSection.qml",
         "qml/ui/preferences/SettingFooter.qml",
         "qml/ui/preferences/SettingButton.qml",
-        "qml/ui/VstControl.qml",
-        "qml/ui/vst/VstHead.qml",
-        "qml/ui/vst/VstLeft.qml",
-        "qml/ui/vst/VstRight.qml",
-        "qml/ui/vst/VstFoot.qml",
         "qml/ui/qmldir",
         "assets/LoonixTunes.png",
         "assets/fonts/KodeMono-VariableFont_wght.ttf",

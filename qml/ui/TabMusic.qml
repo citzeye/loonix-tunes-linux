@@ -83,7 +83,7 @@ Rectangle {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onClicked: function(mouse) {
       if (mouse.button === Qt.LeftButton) {
-        musicModel.scan_music()
+        musicModel.switch_to_music()
       } else if (mouse.button === Qt.RightButton) {
         addMenu.popup()
       }

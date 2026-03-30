@@ -25,7 +25,6 @@ pub mod metadata;
 // UI components
 pub mod playlist;
 pub mod popup;
-pub mod vsthost;
 
 // Re-export key types
 pub use self::audio_output::AudioOutput;

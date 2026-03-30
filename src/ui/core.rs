@@ -20,9 +20,6 @@ use std::sync::{Arc, Mutex, OnceLock};
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 use trash;
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
-use crate::audio::vsthost;
-
 // Global storage for command line arguments
 static COMMAND_LINE_FILES: OnceLock<Vec<String>> = OnceLock::new();
 
@@ -313,41 +310,6 @@ pub struct MusicModel {
     pub clear_external_files: qt_method!(fn(&mut self)),
     pub process_command_line_files: qt_method!(fn(&mut self)),
 
-    // VST3 support
-    pub vst3_paths_internal: Vec<String>,
-    pub vst3_plugins_internal: Vec<vsthost::ScannedPlugin>,
-    pub vst3_scan_results_internal: Vec<vsthost::ScannedPlugin>,
-    pub vst3_paths: qt_property!(QVariantList; NOTIFY vst3_paths_changed),
-    pub vst3_paths_changed: qt_signal!(),
-    pub vst3_plugins: qt_property!(QVariantList; NOTIFY vst3_plugins_changed),
-    pub vst3_plugins_changed: qt_signal!(),
-    pub vst3_scan_results: qt_property!(QVariantList; NOTIFY vst3_scan_results_changed),
-    pub vst3_scan_results_changed: qt_signal!(),
-    pub vst3_changed: qt_signal!(),
-    pub vst3_scanning: qt_property!(bool; NOTIFY vst3_scanning_changed),
-    pub vst3_scanning_changed: qt_signal!(),
-    pub vst3_scan_progress: qt_property!(f64; NOTIFY vst3_scan_progress_changed),
-    pub vst3_scan_progress_changed: qt_signal!(),
-    pub vst3_scan_status: qt_property!(QString; NOTIFY vst3_scan_status_changed),
-    pub vst3_scan_status_changed: qt_signal!(),
-    pub add_vst3_path: qt_method!(fn(&mut self)),
-    pub remove_vst3_path: qt_method!(fn(&mut self, path: String)),
-    pub get_vst3_paths: qt_method!(fn(&self) -> QVariantList),
-    pub get_vst3_plugins: qt_method!(fn(&self) -> QVariantList),
-    pub scan_home_for_vst3: qt_method!(fn(&mut self)),
-    pub refresh_vst3_plugins: qt_method!(fn(&mut self)),
-    pub add_vst3_path_from_scan:
-        qt_method!(fn(&mut self, name: String, vendor: String, path: String)),
-    pub delete_vst3_plugin: qt_method!(fn(&mut self, name: String)),
-    pub load_vst3_plugin: qt_method!(fn(&self, path: String)),
-    pub unload_vst3_plugin: qt_method!(fn(&self)),
-    pub is_vst3_plugin_loaded: qt_method!(fn(&self) -> bool),
-    pub open_vst_editor: qt_method!(fn(&self, win_id: u32)),
-    pub save_vst3_state: qt_method!(fn(&mut self)),
-    pub restore_vst3_state: qt_method!(fn(&mut self)),
-    pub active_vst3_name: qt_property!(QString; NOTIFY active_vst3_changed),
-    pub active_vst3_changed: qt_signal!(),
-
     // Update checker
     pub update_status: qt_property!(QString; NOTIFY update_status_changed),
     pub update_available: qt_property!(bool; NOTIFY update_status_changed),
@@ -364,6 +326,7 @@ pub struct MusicModel {
     pub is_favorite: qt_method!(fn(&self, path: String) -> bool),
     pub toggle_favorite: qt_method!(fn(&mut self, path: String, name: String)),
     pub switch_to_favorites: qt_method!(fn(&mut self)),
+    pub switch_to_music: qt_method!(fn(&mut self)),
 }
 
 impl QAbstractListModel for MusicModel {
@@ -403,47 +366,7 @@ impl QAbstractListModel for MusicModel {
 
 impl MusicModel {
     pub fn new() -> Self {
-        let mut saved_config = crate::audio::config::AppConfig::load();
-
-        // === LOGIKA ONE-TIME AUTO-SCAN ===
-        let mut initial_vst_paths = Vec::new();
-        let mut initial_vst_plugins = Vec::new();
-        let mut need_config_save = false;
-
-        if !saved_config.vst3_initial_scan_done {
-            println!("[VST3] Menjalankan Initial Auto-Scan (Cuma 1x seumur hidup)...");
-
-            // 1. Cek folder ~/.vst3 standar Linux (SATU-SATUNYA jalan yang aman)
-            if let Some(mut home) = dirs::home_dir() {
-                home.push(".vst3");
-                if home.exists() {
-                    initial_vst_paths.push(home.to_string_lossy().into_owned());
-                    println!("[VST3] Ditemukan: {:?}", home);
-                }
-            }
-
-            // 2. Scan setiap path yang ketemu
-            for path_str in &initial_vst_paths {
-                let found =
-                    crate::audio::vsthost::scan_vst3_plugins(std::path::Path::new(path_str));
-                for (file_path, info) in found {
-                    initial_vst_plugins.push(crate::audio::vsthost::ScannedPlugin {
-                        info,
-                        path: file_path.to_string_lossy().into_owned(),
-                    });
-                }
-            }
-
-            // 3. Tandai udah kelar & siapin buat disave
-            saved_config.vst3_initial_scan_done = true;
-            need_config_save = true;
-
-            println!(
-                "[VST3] Initial Scan Kelar. Dapet {} plugin.",
-                initial_vst_plugins.len()
-            );
-        }
-        // === AKHIR LOGIKA AUTO-SCAN ===
+        let saved_config = crate::audio::config::AppConfig::load();
 
         let mut model = Self {
             ffmpeg: Arc::new(Mutex::new(FfmpegEngine::new())),
@@ -458,37 +381,6 @@ impl MusicModel {
             favorites_count: saved_config.favorites.len() as i32,
             external_files: Vec::new(),
             external_files_count: 0,
-            vst3_paths_internal: initial_vst_paths.clone(),
-            vst3_plugins_internal: initial_vst_plugins.clone(),
-            vst3_scan_results_internal: Vec::new(),
-            vst3_paths: {
-                let mut list = QVariantList::default();
-                for path in &initial_vst_paths {
-                    list.push(QString::from(path.clone()).into());
-                }
-                list
-            },
-            vst3_plugins: {
-                let mut list = QVariantList::default();
-                for plugin in &initial_vst_plugins {
-                    let mut map = QVariantMap::default();
-                    map.insert(
-                        "name".into(),
-                        QString::from(plugin.info.name.clone()).into(),
-                    );
-                    map.insert(
-                        "vendor".into(),
-                        QString::from(plugin.info.vendor.clone()).into(),
-                    );
-                    map.insert("path".into(), QString::from(plugin.path.clone()).into());
-                    list.push(map.into());
-                }
-                list
-            },
-            vst3_scan_results: QVariantList::default(),
-            vst3_scanning: false,
-            vst3_scan_progress: 0.0,
-            vst3_scan_status: QString::from(""),
             user_queue: Vec::new(),
             queue_count: 0,
             bassbooster_active: saved_config.bass_enabled,
@@ -633,12 +525,6 @@ impl MusicModel {
         // Store config for saving later
         model.saved_config = Some(saved_config.clone());
 
-        // Save config if this was the first time opening the app (VST3 auto-scan was done)
-        if need_config_save {
-            println!("[VST3] Menyimpan flag initial scan ke config...");
-            saved_config.save();
-        }
-
         // Scan default Music folder on startup
         model.scan_music();
 
@@ -668,6 +554,9 @@ impl MusicModel {
         self.expanded_folders.clear();
 
         self.scan_directory(&music_dir);
+        self.begin_reset_model();
+        self.end_reset_model();
+        self.current_folder_changed();
     }
 
     pub fn scan_folder(&mut self, path: String) {
@@ -1112,6 +1001,10 @@ impl MusicModel {
         self.begin_reset_model();
         self.end_reset_model();
         self.current_folder_changed();
+    }
+
+    pub fn switch_to_music(&mut self) {
+        self.scan_music();
     }
 
     fn save_favorites(&mut self) {
@@ -2627,372 +2520,4 @@ impl MusicModel {
             config.save();
         }
     }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn add_vst3_path(&mut self) {
-        use rfd::FileDialog;
-        if let Some(path) = FileDialog::new().pick_folder() {
-            let path_str = path.to_string_lossy().into_owned();
-            if !self.vst3_paths_internal.contains(&path_str) {
-                self.vst3_paths_internal.push(path_str.clone());
-                self.refresh_vst3_paths_prop();
-
-                // Auto-scan the added path
-                println!("[VST3] Scanning newly added path: {}", path_str);
-                self.vst3_scanning = true;
-                self.vst3_scan_progress = 0.5;
-                self.vst3_scan_status = QString::from(format!("Scanning: {}", path_str));
-                self.vst3_scanning_changed();
-                self.vst3_scan_progress_changed();
-                self.vst3_scan_status_changed();
-
-                let found = vsthost::scan_vst3_plugins(std::path::Path::new(&path_str));
-                println!("[VST3] Found {} plugin(s) in {}", found.len(), path_str);
-
-                for (file_path, info) in found {
-                    let file_path_str = file_path.to_string_lossy().into_owned();
-                    let already_exists = self
-                        .vst3_plugins_internal
-                        .iter()
-                        .any(|p| p.path == file_path_str);
-                    if !already_exists {
-                        self.vst3_plugins_internal.push(vsthost::ScannedPlugin {
-                            info,
-                            path: file_path_str,
-                        });
-                    }
-                }
-
-                self.vst3_scanning = false;
-                self.refresh_vst3_plugins_prop();
-                self.vst3_changed();
-                self.vst3_scanning_changed();
-                self.vst3_scan_progress_changed();
-                self.vst3_scan_status_changed();
-            }
-        }
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn remove_vst3_path(&mut self, path: String) {
-        self.vst3_paths_internal.retain(|p| p != &path);
-        self.refresh_vst3_paths_prop();
-        self.vst3_changed();
-    }
-
-    fn refresh_vst3_paths_prop(&mut self) {
-        let mut list = QVariantList::default();
-        for path in &self.vst3_paths_internal {
-            list.push(QString::from(path.clone()).into());
-        }
-        self.vst3_paths = list;
-        self.vst3_paths_changed();
-    }
-
-    fn refresh_vst3_plugins_prop(&mut self) {
-        let mut list = QVariantList::default();
-        for plugin in &self.vst3_plugins_internal {
-            let mut map = QVariantMap::default();
-            map.insert(
-                "name".into(),
-                QString::from(plugin.info.name.clone()).into(),
-            );
-            map.insert(
-                "vendor".into(),
-                QString::from(plugin.info.vendor.clone()).into(),
-            );
-            map.insert("path".into(), QString::from(plugin.path.clone()).into());
-            list.push(map.into());
-        }
-        self.vst3_plugins = list;
-        self.vst3_plugins_changed();
-    }
-
-    fn refresh_vst3_scan_results_prop(&mut self) {
-        let mut list = QVariantList::default();
-        for plugin in &self.vst3_scan_results_internal {
-            let mut map = QVariantMap::default();
-            map.insert(
-                "name".into(),
-                QString::from(plugin.info.name.clone()).into(),
-            );
-            map.insert(
-                "vendor".into(),
-                QString::from(plugin.info.vendor.clone()).into(),
-            );
-            map.insert("path".into(), QString::from(plugin.path.clone()).into());
-            list.push(map.into());
-        }
-        self.vst3_scan_results = list;
-        self.vst3_scan_results_changed();
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn get_vst3_paths(&self) -> QVariantList {
-        let mut list = QVariantList::default();
-        for path in &self.vst3_paths_internal {
-            list.push(QString::from(path.clone()).into());
-        }
-        list
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn get_vst3_plugins(&self) -> QVariantList {
-        let mut list = QVariantList::default();
-        for plugin in &self.vst3_plugins_internal {
-            let mut map = QVariantMap::default();
-            map.insert(
-                "name".into(),
-                QString::from(plugin.info.name.clone()).into(),
-            );
-            map.insert(
-                "vendor".into(),
-                QString::from(plugin.info.vendor.clone()).into(),
-            );
-            map.insert("path".into(), QString::from(plugin.path.clone()).into());
-            list.push(map.into());
-        }
-        list
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn scan_home_for_vst3(&mut self) {
-        println!("[VST3] scan_home_for_vst3 called");
-        self.vst3_scanning = true;
-        self.vst3_scan_progress = 0.0;
-        self.vst3_scan_status = QString::from("Scanning home folder for VST3 plugins...");
-        self.vst3_scanning_changed();
-        self.vst3_scan_progress_changed();
-        self.vst3_scan_status_changed();
-
-        self.vst3_scan_results_internal.clear();
-
-        if let Some(home) = dirs::home_dir() {
-            let home_str = home.to_string_lossy().into_owned();
-            println!("[VST3] Scanning home: {}", home_str);
-            self.vst3_scan_status = QString::from(format!("Scanning: {}", home_str));
-
-            let found = vsthost::scan_vst3_plugins(&home);
-            println!("[VST3] Found {} VST3 plugins in home", found.len());
-
-            for (path, info) in found {
-                let path_str = path.to_string_lossy().into_owned();
-                let already_exists = self
-                    .vst3_plugins_internal
-                    .iter()
-                    .any(|p| p.path == path_str);
-                if !already_exists {
-                    println!("  + {} by {} at {:?}", info.name, info.vendor, path);
-                    self.vst3_scan_results_internal
-                        .push(vsthost::ScannedPlugin {
-                            info,
-                            path: path_str,
-                        });
-                }
-            }
-
-            self.refresh_vst3_scan_results_prop();
-        }
-
-        self.vst3_scan_progress = 1.0;
-        self.vst3_scan_status = QString::from(format!(
-            "Found {} new plugin(s). Click 'Add' to add to your list.",
-            self.vst3_scan_results_internal.len()
-        ));
-        self.vst3_scanning = false;
-        self.vst3_scanning_changed();
-        self.vst3_scan_progress_changed();
-        self.vst3_scan_status_changed();
-        println!("[VST3] Home scan complete!");
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn refresh_vst3_plugins(&mut self) {
-        println!("[VST3] refresh_vst3_plugins called");
-        self.vst3_scanning = true;
-        self.vst3_scan_progress = 0.0;
-        self.vst3_scan_status = QString::from("Refreshing plugins from configured folders...");
-        self.vst3_scanning_changed();
-        self.vst3_scan_progress_changed();
-        self.vst3_scan_status_changed();
-
-        self.vst3_plugins_internal.clear();
-
-        let total_paths = self.vst3_paths_internal.len();
-        println!("[VST3] Total paths to scan: {}", total_paths);
-
-        if total_paths == 0 {
-            println!("[VST3] No paths configured!");
-            self.vst3_scanning = false;
-            self.vst3_scan_status = QString::from("No folders configured. Add VST3 folders first.");
-            self.vst3_scanning_changed();
-            self.vst3_scan_status_changed();
-            return;
-        }
-
-        for (i, vst_path) in self.vst3_paths_internal.iter().enumerate() {
-            println!("[VST3] Scanning path: {}", vst_path);
-            self.vst3_scan_status = QString::from(format!("Scanning: {}", vst_path));
-            self.vst3_scan_progress = (i as f64 / total_paths as f64) * 0.8;
-            self.vst3_scan_progress_changed();
-            self.vst3_scan_status_changed();
-
-            let found = vsthost::scan_vst3_plugins(std::path::Path::new(vst_path));
-            println!("[VST3] Found {} plugins in this path", found.len());
-            for (path, info) in found {
-                println!("  - {} by {} at {:?}", info.name, info.vendor, path);
-                self.vst3_plugins_internal.push(vsthost::ScannedPlugin {
-                    info,
-                    path: path.to_string_lossy().into_owned(),
-                });
-            }
-        }
-
-        self.vst3_scan_progress = 1.0;
-        self.vst3_scan_status = QString::from(format!(
-            "Found {} plugin(s)",
-            self.vst3_plugins_internal.len()
-        ));
-        self.vst3_scanning = false;
-        self.refresh_vst3_plugins_prop();
-        self.vst3_changed();
-        self.vst3_scanning_changed();
-        self.vst3_scan_progress_changed();
-        self.vst3_scan_status_changed();
-        println!(
-            "[VST3] Refresh complete! Total plugins: {}",
-            self.vst3_plugins_internal.len()
-        );
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn add_vst3_path_from_scan(&mut self, name: String, vendor: String, path: String) {
-        println!("[VST3] Adding plugin from scan: {} at {}", name, path);
-
-        let info = vsthost::PluginInfo {
-            name: name.clone(),
-            vendor,
-            category: String::new(),
-            uid: [0u8; 16],
-        };
-
-        let plugin = vsthost::ScannedPlugin {
-            info,
-            path: path.clone(),
-        };
-
-        self.vst3_plugins_internal.push(plugin);
-
-        self.vst3_scan_results_internal.retain(|p| p.path != path);
-        self.refresh_vst3_plugins_prop();
-        self.refresh_vst3_scan_results_prop();
-        self.vst3_changed();
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn delete_vst3_plugin(&mut self, name: String) {
-        self.vst3_plugins_internal.retain(|p| p.info.name != name);
-        self.refresh_vst3_plugins_prop();
-        self.vst3_changed();
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn load_vst3_plugin(&self, path: String) {
-        println!("[Bridge] Request load VST3 dari QML: {}", path);
-        self.output.load_vst3_plugin(&path);
-
-        let path_obj = std::path::Path::new(&path);
-        if let Some(name) = path_obj.file_stem() {
-            println!("[Bridge] VST3 loaded: {}", name.to_string_lossy());
-        }
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn unload_vst3_plugin(&self) {
-        self.output.unload_vst3_plugin();
-        println!("[Bridge] VST3 unloaded");
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn is_vst3_plugin_loaded(&self) -> bool {
-        self.output.is_vst3_loaded()
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn open_vst_editor(&self, win_id: u32) {
-        println!("[VST3] Minta buka UI di Window ID: {}", win_id);
-        self.output.open_vst_editor(win_id);
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn save_vst3_state(&mut self) {
-        if let Some(ref mut config) = self.saved_config {
-            let loaded_path = self.output.vst3_processor.get_loaded_path();
-            config.vst3_loaded_plugins = loaded_path.map(|p| vec![p]).unwrap_or_default();
-            config.save();
-        }
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
-    pub fn restore_vst3_state(&mut self) {
-        if let Some(ref config) = self.saved_config {
-            for path in &config.vst3_loaded_plugins {
-                let exists = self.vst3_plugins_internal.iter().any(|p| &p.path == path);
-                if exists && std::path::Path::new(path).exists() {
-                    println!("[VST3] Restoring plugin: {}", path);
-                    self.output.load_vst3_plugin(path);
-                }
-            }
-        }
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn add_vst3_path(&mut self) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn remove_vst3_path(&mut self, _path: String) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn get_vst3_paths(&self) -> QVariantList {
-        QVariantList::default()
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn get_vst3_plugins(&self) -> QVariantList {
-        QVariantList::default()
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn scan_home_for_vst3(&mut self) {
-        println!("[VST3] VST3 not supported on this platform");
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn refresh_vst3_plugins(&mut self) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn add_vst3_path_from_scan(&mut self, _name: String, _vendor: String, _path: String) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn delete_vst3_plugin(&mut self, _name: String) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn load_vst3_plugin(&self, _path: String) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn unload_vst3_plugin(&self) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn is_vst3_plugin_loaded(&self) -> bool {
-        false
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn open_vst_editor(&self, _win_id: u32) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn save_vst3_state(&self) {}
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    pub fn restore_vst3_state(&mut self) {}
 }

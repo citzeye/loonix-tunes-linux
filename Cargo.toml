@@ -34,14 +34,9 @@ qmetaobject = { version = "0.2.10", default-features = false }
 [target.'cfg(target_os = "android")'.dependencies]
 qmetaobject = { version = "0.2.10", default-features = false }
 
-# --- DESKTOP ONLY (Linux + Windows): VST3 & Trash ---
+# --- DESKTOP ONLY (Linux + Windows): Trash ---
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 trash = "3.0"
-libloading = "0.8"
-walkdir = "2.4"
-nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
-vst3-sys = { git = "https://github.com/robbert-vdh/vst3-sys.git", package = "vst3-sys" }
-clap-sys = { git = "https://github.com/micahrj/clap-sys.git", package = "clap-sys" }
 
 # --- UI & UTILS (Universal) ---
 cstr = "0.2"

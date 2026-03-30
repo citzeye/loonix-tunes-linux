@@ -13,11 +13,6 @@ pub struct AppConfig {
     pub custom_folders: Vec<(String, String)>,
     pub favorites: Vec<(String, String)>,
     pub locked_folders: Vec<i32>,
-    // VST3 settings
-    pub vst3_initial_scan_done: bool,
-    pub vst3_paths: Vec<String>,
-    pub vst3_loaded_plugins: Vec<String>,
-    pub vst3_active_plugin_index: i32,
     pub mode: crate::audio::engine::OutputMode,
     pub last_track_path: String,
     // DSP settings
@@ -177,10 +172,6 @@ impl Default for AppConfig {
             custom_folders: vec![],
             favorites: vec![],
             locked_folders: vec![],
-            vst3_initial_scan_done: false,
-            vst3_paths: vec![],
-            vst3_loaded_plugins: vec![],
-            vst3_active_plugin_index: -1,
             mode: crate::audio::engine::OutputMode::Stereo,
             last_track_path: String::new(),
             dsp_enabled: true,

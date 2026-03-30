@@ -1004,28 +1004,6 @@ Window {
               }
             }
 
-            // // VST3 󰰪 | 󰬝
-            // Text {
-            //   id: vstIconSlider
-            //   text: VstControl && VstControl.visible ? '󰬝' : '󰰪'
-            //   font.family: symbols.name
-            //   font.pixelSize: 18
-
-            //   color: vstMALoader.containsMouse
-            //     ? theme.colormap.playerhover
-            //     : (VstControl && VstControl.visible) || musicModel.is_vst3_plugin_loaded()
-            //     ? theme.colormap.playeraccent
-            //     : theme.colormap.playersubtext
-
-            //   MouseArea {
-            //     id: vstMALoader
-            //     anchors.fill: parent
-            //     hoverEnabled: true
-            //     onClicked: {
-            //       toggleVstWindow()
-            //     }
-            //   }
-            // }
           }
 
           // --- RIGHT SECTION: VOLUME ---
@@ -1186,35 +1164,6 @@ Window {
         anchors.fill: parent
         anchors.margins: 10
       }
-    }
-  }
-
-  property var vstControl: null
-
-  function toggleVstWindow() {
-    if (vstControl) {
-      if (vstControl.visible) {
-        vstControl.visible = false
-      } else {
-        vstControl.visible = true
-        vstControl.raise()
-      }
-      return
-    }
-    var component = Qt.createComponent("qrc:/qml/ui/VstControl.qml")
-    if (component.status === Component.Ready) {
-      vstControl = component.createObject(root)
-      if (vstControl) {
-        vstControl.visible = true
-      }
-    } else {
-      console.log("VST Window component error:", component.errorString())
-    }
-  }
-
-  function closeVstWindow() {
-    if (vstControl) {
-      vstControl.visible = false
     }
   }
 

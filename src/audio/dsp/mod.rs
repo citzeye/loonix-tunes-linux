@@ -18,8 +18,6 @@ pub mod rubberband_ffi;
 pub mod stereoenhance;
 pub mod stereowidth;
 pub mod surround;
-pub mod vst3processor;
-
 pub use self::abrepeat::{ABRepeat, ABRepeatState};
 pub use self::bassbooster::BassBooster;
 pub use self::biquad::BiquadLowShelf;
@@ -37,7 +35,6 @@ pub use self::reverb::Reverb;
 pub use self::stereoenhance::StereoEnhance;
 pub use self::stereowidth::StereoWidth;
 pub use self::surround::SurroundProcessor;
-pub use self::vst3processor::Vst3Processor;
 
 use crate::audio::engine::ProAudioEngine;
 

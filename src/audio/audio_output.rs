@@ -1,6 +1,5 @@
 /* --- LOONIX-TUNES src/audio/audio_output.rs --- */
 use crate::audio::dsp::crystalizer::get_crystalizer_amount_arc;
-use crate::audio::dsp::vst3processor::Vst3Processor;
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
 use crate::audio::highres::HighResProcessor;
@@ -69,8 +68,6 @@ pub struct AudioOutput {
     normalizer_enabled: Arc<AtomicBool>,
     // Normalizer processor (EBU R128) - wrapped in Arc<Mutex> for thread-safe mutable access
     normalizer: Arc<Mutex<crate::audio::dsp::AudioNormalizer>>,
-    // VST3 Processor - plugin host for VST3 effects
-    pub vst3_processor: Vst3Processor,
     // PipeWire thread for exclusive mode on Linux
     #[cfg(target_os = "linux")]
     pw_thread: Option<std::thread::JoinHandle<()>>,
@@ -113,7 +110,6 @@ impl AudioOutput {
             normalizer: Arc::new(Mutex::new(crate::audio::dsp::AudioNormalizer::new(
                 true, -14.0,
             ))),
-            vst3_processor: Vst3Processor::new(),
             #[cfg(target_os = "linux")]
             pw_thread: None,
         }
@@ -384,7 +380,6 @@ impl AudioOutput {
         let highres_enabled = self.highres_enabled.clone();
         let normalizer_enabled = self.normalizer_enabled.clone();
         let normalizer = self.normalizer.clone();
-        let mut vst3_processor = self.vst3_processor.clone();
         let samples_played = self.samples_played.clone();
         let crossfade_frames = self.crossfade_frames.clone();
         let sample_rate = self.sample_rate;
@@ -404,7 +399,6 @@ impl AudioOutput {
         let mut read_buffer = vec![0.0f32; 16384];
         let mut processed_buffer = vec![0.0f32; 16384];
         let mut crossfade_buffer = vec![0.0f32; 16384];
-        let mut vst3_temp_buffer = vec![0.0f32; 16384];
 
         let err_fn = |_err| {};
 
@@ -599,16 +593,6 @@ impl AudioOutput {
                         processed_buffer[..process_len].copy_from_slice(&temp);
                     }
 
-                    // VST3 Plugin processing (after DSP chain, before normalizer to prevent clipping)
-                    if vst3_processor.is_loaded() {
-                        vst3_temp_buffer[..process_len]
-                            .copy_from_slice(&processed_buffer[..process_len]);
-                        vst3_processor.process(
-                            &vst3_temp_buffer[..process_len],
-                            &mut processed_buffer[..process_len],
-                        );
-                    }
-
                     // EBU R128 Normalizer (Fixed gain per track)
                     if normalizer_enabled.load(Ordering::SeqCst) {
                         let safe_len = process_len.min(norm_input.len());
@@ -747,37 +731,6 @@ impl AudioOutput {
 
     pub fn resume(&mut self) {
         self.is_running.store(true, Ordering::SeqCst);
-    }
-
-    pub fn load_vst3_plugin(&self, path: &str) {
-        if let Err(e) = self.vst3_processor.load_plugin(path) {
-            eprintln!("[AudioOutput] Gagal meload VST3: {}", e);
-        } else {
-            println!("[AudioOutput] VST3 sukses diload ke DSP Chain!");
-        }
-    }
-
-    pub fn unload_vst3_plugin(&self) {
-        self.vst3_processor.unload();
-        println!("[AudioOutput] VST3 plugin unloaded");
-    }
-
-    pub fn is_vst3_loaded(&self) -> bool {
-        self.vst3_processor.is_loaded()
-    }
-
-    pub fn get_vst3_processor(&self) -> crate::audio::dsp::vst3processor::Vst3Processor {
-        self.vst3_processor.clone()
-    }
-
-    #[cfg(target_os = "linux")]
-    pub fn open_vst_editor(&self, window_id: u32) {
-        self.vst3_processor.open_editor(window_id);
-    }
-
-    #[cfg(not(target_os = "linux"))]
-    pub fn open_vst_editor(&self, _window_id: u32) {
-        println!("[AudioOutput] VST3 editor not supported on this platform");
     }
 }
 
