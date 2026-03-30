@@ -73,9 +73,6 @@ jobs:
   windows-release:
     runs-on: windows-latest
     steps:
-      - name: Install Git LFS
-        run: choco install git-lfs -y
-
       - uses: actions/checkout@v4
         with:
           lfs: true
@@ -93,28 +90,30 @@ jobs:
       - name: Setup MSVC Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup VCPKG & Fake pkg-config
+      - name: Setup VCPKG & PkgConfig
         shell: pwsh
         run: |
-          # 1. Install pake nama yang bener: soxr (bukan libsoxr)
+          # Install pkgconfiglite
+          choco install pkgconfiglite --no-progress
+          
+          # Add to PATH
+          echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
+          
+          # Install soxr dan rubberband
           $vcpkg_exe = "C:\vcpkg\vcpkg.exe"
           & $vcpkg_exe install soxr:x64-windows rubberband:x64-windows --vcpkg-root="C:\vcpkg"
 
-          # 2. Pastiin folder tujuan ada
+          # Copy files
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\libs"
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\include"
 
-          # 3. Copy file dari folder soxr_x64-windows (bukan libsoxr_x64-windows)
           Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
           Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
 
           Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
           Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
 
-          # 4. Install pkg-config and add to PATH
-          choco install pkgconfiglite --no-progress
-          "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
+          # Create .pc files
           $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
           New-Item -ItemType Directory -Force -Path $pc_dir
 
