@@ -54,3 +54,4 @@ cargo build --release
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
 Created with ❤️ by citzeye
+

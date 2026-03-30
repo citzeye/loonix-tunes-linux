@@ -3,40 +3,33 @@
 pkgname=loonix-tunes
 pkgver=1.0.0
 pkgrel=1
-pkgdesc="Music player for Loonix OS (Standalone Plugins)"
+pkgdesc="Music player for Loonix OS"
 arch=('x86_64')
 url="https://github.com/citz/loonix-tunes"
 license=('GPL')
-depends=('qt6-base' 'qt6-declarative' 'gstreamer' 'gst-plugins-base')
-makedepends=('rust' 'cargo' 'calf' 'lsp-plugins-lv2')
+depends=('qt5-base' 'qt5-declarative' 'qt5-multimedia' 'hicolor-icon-theme' 'gstreamer' 'gst-plugins-base')
 source=("${pkgname}-${pkgver}::git+file://$PWD")
 md5sums=('SKIP')
 
 build() {
     cd "$srcdir/${pkgname}-${pkgver}"
+    
+    # Paksa pake Qt5
+    export QT_SELECT=qt5
+    export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+    
     cargo build --release
 }
 
 package() {
     cd "$srcdir/${pkgname}-${pkgver}"
     
-    # Bagian: Install binary
+    # 1. Install Binary
     install -Dm755 "target/release/loonix-tunes" "$pkgdir/usr/bin/loonix-tunes"
 
-    # Bagian: Bundling Plugins (Production)
-    mkdir -p "$pkgdir/usr/lib/loonix-tunes"
-    cp -r plugins "$pkgdir/usr/lib/loonix-tunes/"
+    # 2. Install Desktop File
+    install -Dm644 "packaging/linux/loonix-tunes.desktop" "$pkgdir/usr/share/applications/loonix-tunes.desktop"
 
-    # 2. LV2 Bundles (File suara/efek asli)
-    mkdir -p "$pkgdir/usr/lib/loonix-tunes/plugins/lv2"
-    
-    # Copy Calf Bundle
-    cp -r /usr/lib/lv2/calf.lv2 "$pkgdir/usr/lib/loonix-tunes/plugins/lv2/"
-    # Copy LSP Bundle (Ganti nama sesuai folder aslinya di /usr/lib/lv2)
-    cp -r /usr/lib/lv2/lsp-plugins.lv2 "$pkgdir/usr/lib/loonix-tunes/plugins/lv2/"
-
-    # Pastikan file fisik, bukan symlink (Force overwrite jika perlu)
-    cp /usr/lib/calf/libcalf.so "$pkgdir/usr/lib/loonix-tunes/plugins/lv2/calf.lv2/calf.so"
+    # 3. Install Icon
+    install -Dm644 "packaging/linux/icon.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png"
 }
-
-# Akhir Bagian

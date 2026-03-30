@@ -1,0 +1,7 @@
+# pack-refs with: peeled fully-peeled sorted 
+6965d2d4a2aaeab2e4c3884c36fd77ae8e97d28f refs/heads/main
+6965d2d4a2aaeab2e4c3884c36fd77ae8e97d28f refs/heads/makepkg
+6965d2d4a2aaeab2e4c3884c36fd77ae8e97d28f refs/remotes/origin/HEAD
+6965d2d4a2aaeab2e4c3884c36fd77ae8e97d28f refs/remotes/origin/main
+6965d2d4a2aaeab2e4c3884c36fd77ae8e97d28f refs/tags/v1.0.0
+ad1e16226463241dd27ab292afb6e1e38d387dab refs/tags/v1.0.X

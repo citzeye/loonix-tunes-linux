@@ -89,6 +89,28 @@ jobs:
           name: loonix-tunes-tarball
           path: "*.tar.gz"
 
+      - name: Build .deb Package
+        run: |
+          cargo install cargo-deb
+          cargo deb --no-build
+
+      - name: Build .rpm Package
+        run: |
+          cargo install cargo-generate-rpm
+          cargo generate-rpm
+
+      - name: Upload DEB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loonix-tunes-deb
+          path: target/debian/*.deb
+
+      - name: Upload RPM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loonix-tunes-rpm
+          path: target/generate-rpm/*.rpm
+
   # --- BUILD WINDOWS (ZIP) ---
   windows-release:
     runs-on: windows-latest
@@ -201,6 +223,9 @@ jobs:
             **/*.AppImage
             **/*.tar.gz
             **/*.zip
+            **/*.exe
+            **/*.deb
+            **/*.rpm
           body: "Loonix-Tunes v1.0.0 - Birthday Release 🎂\n\nEfficient, Native, and Fast."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

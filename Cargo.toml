@@ -21,7 +21,7 @@ parking_lot = "0.12"
 [target.'cfg(target_os = "linux")'.dependencies]
 pipewire = "0.9"
 libspa = "0.9"
-zbus = "5.6.1" # Tambahin ini biar dbus_service.rs gak nangis
+zbus = "5.6.1"
 qmetaobject = "0.2.10"
 glib = { version = "0.19", features = ["v2_68"] }
 x11 = "2.20"
@@ -53,3 +53,27 @@ crossbeam-channel = "0.5.15"
 
 [build-dependencies]
 winres = "0.1"
+
+[package.metadata.deb]
+maintainer = "citzeye <citz@loonix-tunes.com>"
+copyright = "2026, citzeye"
+license-file = ["LICENSE", "0"]
+depends = "$auto, libqt5core5a, libqt5gui5, libqt5widgets5, libqt5qml5, libqt5quick5, libqt5multimedia5, gstreamer1.0-plugins-base"
+section = "sound"
+priority = "optional"
+assets = [
+    ["target/release/loonix-tunes", "/usr/bin/loonix-tunes", "755"],
+    ["packaging/linux/loonix-tunes.desktop", "/usr/share/applications/", "644"],
+    ["packaging/linux/icon.png", "/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png", "644"],
+]
+
+[package.metadata.rpm]
+package = "loonix-tunes"
+maintainer = "citzeye <citz@loonix-tunes.com>"
+license = "GPLv3"
+summary = "Modern offline music player for Linux"
+assets = [
+    { source = "target/release/loonix-tunes", dest = "/usr/bin/loonix-tunes", mode = "755" },
+    { source = "packaging/linux/loonix-tunes.desktop", dest = "/usr/share/applications/loonix-tunes.desktop", mode = "644" },
+    { source = "packaging/linux/icon.png", dest = "/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png", mode = "644" },
+]
