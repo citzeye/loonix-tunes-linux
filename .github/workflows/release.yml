@@ -38,22 +38,27 @@ jobs:
 
       - name: Bundle AppImage
         run: |
-          # Download linuxdeployqt
+          # 1. Hapus plugin SQL yang nggak berguna (bikin error ldd)
+          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlmimer.so
+          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlpsql.so
+          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlodbc.so
+
+          # 2. Download linuxdeployqt
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
-          # Export PATH Qt biar linuxdeployqt tau pake Qt yang mana
+          # 3. Export PATH Qt biar linuxdeployqt tau pake Qt yang mana
           export PATH=$Qt6_DIR/bin:$PATH
           export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
 
-          # Jalankan bundling dengan flag -qmldir agar modul QML ikut masuk
+          # 4. Jalankan bundling dengan flag -qmldir agar modul QML ikut masuk
           ./linuxdeployqt-continuous-x86_64.AppImage \
             target/release/loonix-tunes \
             -appimage \
             -qmldir=qml \
             -verbose=2
 
-          # Rename hasil build agar nama sesuai
+          # 5. Rename hasil build agar nama sesuai
           mv Loonix-Tunes-*-x86_64.AppImage Loonix-Tunes-v1.0.0-x86_64.AppImage
 
       - name: Upload Linux Artifact
