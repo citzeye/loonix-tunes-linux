@@ -136,7 +136,7 @@ jobs:
           cd "${{ github.workspace }}\packaging\windows"
 
           # 3. Generate file .lib dari file .dll pake alat MSVC (dumpbin & lib)
-          $dlls = Get-ChildItem -Filter "av*.dll", "sw*.dll"
+          $dlls = Get-ChildItem -Path "av*.dll", "sw*.dll"
           foreach ($dll in $dlls) {
               $dll_name = $dll.Name
               $base_name = $dll.BaseName.Split('-')[0] # Ngambil kata 'avcodec' dari 'avcodec-62'
