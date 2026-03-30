@@ -7,6 +7,14 @@
 
 ---
 
+## 📸 Screenshot Showroom
+
+| | |
+|:---:|:---:|
+| ![Main UI](SS/1.png) | ![Playlist View](SS/2.png) |
+| ![DSP Controls](SS/3.png) | ![Compact Mode](SS/4.png) |
+
+
 ## 🎵 About The Project
 
 Loonix-Tunes is an elegant, fast, and feature-rich audio player designed specifically for users who care about audio processing and system efficiency. By combining a blazingly fast Rust audio engine with a beautiful, hardware-accelerated Qt interface, Loonix-Tunes delivers a premium listening experience without bloating your system.
