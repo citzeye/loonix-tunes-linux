@@ -43,7 +43,7 @@ jobs:
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
           # Gunakan --appimage-extract-and-run dan arahkan qmake ke Qt6
-          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/share/applications/loonix-tunes.desktop -appimage -always-set-rpath -qmake=$(which qmake6 || which qmake)
+          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/share/applications/loonix-tunes.desktop -appimage -qmake=$(which qmake6 || which qmake)
 
           # 6. Siapkan folder portable buat di-upload
           mkdir -p loonix-tunes-portable
@@ -70,7 +70,13 @@ jobs:
   windows-release:
     runs-on: windows-latest
     steps:
+      - name: Install Git LFS
+        run: choco install git-lfs -y
+
       - uses: actions/checkout@v4
+        with:
+          lfs: true
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
