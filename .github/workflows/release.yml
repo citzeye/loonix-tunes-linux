@@ -38,10 +38,11 @@ jobs:
 
       - name: Bundle AppImage
         run: |
-          # 1. Hapus plugin SQL yang nggak berguna (bikin error ldd)
-          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlmimer.so
-          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlpsql.so
-          rm -f ${{ github.workspace }}/Qt/6.6.2/gcc_64/plugins/sqldrivers/libqsqlodbc.so
+          # 1. Hapus SQL plugins yang nggak dipakai (sisakan SQLite aja)
+          rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmimer.so
+          rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmysql.so
+          rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlpsql.so
+          rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlodbc.so
 
           # 2. Download linuxdeployqt
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
