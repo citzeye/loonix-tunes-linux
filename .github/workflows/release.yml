@@ -135,6 +135,10 @@ jobs:
       - name: Build Rust
         shell: pwsh
         run: |
+          # Install pkg-config and make sure it's in PATH
+          choco install pkgconfiglite --no-progress
+          $env:Path = "C:\ProgramData\chocolatey\lib\pkgconfiglite\tools\pkgconfiglite\bin;" + $env:Path
+
           $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
           $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
 
@@ -153,7 +157,7 @@ jobs:
           cp target/x86_64-pc-windows-msvc/release/loonix-tunes.exe release-win/
           cp packaging/windows/*.dll release-win/
 
-          windeployqt.exe release-win/loonix-tunes.exe --qmldir qml/
+          windeployqt.exe release-win/loonix-tunes.exe --qmldir qml/ --no-translations
 
           7z a loonix-tunes-${{ github.ref_name }}-win64.zip ./release-win/*
 
