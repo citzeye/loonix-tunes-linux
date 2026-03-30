@@ -8,7 +8,7 @@ on:
 jobs:
   # --- BUILD LINUX (APPIMAGE) ---
   linux-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install Dependencies
@@ -74,6 +74,9 @@ jobs:
         uses: jurplel/install-qt-action@v3
         with:
           version: "6.5.0"
+
+      - name: Setup MSVC Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Build Rust
         shell: pwsh
