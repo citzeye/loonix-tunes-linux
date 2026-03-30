@@ -78,9 +78,52 @@ jobs:
       - name: Setup MSVC Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Setup Fake pkg-config & VCPKG Libraries
+        shell: pwsh
+        run: |
+          # 1. Install vcpkg
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git ${{ github.workspace }}\vcpkg
+          & ${{ github.workspace }}\vcpkg\bootstrap-vcpkg.bat
+
+          # 2. Suruh mesin Windows download & compile SoXR + Rubberband otomatis
+          & ${{ github.workspace }}\vcpkg\vcpkg install libsoxr:x64-windows rubberband:x64-windows
+
+          # 3. Copy file .lib dan headers hasil compile ke folder packaging lo
+          $vcpkg_dir = "$env:VCPKG_INSTALLATION_ROOT\packages"
+          Copy-Item -Path "$vcpkg_dir\libsoxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+          Copy-Item -Path "$vcpkg_dir\libsoxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
+
+          Copy-Item -Path "$vcpkg_dir\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+          Copy-Item -Path "$vcpkg_dir\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
+
+          # 4. Bikin identitas palsu pkg-config
+          choco install pkgconfiglite --no-progress
+          $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
+          New-Item -ItemType Directory -Force -Path $pc_dir
+
+          $libs_dir = "${{ github.workspace }}\packaging\windows\libs" -replace '\\', '/'
+          $inc_dir = "${{ github.workspace }}\packaging\windows\include" -replace '\\', '/'
+
+          @"
+          Name: soxr
+          Description: SoX Resampler
+          Version: 0.1.3
+          Libs: -L$libs_dir -lsoxr
+          Cflags: -I$inc_dir
+          "@ | Out-File -FilePath "$pc_dir\soxr.pc" -Encoding ascii
+
+          @"
+          Name: rubberband
+          Description: Rubber Band
+          Version: 3.0.0
+          Libs: -L$libs_dir -lrubberband
+          Cflags: -I$inc_dir
+          "@ | Out-File -FilePath "$pc_dir\rubberband.pc" -Encoding ascii
+
       - name: Build Rust
         shell: pwsh
         run: |
+          $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
           $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
           $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
           $env:LIB = "${{ github.workspace }}\packaging\windows\libs;" + $env:LIB
