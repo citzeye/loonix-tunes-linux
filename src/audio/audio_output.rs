@@ -345,8 +345,13 @@ impl AudioOutput {
         // Normal mode - use cpal with default device
         let device = {
             let host = cpal::default_host();
-            host.default_output_device()
-                .expect("No output device found")
+            match host.default_output_device() {
+                Some(d) => d,
+                None => {
+                    eprintln!("[AudioOutput] No output device found, skipping playback");
+                    return;
+                }
+            }
         };
 
         #[cfg(not(target_os = "linux"))]

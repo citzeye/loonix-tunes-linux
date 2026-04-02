@@ -28,7 +28,28 @@ pub fn set_command_line_files(files: Vec<String>) {
 }
 
 pub fn get_command_line_files() -> &'static Vec<String> {
-    COMMAND_LINE_FILES.get_or_init(|| Vec::new())
+    COMMAND_LINE_FILES.get_or_init(Vec::new)
+}
+
+/// Clean QML file:// URLs into proper OS paths
+fn clean_qml_path(path: &str) -> String {
+    // Handle raw file:// URLs
+    if path.starts_with("file://") {
+        if let Ok(url) = url::Url::parse(path) {
+            if let Ok(p) = url.to_file_path() {
+                return p.to_string_lossy().to_string();
+            }
+        }
+    }
+    // Handle QML-stripped paths (e.g. /C:/Users/... from file:///C:/Users/...)
+    if path.len() > 3
+        && path.starts_with('/')
+        && path.as_bytes()[1].is_ascii_alphabetic()
+        && path.as_bytes()[2] == b':'
+    {
+        return path[1..].to_string();
+    }
+    path.to_string()
 }
 
 #[derive(QObject, Default)]
@@ -590,30 +611,36 @@ impl MusicModel {
 
     fn scan_directory(&mut self, dir: &Path) {
         if let Ok(entries) = std::fs::read_dir(dir) {
+            let mut dirs: Vec<_> = Vec::new();
+            let mut files: Vec<_> = Vec::new();
             for entry in entries.flatten() {
                 let path = entry.path();
                 let name = entry.file_name().to_string_lossy().to_string();
-
                 if path.is_dir() {
-                    self.all_items.push(MusicItem {
-                        name,
-                        path: path.to_string_lossy().to_string(),
-                        is_folder: true,
-                        parent_folder: None,
-                    });
+                    dirs.push((name, path));
                 } else if is_audio_file(&path) {
-                    self.all_items.push(MusicItem {
-                        name,
-                        path: path.to_string_lossy().to_string(),
-                        is_folder: false,
-                        parent_folder: None,
-                    });
+                    files.push((name, path));
                 }
             }
+            dirs.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            files.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            for (name, path) in dirs {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: true,
+                    parent_folder: None,
+                });
+            }
+            for (name, path) in files {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: false,
+                    parent_folder: None,
+                });
+            }
         }
-
-        self.all_items
-            .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
         self.display_list = self.all_items.clone();
     }
 
@@ -649,7 +676,8 @@ impl MusicModel {
     }
 
     pub fn add_folder_tab(&mut self, path: String) {
-        let folder_path = Path::new(&path);
+        let clean = clean_qml_path(&path);
+        let folder_path = Path::new(&clean);
         if let Some(name) = folder_path.file_name() {
             let mut name_str = name.to_string_lossy().to_string();
             name_str.truncate(15);
@@ -658,26 +686,27 @@ impl MusicModel {
             if !self
                 .custom_folders
                 .iter()
-                .any(|(n, p)| n == &name_str && p == &path)
+                .any(|(n, p)| n == &name_str && p == &clean)
             {
-                self.custom_folders.push((name_str.clone(), path.clone()));
+                self.custom_folders.push((name_str.clone(), clean.clone()));
                 self.custom_folder_count = self.custom_folders.len() as i32;
                 self.custom_folders_changed();
                 self.save_custom_folders();
-                self.switch_to_folder(path);
+                self.switch_to_folder(clean);
             }
         }
     }
 
     pub fn add_song(&mut self, path: String) {
-        let song_path = Path::new(&path);
+        let clean = clean_qml_path(&path);
+        let song_path = Path::new(&clean);
         if let Some(name) = song_path.file_name() {
             let name_str = name.to_string_lossy().to_string();
 
             // Add to all_items
             self.all_items.push(MusicItem {
                 name: name_str,
-                path: path.clone(),
+                path: clean.clone(),
                 is_folder: false,
                 parent_folder: None,
             });
@@ -1053,24 +1082,36 @@ impl MusicModel {
 
     fn scan_custom_directory(&mut self, dir: &Path) {
         if let Ok(entries) = std::fs::read_dir(dir) {
+            let mut dirs: Vec<_> = Vec::new();
+            let mut files: Vec<_> = Vec::new();
             for entry in entries.flatten() {
                 let path = entry.path();
                 let name = entry.file_name().to_string_lossy().to_string();
-
-                if is_audio_file(&path) {
-                    self.all_items.push(MusicItem {
-                        name,
-                        path: path.to_string_lossy().to_string(),
-                        is_folder: false,
-                        parent_folder: None,
-                    });
+                if path.is_dir() {
+                    dirs.push((name, path));
+                } else if is_audio_file(&path) {
+                    files.push((name, path));
                 }
             }
+            dirs.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            files.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            for (name, path) in dirs {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: true,
+                    parent_folder: None,
+                });
+            }
+            for (name, path) in files {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: false,
+                    parent_folder: None,
+                });
+            }
         }
-
-        self.all_items
-            .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-
         self.display_list = self.all_items.clone();
     }
 

@@ -65,7 +65,7 @@ Rectangle {
       width: parent.width - 40
       height: 80
       color: 'transparent'
-      visible: musicModel.rowCount() === 0
+      visible: playlistView.count === 0
 
       Column {
         anchors.centerIn: parent
@@ -222,26 +222,19 @@ Rectangle {
       }
     }
     ScrollBar.vertical: ScrollBar {
-      width: 8
+      width: 6
       z: 1
-
+      policy: ScrollBar.AsNeeded
       background: Rectangle {
-        color: 'transparent'
+        implicitWidth: 6
+        color: theme.colormap.bgmain
+        opacity: 0.0
       }
-
       contentItem: Rectangle {
-        radius: 4
-        color: parent.hovered
-          ? theme.colormap.tabhover
-          : theme.colormap.graysolid
-        opacity: parent.hovered ? 1.0 : 0.5
-
-        Behavior on opacity {
-          NumberAnimation { duration: 150 }
-        }
-        Behavior on color {
-          ColorAnimation { duration: 150 }
-        }
+        implicitWidth: 6
+        radius: 3
+        color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
+        Behavior on color { ColorAnimation { duration: 200 } }
       }
     }
   }

@@ -19,6 +19,7 @@ Window {
 
   onClosing: {
     musicModel.save_state()
+    Qt.quit()
   }
 
   // --- OVERLAY BLOKIR LAYAR ---
@@ -269,6 +270,12 @@ Window {
         anchors.leftMargin: 8
         anchors.rightMargin: 8
         spacing: 0
+
+        MouseArea {
+          anchors.fill: parent
+          onPressed: root.startSystemMove()
+          cursorShape: Qt.SizeAllCursor
+        }
 
           Text {
             id: menuIcon
@@ -784,7 +791,7 @@ Window {
               id: abRepeatIcon
               text: '󰇉'
               font.family: kodeMono.name
-              font.pixelSize: 24
+              font.pixelSize: 18
               font.bold: true
               color: abRepeatMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
 
@@ -888,42 +895,82 @@ Window {
             }
 
             // EQUALIZER
-            Text {
-              id: eqIconSlider
-              text: '󰯷'
-              font.family: kodeMono.name
-              font.pixelSize: 26
-              color: eqMASlider.containsMouse || eqAccordion.Layout.preferredHeight > 0
-                ? theme.colormap.playerhover
-                : theme.colormap.playersubtext
+            Item {
+              id: eqContainer
+              width: eqIconSlider.width
+              height: eqIconSlider.height + 20
+              Layout.alignment: Qt.AlignVCenter
 
-              MouseArea {
-                id: eqMASlider
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                  eqAccordion.isOpen = !eqAccordion.isOpen
+              Text {
+                id: eqTooltip
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: eqIconSlider.top
+                anchors.bottomMargin: 4
+                text: "Equalizer"
+                font.pixelSize: 14
+                font.family: kodeMono.name
+                color: theme.colormap.playerhover
+                visible: eqMASlider.containsMouse
+              }
+
+              Text {
+                id: eqIconSlider
+                anchors.verticalCenter: parent.verticalCenter
+                text: '󰯷'
+                font.family: kodeMono.name
+                font.pixelSize: 18
+                color: eqMASlider.containsMouse || eqAccordion.Layout.preferredHeight > 0
+                  ? theme.colormap.playerhover
+                  : theme.colormap.playersubtext
+
+                MouseArea {
+                  id: eqMASlider
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: {
+                    eqAccordion.isOpen = !eqAccordion.isOpen
+                  }
                 }
               }
             }
 
             // FX
-            Text {
-              id: fxIconSlider
-              text: '󰯺'
-              font.family: kodeMono.name
-              font.pixelSize: 26
+            Item {
+              id: fxContainer
+              width: fxIconSlider.width
+              height: fxIconSlider.height + 20
+              Layout.alignment: Qt.AlignVCenter
 
-              color: presetMASlider.containsMouse || fxAccordion.Layout.preferredHeight > 0
-                ? theme.colormap.playerhover
-                : theme.colormap.playersubtext
+              Text {
+                id: fxTooltip
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: fxIconSlider.top
+                anchors.bottomMargin: 4
+                text: "FX"
+                font.pixelSize: 14
+                font.family: kodeMono.name
+                color: theme.colormap.playerhover
+                visible: presetMASlider.containsMouse
+              }
 
-              MouseArea {
-                id: presetMASlider
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                  fxAccordion.isOpen = !fxAccordion.isOpen
+              Text {
+                id: fxIconSlider
+                anchors.verticalCenter: parent.verticalCenter
+                text: '󰯺'
+                font.family: kodeMono.name
+                font.pixelSize: 18
+
+                color: presetMASlider.containsMouse || fxAccordion.Layout.preferredHeight > 0
+                  ? theme.colormap.playerhover
+                  : theme.colormap.playersubtext
+
+                MouseArea {
+                  id: presetMASlider
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: {
+                    fxAccordion.isOpen = !fxAccordion.isOpen
+                  }
                 }
               }
             }
@@ -1189,6 +1236,78 @@ Window {
   HeaderMenu {}
   TabContextMenu {}
   PlaylistContextMenu {}
+
+  MouseArea {
+    width: 6
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    cursorShape: Qt.SizeHorCursor
+    onPressed: root.startSystemResize(Qt.LeftEdge)
+  }
+
+  MouseArea {
+    width: 6
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    cursorShape: Qt.SizeHorCursor
+    onPressed: root.startSystemResize(Qt.RightEdge)
+  }
+
+  MouseArea {
+    height: 6
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    cursorShape: Qt.SizeVerCursor
+    onPressed: root.startSystemResize(Qt.TopEdge)
+  }
+
+  MouseArea {
+    height: 6
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    cursorShape: Qt.SizeVerCursor
+    onPressed: root.startSystemResize(Qt.BottomEdge)
+  }
+
+  MouseArea {
+    width: 10
+    height: 10
+    anchors.left: parent.left
+    anchors.top: parent.top
+    cursorShape: Qt.SizeFDiagCursor
+    onPressed: root.startSystemResize(Qt.LeftEdge | Qt.TopEdge)
+  }
+
+  MouseArea {
+    width: 10
+    height: 10
+    anchors.right: parent.right
+    anchors.top: parent.top
+    cursorShape: Qt.SizeBDiagCursor
+    onPressed: root.startSystemResize(Qt.RightEdge | Qt.TopEdge)
+  }
+
+  MouseArea {
+    width: 10
+    height: 10
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    cursorShape: Qt.SizeBDiagCursor
+    onPressed: root.startSystemResize(Qt.LeftEdge | Qt.BottomEdge)
+  }
+
+  MouseArea {
+    width: 10
+    height: 10
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    cursorShape: Qt.SizeFDiagCursor
+    onPressed: root.startSystemResize(Qt.RightEdge | Qt.BottomEdge)
+  }
 
   Connections {
     target: musicModel

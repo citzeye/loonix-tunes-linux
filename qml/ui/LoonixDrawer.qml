@@ -11,7 +11,7 @@ Drawer {
 
   edge: edgePosition
   width: edge === Qt.LeftEdge || edge === Qt.RightEdge ? 350 : parent.width
-  height: edge === Qt.TopEdge || edge === Qt.BottomEdge ? 400 : parent.height
+  height: edge === Qt.TopEdge || edge === Qt.BottomEdge ? parent.height * 0.55 : parent.height
   interactive: false
 
   background: Rectangle {
@@ -59,9 +59,23 @@ Drawer {
 
     // Tempat konten dimuat
     Loader {
+      id: contentLoader
       Layout.fillWidth: true
       Layout.fillHeight: true
       sourceComponent: root.content
+    }
+  }
+
+  ScrollBar.vertical: ScrollBar {
+    width: 6
+    z: 1
+    policy: ScrollBar.AsNeeded
+    background: Rectangle { implicitWidth: 6; color: theme.colormap.bgmain; opacity: 0.0 }
+    contentItem: Rectangle {
+      implicitWidth: 6
+      radius: 3
+      color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
+      Behavior on color { ColorAnimation { duration: 200 } }
     }
   }
 }

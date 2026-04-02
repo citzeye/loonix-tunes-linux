@@ -1,4 +1,5 @@
 /* --- LOONIX-TUNES src/main.rs --- */
+#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 use cstr::cstr;
 use qmetaobject::*;
 
@@ -14,8 +15,8 @@ use crate::ui::playerbridge::PlayerBridge;
 use crate::ui::theme::ThemeManager;
 
 fn setup_env() {
-    // Memastikan PipeWire atau backend audio terdeteksi jika diperlukan
     std::env::set_var("RUST_LOG", "info");
+    std::env::set_var("QT_QUICK_CONTROLS_STYLE", "Fusion");
 }
 
 fn main() {
@@ -111,8 +112,12 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/preferences/CollapsibleSection.qml",
         "qml/ui/preferences/SettingFooter.qml",
         "qml/ui/preferences/SettingButton.qml",
+        "qml/ui/ThemeSlider.qml",
         "qml/ui/qmldir",
+        "assets/qtquickcontrols2.conf",
         "assets/LoonixTunes.png",
+        "assets/eqpreset.json",
+        "assets/fxpreset.json",
         "assets/fonts/KodeMono-VariableFont_wght.ttf",
         "assets/fonts/SymbolsNerdFont-Regular.ttf",
         "assets/fonts/twemoji.ttf",

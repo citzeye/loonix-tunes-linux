@@ -21,6 +21,39 @@ Item {
         contentWidth: parent.width
         clip: true
 
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        ScrollBar.vertical: ScrollBar {
+            id: vbar
+            width: 10
+            z: 1
+            policy: ScrollBar.AsNeeded
+
+            background: Rectangle {
+                implicitWidth: 10
+                color: theme.colormap.bgoverlay
+                radius: 5
+            }
+
+            contentItem: Rectangle {
+                implicitWidth: vbar.hovered ? 10 : 8
+                radius: 5
+
+                color: vbar.pressed
+                       ? theme.colormap.playeraccent
+                       : vbar.hovered
+                         ? theme.colormap.playerhover
+                         : theme.colormap.graysolid
+
+                Behavior on implicitWidth {
+                    NumberAnimation { duration: 100 }
+                }
+                Behavior on color {
+                    ColorAnimation { duration: 120 }
+                }
+            }
+        }
+
         ColumnLayout {
             // Kontainer utama sekarang punya lebar yang dikunci
             width: activeWidth

@@ -2,7 +2,7 @@
 *.log
 bin/
 obj/
-.DS_Store/target
+.DS_Store
 **/*.rs.bk
 Cargo.lock
 node_modules
@@ -11,20 +11,13 @@ node_modules
 .backup
 .vst3
 
-# --- Windows Build Dependencies ---
-# (DIBUTUHKAN - tidak diignore)
-!packaging/windows/*.dll
-!packaging/windows/libs/
-!packaging/windows/libs/*.lib
-!packaging/windows/include/
-
-# Jaga-jaga kalau ada file exe nyasar di luar folder target/
+# Windows installer output
+*.msi
 *.exe
 
 # Editor & OS
 *.swp
 *.swo
-.DS_Store
 
 # Build output
-dist/
+Output/

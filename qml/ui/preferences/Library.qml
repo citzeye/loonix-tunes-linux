@@ -5,12 +5,22 @@ import Qt.labs.platform
 
 Flickable {
     id: libFlick
-    contentWidth: width
     contentHeight: libColumn.height
     clip: true
     interactive: true
     boundsBehavior: Flickable.StopAtBounds
-    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+    ScrollBar.vertical: ScrollBar {
+        policy: ScrollBar.AsNeeded
+        width: 6
+        z: 1
+        background: Rectangle { implicitWidth: 6; color: theme.colormap.bgmain; opacity: 0.0 }
+        contentItem: Rectangle {
+            implicitWidth: 6
+            radius: 3
+            color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
+            Behavior on color { ColorAnimation { duration: 200 } }
+        }
+    }
 
     FolderDialog {
         id: manualScanFolderPicker

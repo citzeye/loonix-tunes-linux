@@ -1,3 +1,9 @@
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
 ar = "x86_64-w64-mingw32-gcc-ar"
+
+[env]
+VCPKG_ROOT = { value = "C:/vcpkg", force = true }
+FFMPEG_DIR = { value = "C:/ffmpeg-dev/ffmpeg-8.1-full_build-shared", force = true }
+PKG_CONFIG = { value = "C:/vcpkg/packages/pkgconf_x64-windows/tools/pkgconf/pkgconf.exe", force = true }
+PKG_CONFIG_PATH = { value = "C:/vcpkg/installed/x64-windows/lib/pkgconfig", force = true }
