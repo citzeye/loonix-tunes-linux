@@ -8,12 +8,11 @@ import Qt.labs.platform
 import Loonix 1.0
 import 'ui'
 
-// Agar Folder QML/ui terbbaca
 Window {
   id: root
   visible: true
-  width: 380
-  height: 650
+  width: 350
+  height: 700
   color: 'transparent'
   title: 'Loonix-tunes'
 
@@ -295,15 +294,26 @@ Window {
             }
           }
 
-          Text {
-            Layout.fillWidth: true
-            text: 'LOONIX TUNES'
-            font.family: kodeMono.name
-            font.pixelSize: 12
-            color: theme.colormap.headericon
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignVCenter
-          }
+            Item {
+              Layout.fillWidth: true
+              Layout.alignment: Qt.AlignVCenter
+              Text {
+                id: headerTitle
+                anchors.centerIn: parent
+                text: 'LOONIX TUNES'
+                font.family: kodeMono.name
+                font.pixelSize: 12
+                color: theme.colormap.headericon
+                horizontalAlignment: Text.AlignHCenter
+              }
+              MouseArea {
+                id: headerTitleMouse
+                anchors.fill: parent
+                onDoubleClicked: {
+                  handleHeaderDoubleClick()
+                }
+              }
+            }
 
           Text {
             text: '󰅖'
@@ -682,7 +692,7 @@ Window {
       // ==========================================
       Rectangle {
         Layout.fillWidth: true
-        Layout.preferredHeight: 30
+        Layout.preferredHeight: 40
         color: 'transparent'
 
         // Border kiri
@@ -722,6 +732,7 @@ Window {
               font.family: symbols.name
               font.pixelSize: 18
               color: panMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+              Layout.alignment: Qt.AlignVCenter
 
               MouseArea {
                 id: panMA
@@ -794,6 +805,7 @@ Window {
               font.pixelSize: 18
               font.bold: true
               color: abRepeatMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+              Layout.alignment: Qt.AlignVCenter
 
               MouseArea {
                 id: abRepeatMA
@@ -820,7 +832,7 @@ Window {
             Item {
               id: bassboosterContainer
               width: bassboosterIcon.width
-              height: bassboosterIcon.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -860,7 +872,7 @@ Window {
             Item {
               id: crystalizerContainer
               width: crystalizerIcon.width
-              height: crystalizerIcon.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -898,7 +910,7 @@ Window {
             Item {
               id: eqContainer
               width: eqIconSlider.width
-              height: eqIconSlider.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -938,7 +950,7 @@ Window {
             Item {
               id: fxContainer
               width: fxIconSlider.width
-              height: fxIconSlider.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -979,7 +991,7 @@ Window {
             Item {
               id: surroundContainer
               width: surroundIcon.width
-              height: surroundIcon.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -1017,7 +1029,7 @@ Window {
             Item {
               id: themeContainer
               width: themeIcon.width
-              height: themeIcon.height + 20
+              height: 40
               Layout.alignment: Qt.AlignVCenter
 
               Text {
@@ -1065,6 +1077,7 @@ Window {
               text: musicModel.muted ? '󰝟' : '󰕾'
               font.family: symbols.name
               font.pixelSize: 18
+              Layout.alignment: Qt.AlignVCenter
               horizontalAlignment: Text.AlignHCenter
               Layout.preferredWidth: 20
               color: volMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
