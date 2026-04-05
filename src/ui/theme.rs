@@ -78,325 +78,332 @@ impl ThemeManager {
         match name.as_str() {
             "Blue" => {
                 // --- BACKGROUNDS ---
-                map.insert("bgmain", "#1E222A");
-                map.insert("bgoverlay", "#252931");
-                map.insert("graysolid", "#4B5263");
-                map.insert("contextmenubg", "#E61E222A");
-                map.insert("overlay", "#80000000");
+                map.insert("bgmain", "#0b0f19");
+                map.insert("bgoverlay", "#121a2f");
+                map.insert("graysolid", "#2a364f");
+                map.insert("contextmenubg", "#0d1322");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#252931");
-                map.insert("headericon", "#828997");
-                map.insert("headertext", "#828997");
-                map.insert("headerhover", "#56B6C2");
+                map.insert("headerbg", "#121a2f");
+                map.insert("headericon", "#5b6c8f");
+                map.insert("headertext", "#5b6c8f");
+                map.insert("headerhover", "#ff4081");
 
                 // --- PLAYER ---
-                map.insert("playertitle", "#61AFEF");
-                map.insert("playersubtext", "#ABB2BF");
-                map.insert("playeraccent", "#56B6C2");
-                map.insert("playerhover", "#61AFEF");
+                map.insert("playertitle", "#00e5ff");
+                map.insert("playersubtext", "#6482c0");
+                map.insert("playeraccent", "#2979ff");
+                map.insert("playerhover", "#ff4081");
 
                 // --- TABS ---
-                map.insert("tabtext", "#ABB2BF");
-                map.insert("tabborder", "#4B5263");
-                map.insert("tabhover", "#61AFEF");
+                map.insert("tabtext", "#d1d8e6");
+                map.insert("tabborder", "#00e5ff");
+                map.insert("tabhover", "#ff4081");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#ABB2BF");
-                map.insert("playlistfolder", "#56B6C2");
-                map.insert("playlistactive", "#61AFEF");
-                map.insert("playlisticon", "#56B6C2");
+                map.insert("playlisttext", "#d1d8e6");
+                map.insert("playlistfolder", "#f5a623");
+                map.insert("playlistactive", "#00e5ff");
+                map.insert("playlisticon", "#f5a623");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#56B6C2");
-                map.insert("footeralttext", "#828997");
-                map.insert("footerhover", "#61AFEF");
-                map.insert("footerwarning", "#E5C07B");
+                map.insert("footertext", "#00e5ff");
+                map.insert("footeralttext", "#5b6c8f");
+                map.insert("footerhover", "#ff4081");
+                map.insert("footerwarning", "#ffea00");
+                map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#252931");
-                map.insert("eqslideractive", "#56B6C2");
-                map.insert("eqhandle", "#61AFEF");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#61AFEF");
-                map.insert("fxnodedim", "#4B5263");
+                map.insert("eqsliderbg", "#121a2f");
+                map.insert("eqslideractive", "#00e5ff");
+                map.insert("eqhandle", "#ff4081");
+                map.insert("eqgain", "#f5a623");
+                map.insert("eqmix", "#ff4081");
+                map.insert("fxnodeactive", "#00e5ff");
+                map.insert("fxnodedim", "#5b6c8f");
             }
             "Green" => {
-                // --- BACKGROUNDS ---
-                map.insert("bgmain", "#1D2021");
-                map.insert("bgoverlay", "#282828");
-                map.insert("graysolid", "#504945");
-                map.insert("contextmenubg", "#E61D2021");
-                map.insert("overlay", "#80000000");
+                // --- BACKGROUNDS (60%) ---
+                map.insert("bgmain", "#0a120e");
+                map.insert("bgoverlay", "#121c15");
+                map.insert("graysolid", "#213326");
+                map.insert("contextmenubg", "#0d1711");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#282828");
-                map.insert("headericon", "#A89984");
-                map.insert("headertext", "#A89984");
-                map.insert("headerhover", "#B8BB26");
+                map.insert("headerbg", "#121c15");
+                map.insert("headericon", "#5a8065");
+                map.insert("headertext", "#5a8065");
+                map.insert("headerhover", "#ff00ff");
 
-                // --- PLAYER ---
-                map.insert("playertitle", "#B8BB26");
-                map.insert("playersubtext", "#EBDBB2");
-                map.insert("playeraccent", "#8EC07C");
-                map.insert("playerhover", "#B8BB26");
+                // --- PLAYER (30% secondary + 10% accent) ---
+                map.insert("playertitle", "#00ff66");
+                map.insert("playersubtext", "#5a8065");
+                map.insert("playeraccent", "#0088ff");
+                map.insert("playerhover", "#ff00ff");
 
                 // --- TABS ---
-                map.insert("tabtext", "#A89984");
-                map.insert("tabborder", "#504945");
-                map.insert("tabhover", "#8EC07C");
+                map.insert("tabtext", "#d1e6d8");
+                map.insert("tabborder", "#00ff66");
+                map.insert("tabhover", "#ff00ff");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#EBDBB2");
-                map.insert("playlistfolder", "#8EC07C");
-                map.insert("playlistactive", "#B8BB26");
-                map.insert("playlisticon", "#8EC07C");
+                map.insert("playlisttext", "#d1e6d8");
+                map.insert("playlistfolder", "#ff3300");
+                map.insert("playlistactive", "#00ff66");
+                map.insert("playlisticon", "#ff3300");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#8EC07C");
-                map.insert("footeralttext", "#A89984");
-                map.insert("footerhover", "#B8BB26");
-                map.insert("footerwarning", "#FABD2F");
+                map.insert("footertext", "#00ff66");
+                map.insert("footeralttext", "#5a8065");
+                map.insert("footerhover", "#ff00ff");
+                map.insert("footerwarning", "#ffcc00");
+                map.insert("footeralert", "#ff3300");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#282828");
-                map.insert("eqslideractive", "#8EC07C");
-                map.insert("eqhandle", "#B8BB26");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#B8BB26");
-                map.insert("fxnodedim", "#504945");
+                map.insert("eqsliderbg", "#121c15");
+                map.insert("eqslideractive", "#00ff66");
+                map.insert("eqhandle", "#ff00ff");
+                map.insert("eqgain", "#ff3300");
+                map.insert("eqmix", "#ff00ff");
+                map.insert("fxnodeactive", "#00ff66");
+                map.insert("fxnodedim", "#213326");
             }
             "Monochrome" => {
-                // --- BACKGROUNDS ---
+                // --- BACKGROUNDS (60%) ---
                 map.insert("bgmain", "#121212");
-                map.insert("bgoverlay", "#1E1E1E");
+                map.insert("bgoverlay", "#1e1e1e");
                 map.insert("graysolid", "#333333");
-                map.insert("contextmenubg", "#E6121212");
+                map.insert("contextmenubg", "#181818");
                 map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#1E1E1E");
-                map.insert("headericon", "#888888");
-                map.insert("headertext", "#888888");
-                map.insert("headerhover", "#FFFFFF");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#8b8b8b");
+                map.insert("headertext", "#8b8b8b");
+                map.insert("headerhover", "#ffffff");
 
-                // --- PLAYER ---
-                map.insert("playertitle", "#FFFFFF");
-                map.insert("playersubtext", "#B3B3B3");
-                map.insert("playeraccent", "#E0E0E0");
-                map.insert("playerhover", "#FFFFFF");
+                // --- PLAYER (30% secondary + 10% accent) ---
+                map.insert("playertitle", "#ffffff");
+                map.insert("playersubtext", "#8b8b8b");
+                map.insert("playeraccent", "#555555");
+                map.insert("playerhover", "#ffffff"); 
 
                 // --- TABS ---
-                map.insert("tabtext", "#B3B3B3");
-                map.insert("tabborder", "#333333");
-                map.insert("tabhover", "#FFFFFF");
+                map.insert("tabtext", "#e0e0e0"); 
+                map.insert("tabborder", "#ffffff");
+                map.insert("tabhover", "#ffffff");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#B3B3B3");
-                map.insert("playlistfolder", "#E0E0E0");
-                map.insert("playlistactive", "#FFFFFF");
-                map.insert("playlisticon", "#B3B3B3");
+                map.insert("playlisttext", "#e0e0e0");
+                map.insert("playlistfolder", "#d4d4d4"); 
+                map.insert("playlistactive", "#ffffff");
+                map.insert("playlisticon", "#d4d4d4"); 
 
                 // --- FOOTER ---
-                map.insert("footertext", "#E0E0E0");
-                map.insert("footeralttext", "#888888");
-                map.insert("footerhover", "#FFFFFF");
-                map.insert("footerwarning", "#FFB86C");
+                map.insert("footertext", "#ffffff");
+                map.insert("footeralttext", "#8b8b8b");
+                map.insert("footerhover", "#ffffff");
+                map.insert("footerwarning", "#d4d4d4"); 
+                map.insert("footeralert", "#ffffff");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#1E1E1E");
-                map.insert("eqslideractive", "#E0E0E0");
-                map.insert("eqhandle", "#FFFFFF");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#FFFFFF");
+                map.insert("eqsliderbg", "#1e1e1e");
+                map.insert("eqslideractive", "#ffffff");
+                map.insert("eqhandle", "#ffffff");
+                map.insert("eqgain", "#d4d4d4");
+                map.insert("eqmix", "#ffffff");
+                map.insert("fxnodeactive", "#ffffff");
                 map.insert("fxnodedim", "#333333");
             }
             "Orange" => {
-                // --- BACKGROUNDS ---
-                map.insert("bgmain", "#1A1817");
-                map.insert("bgoverlay", "#24211F");
-                map.insert("graysolid", "#4A433F");
-                map.insert("contextmenubg", "#E61A1817");
-                map.insert("overlay", "#80000000");
+                // --- BACKGROUNDS (60%) ---
+                map.insert("bgmain", "#140c0b");
+                map.insert("bgoverlay", "#1c1210");
+                map.insert("graysolid", "#36211e");
+                map.insert("contextmenubg", "#0f0807");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#24211F");
-                map.insert("headericon", "#9E938E");
-                map.insert("headertext", "#9E938E");
-                map.insert("headerhover", "#FF8A65");
+                map.insert("headerbg", "#1c1210");
+                map.insert("headericon", "#a36b5e");
+                map.insert("headertext", "#a36b5e");
+                map.insert("headerhover", "#ffea00");
 
-                // --- PLAYER ---
-                map.insert("playertitle", "#FF7043");
-                map.insert("playersubtext", "#D7CCC8");
-                map.insert("playeraccent", "#FF8A65");
-                map.insert("playerhover", "#FFAB91");
+                // --- PLAYER (30% secondary + 10% accent) ---
+                map.insert("playertitle", "#ff5500");
+                map.insert("playersubtext", "#a36b5e");
+                map.insert("playeraccent", "#8000ff");
+                map.insert("playerhover", "#ffea00");
 
                 // --- TABS ---
-                map.insert("tabtext", "#9E938E");
-                map.insert("tabborder", "#4A433F");
-                map.insert("tabhover", "#FF7043");
+                map.insert("tabtext", "#ecdcd9");
+                map.insert("tabborder", "#ff5500");
+                map.insert("tabhover", "#ffea00");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#D7CCC8");
-                map.insert("playlistfolder", "#FF8A65");
-                map.insert("playlistactive", "#FF7043");
-                map.insert("playlisticon", "#FF8A65");
+                map.insert("playlisttext", "#ecdcd9");
+                map.insert("playlistfolder", "#00e5ff");
+                map.insert("playlistactive", "#ff5500");
+                map.insert("playlisticon", "#00e5ff");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#FF8A65");
-                map.insert("footeralttext", "#9E938E");
-                map.insert("footerhover", "#FF7043");
-                map.insert("footerwarning", "#FFCA28");
+                map.insert("footertext", "#ff5500");
+                map.insert("footeralttext", "#a36b5e");
+                map.insert("footerhover", "#ffea00");
+                map.insert("footerwarning", "#ffea00");
+                map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#24211F");
-                map.insert("eqslideractive", "#FF8A65");
-                map.insert("eqhandle", "#FF7043");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#FF7043");
-                map.insert("fxnodedim", "#4A433F");
+                map.insert("eqsliderbg", "#1c1210");
+                map.insert("eqslideractive", "#ff5500");
+                map.insert("eqhandle", "#ffea00");
+                map.insert("eqgain", "#00e5ff");
+                map.insert("eqmix", "#ffea00");
+                map.insert("fxnodeactive", "#ff5500");
+                map.insert("fxnodedim", "#36211e");
             }
             "Pink" => {
                 // --- BACKGROUNDS ---
-                map.insert("bgmain", "#1F1D2E");
-                map.insert("bgoverlay", "#26233A");
-                map.insert("graysolid", "#524F67");
-                map.insert("contextmenubg", "#E61F1D2E");
-                map.insert("overlay", "#80000000");
+                map.insert("bgmain", "#120a14");
+                map.insert("bgoverlay", "#1b101f");
+                map.insert("graysolid", "#382042");
+                map.insert("contextmenubg", "#0d060f");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#26233A");
-                map.insert("headericon", "#908CAA");
-                map.insert("headertext", "#908CAA");
-                map.insert("headerhover", "#EB6F92");
+                map.insert("headerbg", "#1b101f");
+                map.insert("headericon", "#9b74ab");
+                map.insert("headertext", "#9b74ab");
+                map.insert("headerhover", "#00ffcc");
 
                 // --- PLAYER ---
-                map.insert("playertitle", "#EBBCBA");
-                map.insert("playersubtext", "#E0DEF4");
-                map.insert("playeraccent", "#C4A7E7");
-                map.insert("playerhover", "#EB6F92");
+                map.insert("playertitle", "#ff00aa");
+                map.insert("playersubtext", "#9b74ab");
+                map.insert("playeraccent", "#4400ff");
+                map.insert("playerhover", "#00ffcc");
 
                 // --- TABS ---
-                map.insert("tabtext", "#908CAA");
-                map.insert("tabborder", "#524F67");
-                map.insert("tabhover", "#FF79C6");
+                map.insert("tabtext", "#eedef2");
+                map.insert("tabborder", "#ff00aa");
+                map.insert("tabhover", "#00ffcc");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#E0DEF4");
-                map.insert("playlistfolder", "#C4A7E7");
-                map.insert("playlistactive", "#EB6F92");
-                map.insert("playlisticon", "#C4A7E7");
+                map.insert("playlisttext", "#eedef2");
+                map.insert("playlistfolder", "#ccff00");
+                map.insert("playlistactive", "#ff00aa");
+                map.insert("playlisticon", "#ccff00");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#C4A7E7");
-                map.insert("footeralttext", "#908CAA");
-                map.insert("footerhover", "#EB6F92");
-                map.insert("footerwarning", "#F6C177");
+                map.insert("footertext", "#ff00aa");
+                map.insert("footeralttext", "#9b74ab");
+                map.insert("footerhover", "#00ffcc");
+                map.insert("footerwarning", "#ccff00");
+                map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#26233A");
-                map.insert("eqslideractive", "#C4A7E7");
-                map.insert("eqhandle", "#EB6F92");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#EB6F92");
-                map.insert("fxnodedim", "#524F67");
+                map.insert("eqsliderbg", "#1b101f");
+                map.insert("eqslideractive", "#ff00aa");
+                map.insert("eqhandle", "#00ffcc");
+                map.insert("eqgain", "#ccff00");
+                map.insert("eqmix", "#00ffcc");
+                map.insert("fxnodeactive", "#ff00aa");
+                map.insert("fxnodedim", "#382042");
             }
             "Red" => {
-                // --- BACKGROUNDS ---
-                map.insert("bgmain", "#181818");
-                map.insert("bgoverlay", "#222222");
-                map.insert("graysolid", "#444444");
-                map.insert("contextmenubg", "#E6181818");
-                map.insert("overlay", "#80000000");
+                // --- BACKGROUNDS (60%) ---
+                map.insert("bgmain", "#120909");
+                map.insert("bgoverlay", "#1c0d0d");
+                map.insert("graysolid", "#3d1b1b");
+                map.insert("contextmenubg", "#0d0505");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#222222");
-                map.insert("headericon", "#8C8C8C");
-                map.insert("headertext", "#8C8C8C");
-                map.insert("headerhover", "#FF4D4D");
+                map.insert("headerbg", "#1c0d0d");
+                map.insert("headericon", "#a86363");
+                map.insert("headertext", "#a86363");
+                map.insert("headerhover", "#00ff88");
 
-                // --- PLAYER ---
-                map.insert("playertitle", "#FF4D4D");
-                map.insert("playersubtext", "#CCCCCC");
-                map.insert("playeraccent", "#FF7373");
-                map.insert("playerhover", "#FF9999");
+                // --- PLAYER (30% secondary + 10% accent) ---
+                map.insert("playertitle", "#ff003c");
+                map.insert("playersubtext", "#a86363");
+                map.insert("playeraccent", "#8a2be2");
+                map.insert("playerhover", "#00ff88");
 
                 // --- TABS ---
-                map.insert("tabtext", "#8C8C8C");
-                map.insert("tabborder", "#444444");
-                map.insert("tabhover", "#FF4D4D");
+                map.insert("tabtext", "#edd4d4");
+                map.insert("tabborder", "#ff003c");
+                map.insert("tabhover", "#00ff88");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#CCCCCC");
-                map.insert("playlistfolder", "#FF7373");
-                map.insert("playlistactive", "#FF4D4D");
-                map.insert("playlisticon", "#FF7373");
+                map.insert("playlisttext", "#edd4d4");
+                map.insert("playlistfolder", "#ffea00");
+                map.insert("playlistactive", "#ff003c");
+                map.insert("playlisticon", "#ffea00");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#FF7373");
-                map.insert("footeralttext", "#8C8C8C");
-                map.insert("footerhover", "#FF4D4D");
-                map.insert("footerwarning", "#FFB84D");
+                map.insert("footertext", "#ff003c");
+                map.insert("footeralttext", "#a86363");
+                map.insert("footerhover", "#00ff88");
+                map.insert("footerwarning", "#ffea00");
+                map.insert("footeralert", "#ff003c");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#222222");
-                map.insert("eqslideractive", "#FF7373");
-                map.insert("eqhandle", "#FF4D4D");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#FF4D4D");
-                map.insert("fxnodedim", "#444444");
+                map.insert("eqsliderbg", "#1c0d0d");
+                map.insert("eqslideractive", "#ff003c");
+                map.insert("eqhandle", "#00ff88");
+                map.insert("eqgain", "#ffea00");
+                map.insert("eqmix", "#00ff88");
+                map.insert("fxnodeactive", "#ff003c");
+                map.insert("fxnodedim", "#3d1b1b");
             }
             "Yellow" => {
-                // --- BACKGROUNDS ---
-                map.insert("bgmain", "#1C1E26");
-                map.insert("bgoverlay", "#232530");
-                map.insert("graysolid", "#4B4D5B");
-                map.insert("contextmenubg", "#E61C1E26");
-                map.insert("overlay", "#80000000");
+                // --- BACKGROUNDS (60%) ---
+                map.insert("bgmain", "#0d1012"); 
+                map.insert("bgoverlay", "#15191c");
+                map.insert("graysolid", "#2d353b");
+                map.insert("contextmenubg", "#0a0c0e");
+                map.insert("overlay", "#000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#232530");
-                map.insert("headericon", "#818392");
-                map.insert("headertext", "#818392");
-                map.insert("headerhover", "#F0C674");
+                map.insert("headerbg", "#15191c");
+                map.insert("headericon", "#9fa67c");
+                map.insert("headertext", "#9fa67c");
+                map.insert("headerhover", "#ff007f");
 
-                // --- PLAYER ---
-                map.insert("playertitle", "#E5C07B");
-                map.insert("playersubtext", "#D5D8E6");
-                map.insert("playeraccent", "#D19A66");
-                map.insert("playerhover", "#F0C674");
+                // --- PLAYER (30% secondary + 10% accent) ---
+                map.insert("playertitle", "#ffea00"); 
+                map.insert("playersubtext", "#9fa67c"); 
+                map.insert("playeraccent", "#ccb900"); 
+                map.insert("playerhover", "#ff007f"); 
 
                 // --- TABS ---
-                map.insert("tabtext", "#818392");
-                map.insert("tabborder", "#4B4D5B");
-                map.insert("tabhover", "#E5C07B");
+                map.insert("tabtext", "#dde0d1");
+                map.insert("tabborder", "#ffea00");
+                map.insert("tabhover", "#ff007f");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#D5D8E6");
-                map.insert("playlistfolder", "#D19A66");
-                map.insert("playlistactive", "#E5C07B");
-                map.insert("playlisticon", "#D19A66");
+                map.insert("playlisttext", "#dde0d1");
+                map.insert("playlistfolder", "#b000ff"); 
+                map.insert("playlistactive", "#ffea00");
+                map.insert("playlisticon", "#b000ff");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#D19A66");
-                map.insert("footeralttext", "#818392");
-                map.insert("footerhover", "#E5C07B");
-                map.insert("footerwarning", "#E06C75");
+                map.insert("footertext", "#ffea00");
+                map.insert("footeralttext", "#9fa67c");
+                map.insert("footerhover", "#ff007f");
+                map.insert("footerwarning", "#ff6a00");
+                map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
-                map.insert("eqsliderbg", "#232530");
-                map.insert("eqslideractive", "#D19A66");
-                map.insert("eqhandle", "#E5C07B");
-                map.insert("eqgain", "#ff881a");
-                map.insert("eqmix", "#FF79C6");
-                map.insert("fxnodeactive", "#E5C07B");
-                map.insert("fxnodedim", "#4B4D5B");
+                map.insert("eqsliderbg", "#15191c");
+                map.insert("eqslideractive", "#ffea00");
+                map.insert("eqhandle", "#ff007f");
+                map.insert("eqgain", "#b000ff");
+                map.insert("eqmix", "#ff007f");
+                map.insert("fxnodeactive", "#ffea00");
+                map.insert("fxnodedim", "#2d353b");
             }
             _ => {
                 // --- DEFAULT FALLBACK ---
