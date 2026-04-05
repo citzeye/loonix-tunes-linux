@@ -11,8 +11,10 @@ import 'ui'
 Window {
   id: root
   visible: true
-  width: 350
+  width: Screen.desktopAvailableWidth * 0.25
   height: 700
+  x: (Screen.desktopAvailableWidth - width) / 2
+  y: (Screen.desktopAvailableHeight - height) / 2
   color: 'transparent'
   title: 'Loonix-tunes'
 
@@ -22,7 +24,7 @@ Window {
   }
 
   // --- OVERLAY BLOKIR LAYAR ---
-  readonly property real criticalWidth: 300
+  readonly property real criticalWidth: 500
 
   Rectangle {
     id: screenWarning
@@ -30,7 +32,7 @@ Window {
     height: root.height
     z: 9999
     color: "#E6000000"
-    visible: root.width < 300
+    visible: root.width < 500
 
     MouseArea {
       anchors.fill: parent
@@ -49,7 +51,7 @@ Window {
       }
 
       Text {
-        text: "PLEASE MAKE YOUR SCREEN MINIMUM 30%"
+        text: "PLEASE MAKE YOUR WINDOW MINIMUM 500PX"
         color: "white"
         font.family: kodeMono.name
         font.pixelSize: 14
@@ -416,7 +418,7 @@ Window {
               text: '00:00'
               color: theme.colormap.playersubtext
               font.family: kodeMono.name
-              font.pixelSize: 11
+              font.pixelSize: 12
             }
 
             Slider {
@@ -519,7 +521,7 @@ Window {
               text: musicModel.duration > 0 ? musicModel.format_time(musicModel.duration) : "--:--"
               color: theme.colormap.playersubtext
               font.family: kodeMono.name
-              font.pixelSize: 11
+              font.pixelSize: 12
             }
           }
 
@@ -712,7 +714,7 @@ Window {
                 radius: 5
                 color: balanceSlider.pressed
                   ? theme.colormap.playerhover
-                  : theme.colormap.playeraccent
+                  : theme.colormap.playerhover
                 antialiasing: false
               }
 
@@ -1088,7 +1090,7 @@ Window {
                 height: volPercentText.implicitHeight + 6
                 radius: 4
                 color: theme.colormap.bgoverlay
-                border.color: theme.colormap.playeraccent
+                border.color: theme.colormap.playerhover
                 border.width: 1
                 antialiasing: false
 
@@ -1096,7 +1098,7 @@ Window {
                   id: volPercentText
                   anchors.centerIn: parent
                   text: Math.round(volSlider.value * 100) + "%"
-                  color: theme.colormap.playeraccent
+                  color: theme.colormap.playerhover
                   font.family: kodeMono.name
                   font.pixelSize: 11
                   font.bold: true
@@ -1114,7 +1116,7 @@ Window {
                 Rectangle {
                   width: Math.round(volSlider.visualPosition * parent.width)
                   height: parent.height
-                  color: theme.colormap.playeraccent
+                  color: theme.colormap.playerhover
                   radius: 2
                 }
               }
@@ -1147,14 +1149,14 @@ Window {
       id: eq
       x: (parent.width - width) / 2
       y: 171
-      width: parent.width * 0.9
+      width: 500
   }
 
   Fx {
       id: fx
       x: (parent.width - width) / 2
       y: 171
-      width: parent.width * 0.9
+      width: 500
   }
 
   Pref {
@@ -1195,6 +1197,10 @@ Window {
 
     function onDurationChanged() {
       totalDuration.text = musicModel.format_time(musicModel.duration)
+    }
+
+    function onBalance_changed() {
+      balanceSlider.value = musicModel.balance
     }
   }
 

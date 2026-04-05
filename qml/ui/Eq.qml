@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 Popup {
     id: eqRoot
-    width: root.width * 0.9
+    width: 500
     height: implicitHeight
     modal: true
     focus: true
@@ -13,7 +13,7 @@ Popup {
 
     background: Rectangle {
         color: theme.colormap.bgmain
-        border.color: theme.colormap.tabborder
+        border.color: theme.colormap.eqborder
         border.width: 1
         radius: 4
         antialiasing: false
@@ -117,7 +117,7 @@ Popup {
                 Layout.preferredHeight: 120
                 color: theme.colormap.bgoverlay
                 radius: 4
-                border.color: theme.colormap.tabborder
+                border.color: theme.colormap.eqborder
 
                 RowLayout {
                     anchors.top: parent.top
@@ -189,7 +189,7 @@ Popup {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     y: gainSlider.topPadding + gainSlider.visualPosition * (gainSlider.availableHeight - height)
                                     width: 10; height: 10; radius: 5; color: gainSlider.pressed ? theme.colormap.playerhover : theme.colormap.eqgain
-                                    border.color: theme.colormap.tabborder; border.width: 1
+                                    border.color: theme.colormap.eqborder; border.width: 1
                                 }
                             }
 
@@ -242,7 +242,7 @@ Popup {
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: Math.round(innerSlider.value)
-                                        color: innerSlider.pressed ? theme.colormap.playeraccent : theme.colormap.playersubtext
+                                        color: innerSlider.pressed ? theme.colormap.eqslider : theme.colormap.playersubtext
                                         font.family: sansSerif.name
                                         font.pixelSize: 11
                                     }
@@ -275,7 +275,7 @@ Popup {
                                                 width: parent.width
                                                 y: innerSlider.visualPosition * parent.height
                                                 height: parent.height - y
-                                                color: theme.colormap.playeraccent
+                                                color: theme.colormap.eqslider
                                                 radius: 1.5
                                                 opacity: 0.6
                                             }
@@ -285,8 +285,8 @@ Popup {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             y: innerSlider.topPadding + innerSlider.visualPosition * (innerSlider.availableHeight - height)
                                             width: 10; height: 10; radius: 5
-                                            color: innerSlider.pressed ? theme.colormap.playerhover : theme.colormap.playeraccent
-                                            border.color: theme.colormap.tabborder
+                                            color: innerSlider.pressed ? theme.colormap.playerhover : theme.colormap.eqslider
+                                            border.color: theme.colormap.eqborder
                                             border.width: 1
                                         }
                                     }
@@ -379,7 +379,7 @@ Popup {
                                         y: drySlider.topPadding + drySlider.visualPosition * (drySlider.availableHeight - height)
                                         width: 10; height: 10; radius: 5
                                         color: drySlider.pressed ? theme.colormap.playerhover : theme.colormap.eqmix
-                                        border.color: theme.colormap.tabborder
+                                        border.color: theme.colormap.eqborder
                                         border.width: 1
                                     }
 
@@ -452,7 +452,7 @@ Popup {
                                         y: wetSlider.topPadding + wetSlider.visualPosition * (wetSlider.availableHeight - height)
                                         width: 10; height: 10; radius: 5
                                         color: wetSlider.pressed ? theme.colormap.playerhover : theme.colormap.eqmix
-                                        border.color: theme.colormap.tabborder
+                                        border.color: theme.colormap.eqborder
                                         border.width: 1
                                     }
 
@@ -498,8 +498,8 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: eqOnOffBtn.hovered ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                        border.color: theme.colormap.tabborder
+                        color: eqOnOffBtn.hovered ? theme.colormap.eqslider : theme.colormap.bgoverlay
+                        border.color: theme.colormap.eqborder
                         radius: 2
                     }
 
@@ -528,8 +528,8 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: resetBtn.hovered ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                        border.color: theme.colormap.tabborder
+                        color: resetBtn.hovered ? theme.colormap.eqslider : theme.colormap.bgoverlay
+                        border.color: theme.colormap.eqborder
                         radius: 2
                     }
 
@@ -556,8 +556,8 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: saveBtn.hovered ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                        border.color: theme.colormap.tabborder
+                        color: saveBtn.hovered ? theme.colormap.eqslider : theme.colormap.bgoverlay
+                        border.color: theme.colormap.eqborder
                         radius: 2
                     }
 
@@ -595,8 +595,8 @@ Popup {
                             verticalAlignment: Text.AlignVCenter
                         }
                         background: Rectangle {
-                            color: pBtn.hovered ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                            border.color: pBtn.isActive ? theme.colormap.tabhover : theme.colormap.tabborder
+                            color: pBtn.hovered ? theme.colormap.eqslider : theme.colormap.bgoverlay
+                            border.color: pBtn.isActive ? theme.colormap.tabhover : theme.colormap.eqborder
                             radius: 2
                         }
 
@@ -610,7 +610,7 @@ Popup {
 
         Popup {
             id: saveEqDialog
-            width: 280
+    width: 450
             height: 160
             x: (eqContentItem.width - width) / 2
             y: (eqContentItem.height - height) / 2
@@ -620,7 +620,7 @@ Popup {
 
             background: Rectangle {
                 color: theme.colormap.bgmain
-                border.color: theme.colormap.playeraccent
+                border.color: theme.colormap.eqslider
                 border.width: 1
                 radius: 6
                 Rectangle {
@@ -644,7 +644,7 @@ Popup {
                     font.family: kodeMono.name
                     font.pixelSize: 12
                     font.bold: true
-                    color: theme.colormap.playeraccent
+                    color: theme.colormap.eqslider
                 }
 
                 ComboBox {
@@ -671,7 +671,7 @@ Popup {
 
                     background: Rectangle {
                         color: theme.colormap.eqsliderbg
-                        border.color: theme.colormap.tabborder
+                        border.color: theme.colormap.eqborder
                         radius: 2
                     }
 
@@ -684,7 +684,7 @@ Popup {
                             font.family: kodeMono.name
                             font.pixelSize: 10
                             verticalAlignment: Text.AlignVCenter
-                            color: (hovered || highlighted) ? theme.colormap.playeraccent : theme.colormap.tabtext
+                            color: (hovered || highlighted) ? theme.colormap.eqslider : theme.colormap.tabtext
 
                             Behavior on color { ColorAnimation { duration: 100 } }
                         }
@@ -709,7 +709,7 @@ Popup {
 
                         background: Rectangle {
                             color: theme.colormap.eqsliderbg
-                            border.color: theme.colormap.tabborder
+                            border.color: theme.colormap.eqborder
                             radius: 2
                         }
                     }
@@ -737,7 +737,7 @@ Popup {
 
                     background: Rectangle {
                         color: theme.colormap.bgoverlay
-                        border.color: nameInput.activeFocus ? theme.colormap.playeraccent : theme.colormap.tabborder
+                        border.color: nameInput.activeFocus ? theme.colormap.eqslider : theme.colormap.eqborder
                         radius: 2
                     }
                 }
@@ -765,7 +765,7 @@ Popup {
                         text: "SAVE"
                         font.family: kodeMono.name
                         font.pixelSize: 10
-                        color: saveMA.containsMouse ? theme.colormap.playlisticon : theme.colormap.playeraccent
+                        color: saveMA.containsMouse ? theme.colormap.playlisticon : theme.colormap.eqslider
                         MouseArea {
                             id: saveMA
                             anchors.fill: parent

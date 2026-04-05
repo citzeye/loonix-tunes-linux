@@ -11,10 +11,10 @@ Rectangle {
   height: 20
   property bool isActive: musicModel.current_folder_qml === '' ||
     musicModel.current_folder_qml.toUpperCase() === 'MUSIC'
-  color: isActive ? theme.colormap.bgoverlay : 'transparent'
+  color: isActive || tabMA_static.containsMouse ? theme.colormap.bgoverlay : 'transparent'
   radius: 4
   border.width: isActive ? 0.5 : 0.5
-  border.color: isActive ? theme.colormap.tabhover : theme.colormap.tabborder
+  border.color: isActive || tabMA_static.containsMouse ? theme.colormap.tabhover : theme.colormap.tabborder
 
   // Folder Dialog for adding folders
   FolderDialog {

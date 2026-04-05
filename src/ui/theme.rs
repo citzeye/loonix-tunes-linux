@@ -78,81 +78,83 @@ impl ThemeManager {
         match name.as_str() {
             "Blue" => {
                 // --- BACKGROUNDS ---
-                map.insert("bgmain", "#0b0f19");
-                map.insert("bgoverlay", "#121a2f");
-                map.insert("graysolid", "#2a364f");
-                map.insert("contextmenubg", "#0d1322");
-                map.insert("overlay", "#000000");
+                map.insert("bgmain", "#121212");
+                map.insert("bgoverlay", "#1e1e1e");
+                map.insert("graysolid", "#333333");
+                map.insert("contextmenubg", "#181818");
+                map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#121a2f");
-                map.insert("headericon", "#5b6c8f");
-                map.insert("headertext", "#5b6c8f");
-                map.insert("headerhover", "#ff4081");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
+                map.insert("headerhover", "#00ddff");
 
                 // --- PLAYER ---
-                map.insert("playertitle", "#00e5ff");
-                map.insert("playersubtext", "#6482c0");
-                map.insert("playeraccent", "#2979ff");
-                map.insert("playerhover", "#ff4081");
+                map.insert("playertitle", "#00ffdd");
+                map.insert("playersubtext", "#6d6d6d");
+                map.insert("playeraccent", "#00ffdd");
+                map.insert("playerhover", "#843ff3");
 
                 // --- TABS ---
                 map.insert("tabtext", "#d1d8e6");
-                map.insert("tabborder", "#00e5ff");
-                map.insert("tabhover", "#ff4081");
+                map.insert("tabborder", "#8a8a8a");
+                map.insert("tabhover", "#00ffdd");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#d1d8e6");
                 map.insert("playlistfolder", "#f5a623");
-                map.insert("playlistactive", "#00e5ff");
-                map.insert("playlisticon", "#f5a623");
+                map.insert("playlistactive", "#843ff3");
+                map.insert("playlisticon", "#00ffdd");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#00e5ff");
                 map.insert("footeralttext", "#5b6c8f");
-                map.insert("footerhover", "#ff4081");
+                map.insert("footerhover", "#843ff3");
                 map.insert("footerwarning", "#ffea00");
                 map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#121a2f");
+                map.insert("eqborder", "#8a8a8a");
                 map.insert("eqslideractive", "#00e5ff");
-                map.insert("eqhandle", "#ff4081");
+                map.insert("eqslider", "#00ffdd");
+                map.insert("eqhandle", "#843ff3");
                 map.insert("eqgain", "#f5a623");
-                map.insert("eqmix", "#ff4081");
+                map.insert("eqmix", "#843ff3");
                 map.insert("fxnodeactive", "#00e5ff");
                 map.insert("fxnodedim", "#5b6c8f");
             }
             "Green" => {
                 // --- BACKGROUNDS (60%) ---
-                map.insert("bgmain", "#0a120e");
-                map.insert("bgoverlay", "#121c15");
-                map.insert("graysolid", "#213326");
-                map.insert("contextmenubg", "#0d1711");
-                map.insert("overlay", "#000000");
+                map.insert("bgmain", "#121212");
+                map.insert("bgoverlay", "#1e1e1e");
+                map.insert("graysolid", "#333333");
+                map.insert("contextmenubg", "#181818");
+                map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#121c15");
-                map.insert("headericon", "#5a8065");
-                map.insert("headertext", "#5a8065");
-                map.insert("headerhover", "#ff00ff");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
+                map.insert("headerhover", "#00ff26");
 
-                // --- PLAYER (30% secondary + 10% accent) ---
-                map.insert("playertitle", "#00ff66");
-                map.insert("playersubtext", "#5a8065");
-                map.insert("playeraccent", "#0088ff");
-                map.insert("playerhover", "#ff00ff");
+                // --- PLAYER ---
+                map.insert("playertitle", "#00ff26");
+                map.insert("playersubtext", "#6d6d6d");
+                map.insert("playeraccent", "#00ff26");
+                map.insert("playerhover", "#ffcc00");
 
                 // --- TABS ---
                 map.insert("tabtext", "#d1e6d8");
-                map.insert("tabborder", "#00ff66");
-                map.insert("tabhover", "#ff00ff");
+                map.insert("tabborder", "#6d6d6d");
+                map.insert("tabhover", "#00ff26");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#d1e6d8");
-                map.insert("playlistfolder", "#ff3300");
-                map.insert("playlistactive", "#00ff66");
-                map.insert("playlisticon", "#ff3300");
+                map.insert("playlistfolder", "#00ff26");
+                map.insert("playlistactive", "#ffcc00");
+                map.insert("playlisticon", "#00ff26");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#00ff66");
@@ -163,7 +165,9 @@ impl ThemeManager {
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#121c15");
+                map.insert("eqborder", "#6d6d6d");
                 map.insert("eqslideractive", "#00ff66");
+                map.insert("eqslider", "#00ff26");
                 map.insert("eqhandle", "#ff00ff");
                 map.insert("eqgain", "#ff3300");
                 map.insert("eqmix", "#ff00ff");
@@ -180,37 +184,39 @@ impl ThemeManager {
 
                 // --- HEADER ---
                 map.insert("headerbg", "#1e1e1e");
-                map.insert("headericon", "#8b8b8b");
-                map.insert("headertext", "#8b8b8b");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
                 map.insert("headerhover", "#ffffff");
 
-                // --- PLAYER (30% secondary + 10% accent) ---
+                // --- PLAYER ---
                 map.insert("playertitle", "#ffffff");
-                map.insert("playersubtext", "#8b8b8b");
+                map.insert("playersubtext", "#6d6d6d");
                 map.insert("playeraccent", "#555555");
-                map.insert("playerhover", "#ffffff"); 
+                map.insert("playerhover", "#ffffff");
 
                 // --- TABS ---
-                map.insert("tabtext", "#e0e0e0"); 
+                map.insert("tabtext", "#e0e0e0");
                 map.insert("tabborder", "#ffffff");
                 map.insert("tabhover", "#ffffff");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#e0e0e0");
-                map.insert("playlistfolder", "#d4d4d4"); 
+                map.insert("playlistfolder", "#d4d4d4");
                 map.insert("playlistactive", "#ffffff");
-                map.insert("playlisticon", "#d4d4d4"); 
+                map.insert("playlisticon", "#d4d4d4");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#ffffff");
                 map.insert("footeralttext", "#8b8b8b");
                 map.insert("footerhover", "#ffffff");
-                map.insert("footerwarning", "#d4d4d4"); 
+                map.insert("footerwarning", "#d4d4d4");
                 map.insert("footeralert", "#ffffff");
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#1e1e1e");
+                map.insert("eqborder", "#ffffff");
                 map.insert("eqslideractive", "#ffffff");
+                map.insert("eqslider", "#555555");
                 map.insert("eqhandle", "#ffffff");
                 map.insert("eqgain", "#d4d4d4");
                 map.insert("eqmix", "#ffffff");
@@ -219,34 +225,34 @@ impl ThemeManager {
             }
             "Orange" => {
                 // --- BACKGROUNDS (60%) ---
-                map.insert("bgmain", "#140c0b");
-                map.insert("bgoverlay", "#1c1210");
-                map.insert("graysolid", "#36211e");
-                map.insert("contextmenubg", "#0f0807");
-                map.insert("overlay", "#000000");
+                map.insert("bgmain", "#121212");
+                map.insert("bgoverlay", "#1e1e1e");
+                map.insert("graysolid", "#333333");
+                map.insert("contextmenubg", "#181818");
+                map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#1c1210");
-                map.insert("headericon", "#a36b5e");
-                map.insert("headertext", "#a36b5e");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
                 map.insert("headerhover", "#ffea00");
 
-                // --- PLAYER (30% secondary + 10% accent) ---
+                // --- PLAYER ---
                 map.insert("playertitle", "#ff5500");
-                map.insert("playersubtext", "#a36b5e");
-                map.insert("playeraccent", "#8000ff");
+                map.insert("playersubtext", "#6d6d6d");
+                map.insert("playeraccent", "#ff5500");
                 map.insert("playerhover", "#ffea00");
 
                 // --- TABS ---
                 map.insert("tabtext", "#ecdcd9");
-                map.insert("tabborder", "#ff5500");
-                map.insert("tabhover", "#ffea00");
+                map.insert("tabborder", "#6d6d6d");
+                map.insert("tabhover", "#ff5500");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#ecdcd9");
-                map.insert("playlistfolder", "#00e5ff");
+                map.insert("playlistfolder", "#ffea00");
                 map.insert("playlistactive", "#ff5500");
-                map.insert("playlisticon", "#00e5ff");
+                map.insert("playlisticon", "#ff5500");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#ff5500");
@@ -257,7 +263,9 @@ impl ThemeManager {
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#1c1210");
+                map.insert("eqborder", "#6d6d6d");
                 map.insert("eqslideractive", "#ff5500");
+                map.insert("eqslider", "#ff5500");
                 map.insert("eqhandle", "#ffea00");
                 map.insert("eqgain", "#00e5ff");
                 map.insert("eqmix", "#ffea00");
@@ -266,37 +274,37 @@ impl ThemeManager {
             }
             "Pink" => {
                 // --- BACKGROUNDS ---
-                map.insert("bgmain", "#120a14");
-                map.insert("bgoverlay", "#1b101f");
-                map.insert("graysolid", "#382042");
-                map.insert("contextmenubg", "#0d060f");
-                map.insert("overlay", "#000000");
+                map.insert("bgmain", "#121212");
+                map.insert("bgoverlay", "#1e1e1e");
+                map.insert("graysolid", "#333333");
+                map.insert("contextmenubg", "#181818");
+                map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#1b101f");
-                map.insert("headericon", "#9b74ab");
-                map.insert("headertext", "#9b74ab");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
                 map.insert("headerhover", "#00ffcc");
 
                 // --- PLAYER ---
-                map.insert("playertitle", "#ff00aa");
-                map.insert("playersubtext", "#9b74ab");
-                map.insert("playeraccent", "#4400ff");
+                map.insert("playertitle", "#f965d9");
+                map.insert("playersubtext", "#6d6d6d");
+                map.insert("playeraccent", "#f965d9");
                 map.insert("playerhover", "#00ffcc");
 
                 // --- TABS ---
                 map.insert("tabtext", "#eedef2");
-                map.insert("tabborder", "#ff00aa");
-                map.insert("tabhover", "#00ffcc");
+                map.insert("tabborder", "#6d6d6d");
+                map.insert("tabhover", "#f965d9");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#eedef2");
-                map.insert("playlistfolder", "#ccff00");
-                map.insert("playlistactive", "#ff00aa");
-                map.insert("playlisticon", "#ccff00");
+                map.insert("playlistfolder", "#d59407");
+                map.insert("playlistactive", "#65f996");
+                map.insert("playlisticon", "#f965d9");
 
                 // --- FOOTER ---
-                map.insert("footertext", "#ff00aa");
+                map.insert("footertext", "#f965d9");
                 map.insert("footeralttext", "#9b74ab");
                 map.insert("footerhover", "#00ffcc");
                 map.insert("footerwarning", "#ccff00");
@@ -304,43 +312,45 @@ impl ThemeManager {
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#1b101f");
-                map.insert("eqslideractive", "#ff00aa");
+                map.insert("eqborder", "#6d6d6d");
+                map.insert("eqslideractive", "#f965d9");
+                map.insert("eqslider", "#f965d9");
                 map.insert("eqhandle", "#00ffcc");
                 map.insert("eqgain", "#ccff00");
                 map.insert("eqmix", "#00ffcc");
-                map.insert("fxnodeactive", "#ff00aa");
+                map.insert("fxnodeactive", "#f965d9");
                 map.insert("fxnodedim", "#382042");
             }
             "Red" => {
                 // --- BACKGROUNDS (60%) ---
-                map.insert("bgmain", "#120909");
-                map.insert("bgoverlay", "#1c0d0d");
-                map.insert("graysolid", "#3d1b1b");
-                map.insert("contextmenubg", "#0d0505");
-                map.insert("overlay", "#000000");
+                map.insert("bgmain", "#121212");
+                map.insert("bgoverlay", "#1e1e1e");
+                map.insert("graysolid", "#333333");
+                map.insert("contextmenubg", "#181818");
+                map.insert("overlay", "#80000000");
 
                 // --- HEADER ---
-                map.insert("headerbg", "#1c0d0d");
-                map.insert("headericon", "#a86363");
-                map.insert("headertext", "#a86363");
-                map.insert("headerhover", "#00ff88");
+                map.insert("headerbg", "#1e1e1e");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
+                map.insert("headerhover", "#ff003c");
 
-                // --- PLAYER (30% secondary + 10% accent) ---
+                // --- PLAYER ---
                 map.insert("playertitle", "#ff003c");
-                map.insert("playersubtext", "#a86363");
-                map.insert("playeraccent", "#8a2be2");
-                map.insert("playerhover", "#00ff88");
+                map.insert("playersubtext", "#bdbdbd");
+                map.insert("playeraccent", "#ff003c");
+                map.insert("playerhover", "#2b00ff");
 
                 // --- TABS ---
-                map.insert("tabtext", "#edd4d4");
-                map.insert("tabborder", "#ff003c");
-                map.insert("tabhover", "#00ff88");
+                map.insert("tabtext", "#bdbdbd");
+                map.insert("tabborder", "#6d6d6d");
+                map.insert("tabhover", "#ff003c");
 
                 // --- PLAYLIST ---
-                map.insert("playlisttext", "#edd4d4");
-                map.insert("playlistfolder", "#ffea00");
+                map.insert("playlisttext", "#bdbdbd");
+                map.insert("playlistfolder", "#d59407");
                 map.insert("playlistactive", "#ff003c");
-                map.insert("playlisticon", "#ffea00");
+                map.insert("playlisticon", "#2b00ff");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#ff003c");
@@ -351,16 +361,18 @@ impl ThemeManager {
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#1c0d0d");
-                map.insert("eqslideractive", "#ff003c");
+                map.insert("eqborder", "#6d6d6d");
+                map.insert("eqslideractive", "#2b00ff");
+                map.insert("eqslider", "#ff003c");
                 map.insert("eqhandle", "#00ff88");
-                map.insert("eqgain", "#ffea00");
-                map.insert("eqmix", "#00ff88");
+                map.insert("eqgain", "#bdbdbd");
+                map.insert("eqmix", "#2b00ff");
                 map.insert("fxnodeactive", "#ff003c");
                 map.insert("fxnodedim", "#3d1b1b");
             }
             "Yellow" => {
                 // --- BACKGROUNDS (60%) ---
-                map.insert("bgmain", "#0d1012"); 
+                map.insert("bgmain", "#0d1012");
                 map.insert("bgoverlay", "#15191c");
                 map.insert("graysolid", "#2d353b");
                 map.insert("contextmenubg", "#0a0c0e");
@@ -368,40 +380,42 @@ impl ThemeManager {
 
                 // --- HEADER ---
                 map.insert("headerbg", "#15191c");
-                map.insert("headericon", "#9fa67c");
-                map.insert("headertext", "#9fa67c");
-                map.insert("headerhover", "#ff007f");
+                map.insert("headericon", "#6d6d6d");
+                map.insert("headertext", "#6d6d6d");
+                map.insert("headerhover", "#f965d9");
 
-                // --- PLAYER (30% secondary + 10% accent) ---
-                map.insert("playertitle", "#ffea00"); 
-                map.insert("playersubtext", "#9fa67c"); 
-                map.insert("playeraccent", "#ccb900"); 
-                map.insert("playerhover", "#ff007f"); 
+                // --- PLAYER ---
+                map.insert("playertitle", "#ffea00");
+                map.insert("playersubtext", "#6d6d6d");
+                map.insert("playeraccent", "#ffea00");
+                map.insert("playerhover", "#f965d9");
 
                 // --- TABS ---
                 map.insert("tabtext", "#dde0d1");
-                map.insert("tabborder", "#ffea00");
-                map.insert("tabhover", "#ff007f");
+                map.insert("tabborder", "#6d6d6d");
+                map.insert("tabhover", "#ffea00");
 
                 // --- PLAYLIST ---
                 map.insert("playlisttext", "#dde0d1");
-                map.insert("playlistfolder", "#b000ff"); 
+                map.insert("playlistfolder", "#d59407");
                 map.insert("playlistactive", "#ffea00");
-                map.insert("playlisticon", "#b000ff");
+                map.insert("playlisticon", "#f965d9");
 
                 // --- FOOTER ---
                 map.insert("footertext", "#ffea00");
                 map.insert("footeralttext", "#9fa67c");
-                map.insert("footerhover", "#ff007f");
-                map.insert("footerwarning", "#ff6a00");
+                map.insert("footerhover", "#f965d9");
+                map.insert("footerwarning", "#f965d9");
                 map.insert("footeralert", "#ff1744");
 
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#15191c");
+                map.insert("eqborder", "#6d6d6d");
                 map.insert("eqslideractive", "#ffea00");
-                map.insert("eqhandle", "#ff007f");
+                map.insert("eqslider", "#ffea00");
+                map.insert("eqhandle", "#f965d9");
                 map.insert("eqgain", "#b000ff");
-                map.insert("eqmix", "#ff007f");
+                map.insert("eqmix", "#f965d9");
                 map.insert("fxnodeactive", "#ffea00");
                 map.insert("fxnodedim", "#2d353b");
             }
@@ -416,7 +430,7 @@ impl ThemeManager {
                 map.insert("headerbg", "#201f2b");
                 map.insert("headericon", "#6d6d6d");
                 map.insert("headertext", "#6d6d6d");
-                map.insert("headerhover", "#f763ff");
+                map.insert("headerhover", "#ff1ae0");
                 // --- PLAYER ---
                 map.insert("playertitle", "#00ffa2");
                 map.insert("playersubtext", "#57caab");
@@ -439,7 +453,9 @@ impl ThemeManager {
                 map.insert("footeralert", "#cc3333");
                 // --- EQ & FX ---
                 map.insert("eqsliderbg", "#201f2b");
+                map.insert("eqborder", "#00ffa2");
                 map.insert("eqslideractive", "#00ffa2");
+                map.insert("eqslider", "#9442ff");
                 map.insert("eqhandle", "#ff1ae0");
                 map.insert("eqgain", "#ff881a");
                 map.insert("eqmix", "#ff1ae0");

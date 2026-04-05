@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 Popup {
     id: fxRoot
-    width: root.width * 0.9
+    width: 500
     height: 300
     modal: true
     focus: true
