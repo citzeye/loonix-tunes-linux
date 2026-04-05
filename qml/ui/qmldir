@@ -9,8 +9,8 @@ TabContextMenu 1.0 TabContextMenu.qml
 PlaylistContextMenu 1.0 PlaylistContextMenu.qml
 Playlist 1.0 Playlist.qml
 Pref 1.0 Pref.qml
-EqPopup 1.0 EqPopup.qml
-FxPopup 1.0 FxPopup.qml
+Eq 1.0 Eq.qml
+Fx 1.0 Fx.qml
 ThemeSlider 1.0 ThemeSlider.qml
 RenameDialog 1.0 RenameDialog.qml
 PrefButton 1.0 PrefButton.qml

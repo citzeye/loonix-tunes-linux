@@ -867,7 +867,7 @@ Window {
                 text: '󰯷'
                 font.family: symbols.name
                 font.pixelSize: 18
-                color: eqMASlider.containsMouse || eqPopup.visible
+                color: eqMASlider.containsMouse || eq.visible
                   ? theme.colormap.playerhover
                   : theme.colormap.playersubtext
 
@@ -876,10 +876,10 @@ Window {
                   anchors.fill: parent
                   hoverEnabled: true
                   onClicked: {
-                    if (eqPopup.visible) {
-                      eqPopup.close()
+                    if (eq.visible) {
+                      eq.close()
                     } else {
-                      eqPopup.open()
+                      eq.open()
                     }
                   }
                 }
@@ -912,7 +912,7 @@ Window {
                 font.family: symbols.name
                 font.pixelSize: 18
 
-                color: presetMASlider.containsMouse || fxPopup.visible
+                color: presetMASlider.containsMouse || fx.visible
                   ? theme.colormap.playerhover
                   : theme.colormap.playersubtext
 
@@ -921,10 +921,10 @@ Window {
                   anchors.fill: parent
                   hoverEnabled: true
                   onClicked: {
-                    if (fxPopup.visible) {
-                      fxPopup.close()
+                    if (fx.visible) {
+                      fx.close()
                     } else {
-                      fxPopup.open()
+                      fx.open()
                     }
                   }
                 }
@@ -1142,15 +1142,15 @@ Window {
   // ==========================================
   // SECTION: POPUPS (Panggilan Eksternal)
   // ==========================================
-  EqPopup {
-      id: eqPopup
+  Eq {
+      id: eq
       x: (parent.width - width) / 2
       y: (parent.height - height) / 2
       width: parent.width * 0.9
   }
 
-  FxPopup {
-      id: fxPopup
+  Fx {
+      id: fx
       x: (parent.width - width) / 2
       y: (parent.height - height) / 2
       width: parent.width * 0.9

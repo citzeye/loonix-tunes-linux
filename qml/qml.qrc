@@ -4,6 +4,8 @@
         <file>ui/Tab.qml</file>
         <file>ui/TabMusic.qml</file>
         <file>ui/TabCustom.qml</file>
+        <file>ui/Eq.qml</file>
+        <file>ui/Fx.qml</file>
         <file>ui/TrackInfo.qml</file>
         <file>ui/Playlist.qml</file>
         <file>ui/qmldir</file>
