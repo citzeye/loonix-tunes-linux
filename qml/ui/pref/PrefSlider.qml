@@ -1,12 +1,12 @@
-
 /* --- LOONIX-TUNES qml/ui/pref/PrefSlider.qml --- */
 
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ColumnLayout {
-    id: sliderRoot
+Item {
+    id: rootSlider
+    implicitHeight: 24
 
     property string label: "Slider"
     property string valueText: ""
@@ -20,34 +20,29 @@ ColumnLayout {
     signal resetToDefault()
 
     Layout.fillWidth: true
-    spacing: 2
 
-    // Label kiri atas
-    Text {
-        text: sliderRoot.label
-        color: theme.colormap["playlisttext"]
-        font.family: kodeMono.name
-        font.pixelSize: 12
-        Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-    }
-
-    // Slider + Value sejajar
     RowLayout {
-        Layout.fillWidth: true
-        spacing: 10
+        anchors.fill: parent
+        spacing: 12
+
+        Text {
+            text: rootSlider.label
+            Layout.preferredWidth: 130
+            font.family: kodeMono.name
+            font.pixelSize: 12
+            color: theme.colormap["playlisttext"]
+            elide: Text.ElideRight
+        }
 
         Slider {
             id: slider
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
-            Layout.maximumWidth: 250
-            from: sliderRoot.fromValue
-            to: sliderRoot.toValue
-            stepSize: sliderRoot.stepValue
-            value: sliderRoot.currentValue
+            from: rootSlider.fromValue
+            to: rootSlider.toValue
+            stepSize: rootSlider.stepValue
+            value: rootSlider.currentValue
             live: true
-            onMoved: sliderRoot.moved(value)
+            onMoved: rootSlider.moved(value)
 
             WheelHandler {
                 target: slider
@@ -55,11 +50,11 @@ ColumnLayout {
                 property: "position"
                 orientation: Qt.Vertical
                 onWheel: function(event) {
-                    var step = sliderRoot.stepValue
+                    var step = rootSlider.stepValue
                     var delta = event.angleDelta.y > 0 ? step : -step
-                    var newVal = Math.max(sliderRoot.fromValue, Math.min(sliderRoot.toValue, slider.value + delta))
+                    var newVal = Math.max(rootSlider.fromValue, Math.min(rootSlider.toValue, slider.value + delta))
                     slider.value = newVal
-                    sliderRoot.moved(newVal)
+                    rootSlider.moved(newVal)
                 }
             }
 
@@ -80,32 +75,21 @@ ColumnLayout {
             handle: Rectangle {
                 x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
                 y: slider.topPadding + slider.availableHeight / 2 - height / 2
-                width: 14
-                height: 14
-                radius: 7
+                width: 10
+                height: 10
+                radius: 5
                 color: slider.pressed ? theme.colormap["playerhover"] : theme.colormap["playeraccent"]
                 border.color: theme.colormap["playeraccent"]
             }
         }
 
         Text {
-            text: sliderRoot.valueText
-            color: theme.colormap["playeraccent"]
+            text: rootSlider.valueText
+            Layout.preferredWidth: 60
+            horizontalAlignment: Text.AlignRight
             font.family: kodeMono.name
             font.pixelSize: 12
-            font.bold: true
+            color: theme.colormap["playeraccent"]
         }
-
-        Item { Layout.fillWidth: true }
-    }
-
-    Text {
-        text: sliderRoot.description
-        color: theme.colormap["playersubtext"]
-        font.family: kodeMono.name
-        font.pixelSize: 10
-        wrapMode: Text.WordWrap
-        Layout.fillWidth: true
-        visible: text !== ""
     }
 }

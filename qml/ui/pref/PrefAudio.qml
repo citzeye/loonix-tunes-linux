@@ -11,13 +11,14 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar {
         policy: ScrollBar.AsNeeded
-        width: 6
+        width: 4
         z: 1
-        background: Rectangle { implicitWidth: 6; color: theme.colormap.bgmain; opacity: 0.0 }
+        background: Rectangle { implicitWidth: 4; implicitHeight: 20; color: theme.colormap.bgmain; opacity: 0.0 }
         contentItem: Rectangle {
-            implicitWidth: 6
-            radius: 3
-            color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
+            implicitWidth: 4
+            implicitHeight: 30
+            radius: 2
+            color: theme.colormap.playeraccent
             Behavior on color { ColorAnimation { duration: 200 } }
         }
     }
@@ -84,13 +85,13 @@ Flickable {
                     // Switch (separate - toggle on/off only)
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.normalizer_enabled ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
 
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.normalizer_enabled ? parent.width - width - 2 : 2
@@ -194,12 +195,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.reverb_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.reverb_active ? parent.width - width - 2 : 2
@@ -316,12 +317,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.compressor_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.compressor_active ? parent.width - width - 2 : 2
@@ -396,12 +397,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.pitch_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.pitch_active ? parent.width - width - 2 : 2
@@ -476,12 +477,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.middle_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.middle_active ? parent.width - width - 2 : 2
@@ -556,12 +557,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.mono_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.mono_active ? parent.width - width - 2 : 2
@@ -636,12 +637,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.stereo_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.stereo_active ? parent.width - width - 2 : 2
@@ -716,12 +717,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.crossfeed_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.crossfeed_active ? parent.width - width - 2 : 2
@@ -806,12 +807,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.bassbooster_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.bassbooster_active ? parent.width - width - 2 : 2
@@ -895,12 +896,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.surround_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.surround_active ? parent.width - width - 2 : 2
@@ -975,12 +976,12 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 40; height: 22
-                        radius: 11
+                        width: 30; height: 16
+                        radius: 8
                         color: musicModel.crystalizer_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
-                            width: 18; height: 18
-                            radius: 9
+                            width: 12; height: 12
+                            radius: 6
                             color: theme.colormap["bgmain"]
                             y: 2
                             x: musicModel.crystalizer_active ? parent.width - width - 2 : 2

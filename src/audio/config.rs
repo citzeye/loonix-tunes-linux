@@ -15,6 +15,11 @@ pub struct AppConfig {
     pub locked_folders: Vec<i32>,
     pub mode: crate::audio::engine::OutputMode,
     pub last_track_path: String,
+    // Window position
+    pub window_x: i32,
+    pub window_y: i32,
+    pub window_width: i32,
+    pub window_height: i32,
     // DSP settings
     pub dsp_enabled: bool,
     pub bass_enabled: bool,
@@ -174,6 +179,10 @@ impl Default for AppConfig {
             locked_folders: vec![],
             mode: crate::audio::engine::OutputMode::Stereo,
             last_track_path: String::new(),
+            window_x: -1,
+            window_y: -1,
+            window_width: 350,
+            window_height: 700,
             dsp_enabled: true,
             bass_enabled,
             bass_gain,

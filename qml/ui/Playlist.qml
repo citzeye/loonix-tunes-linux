@@ -222,19 +222,20 @@ Rectangle {
       }
     }
     ScrollBar.vertical: ScrollBar {
-      width: 6
+      width: 4
       z: 1
       policy: ScrollBar.AsNeeded
       background: Rectangle {
-        implicitWidth: 6
+        implicitWidth: 4
+        implicitHeight: 20
         color: theme.colormap.bgmain
         opacity: 0.0
       }
       contentItem: Rectangle {
-        implicitWidth: 6
-        radius: 3
-        color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
-        Behavior on color { ColorAnimation { duration: 200 } }
+        implicitWidth: 4
+        implicitHeight: 30
+        radius: 2
+        color: theme.colormap.playeraccent
       }
     }
   }

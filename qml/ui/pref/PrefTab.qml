@@ -7,6 +7,7 @@ Item {
     property string text: "Tab"
     property string icon: "󰋊"
     property bool isActive: false
+    property bool isHovered: false
     signal clicked()
     width: 120
     height: 16

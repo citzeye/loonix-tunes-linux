@@ -103,8 +103,42 @@ Window {
 
   Component.onCompleted: {
     root.flags = Qt.Window | Qt.FramelessWindowHint | Qt.CustomizeWindowHint
+    
+    // Restore window position
+    var cfg = musicModel.get_window_config()
+    var hasSavedPosition = (cfg && cfg.window_x >= 0 && cfg.window_y >= 0)
+    
+    if (hasSavedPosition) {
+      root.x = cfg.window_x
+      root.y = cfg.window_y
+      root.width = cfg.window_width > 0 ? cfg.window_width : 350
+      root.height = cfg.window_height > 0 ? cfg.window_height : 700
+    } else {
+      // Center on screen if no saved position
+      root.x = Math.round((Screen.desktopAvailableWidth - root.width) / 2)
+      root.y = Math.round((Screen.desktopAvailableHeight - root.height) / 2)
+    }
+    
+    // Mark as initialized after position is set
+    root.isInitialized = true
+    
     musicModel.scan_music()
     musicModel.start_update_loop()
+  }
+
+  property bool isInitialized: false
+
+  onXChanged: if (isInitialized) {
+    musicModel.save_window_position(root.x, root.y, root.width, root.height)
+  }
+  onYChanged: if (isInitialized) {
+    musicModel.save_window_position(root.x, root.y, root.width, root.height)
+  }
+  onWidthChanged: {
+    musicModel.save_window_position(root.x, root.y, root.width, root.height)
+  }
+  onHeightChanged: {
+    musicModel.save_window_position(root.x, root.y, root.width, root.height)
   }
 
   Timer {
@@ -681,7 +715,7 @@ Window {
       // --- END LOONIX DRAWER CONTAINER ---
 
       // ==========================================
-      // SECTION: SLIDER CONTROLS (PAN & VOLUME)
+      // SECTION: SPECIAL CONTROLS
       // ==========================================
       Rectangle {
         Layout.fillWidth: true
@@ -712,7 +746,7 @@ Window {
           anchors.leftMargin: 20
           anchors.rightMargin: 20
 
-          // --- LEFT SECTION: PAN / BALANCE ---
+          // --- LEFT SECTION: PAN / AB---
           RowLayout {
             anchors.left: parent.left
             anchors.top: parent.top
@@ -794,9 +828,8 @@ Window {
             Text {
               id: abRepeatIcon
               text: '󰇉'
-              font.family: kodeMono.name
+              font.family: symbols.name
               font.pixelSize: 18
-              font.bold: true
               color: abRepeatMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
               Layout.alignment: Qt.AlignVCenter
 
@@ -812,9 +845,9 @@ Window {
             
           }
 
-          // --- MIDDLE SECTION: EQ & FX (ABSOLUTE CENTER) ---
+          // --- MIDDLE INSTANT FX ---
           RowLayout {
-            anchors.horizontalCenter: parent.horizontalCenter // <-- INI KUNCI RATA TENGAH
+            anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             spacing: 15
@@ -922,7 +955,7 @@ Window {
                 id: eqIconSlider
                 anchors.verticalCenter: parent.verticalCenter
                 text: '󰯷'
-                font.family: kodeMono.name
+                font.family: symbols.name
                 font.pixelSize: 18
                 color: eqMASlider.containsMouse || eqAccordion.Layout.preferredHeight > 0
                   ? theme.colormap.playerhover
@@ -962,7 +995,7 @@ Window {
                 id: fxIconSlider
                 anchors.verticalCenter: parent.verticalCenter
                 text: '󰯺'
-                font.family: kodeMono.name
+                font.family: symbols.name
                 font.pixelSize: 18
 
                 color: presetMASlider.containsMouse || fxAccordion.Layout.preferredHeight > 0

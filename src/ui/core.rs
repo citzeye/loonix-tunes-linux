@@ -289,6 +289,8 @@ pub struct MusicModel {
     pub update_tick: qt_method!(fn(&mut self)),
     pub start_update_loop: qt_method!(fn(&mut self)),
     pub save_state: qt_method!(fn(&mut self)),
+    pub save_window_position: qt_method!(fn(&mut self, x: i32, y: i32, width: i32, height: i32)),
+    pub get_window_config: qt_method!(fn(&self) -> QVariantMap),
     pub add_folder_tab: qt_method!(fn(&mut self, path: String)),
     pub add_song: qt_method!(fn(&mut self, path: String)),
     pub add_temporary_folder: qt_method!(fn(&mut self, path: String)),
@@ -2560,5 +2562,32 @@ impl MusicModel {
 
             config.save();
         }
+    }
+
+    pub fn save_window_position(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        if let Some(ref mut config) = self.saved_config {
+            config.window_x = x;
+            config.window_y = y;
+            config.window_width = width;
+            config.window_height = height;
+            config.save();
+        }
+    }
+
+    pub fn get_window_config(&self) -> QVariantMap {
+        let mut map = QVariantMap::default();
+        if let Some(ref config) = self.saved_config {
+            map.insert(QString::from("window_x"), QVariant::from(config.window_x));
+            map.insert(QString::from("window_y"), QVariant::from(config.window_y));
+            map.insert(
+                QString::from("window_width"),
+                QVariant::from(config.window_width),
+            );
+            map.insert(
+                QString::from("window_height"),
+                QVariant::from(config.window_height),
+            );
+        }
+        map
     }
 }

@@ -8,7 +8,7 @@ Cargo.lock
 node_modules
 /target
 .skill
-.vst3
+.backup
 
 # Windows installer output
 *.msi

@@ -340,7 +340,7 @@ Item {
         }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: 'Setting'
+          text: 'Pref'
           font.family: kodeMono.name
           font.pixelSize: 10
           color: tile8MA.containsMouse ? theme.colormap.playlisticon : theme.colormap.tabtext
@@ -351,6 +351,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         onClicked: {
+          root.prefDialogVisible = true
           root.playlistContextMenuVisible = false
         }
       }

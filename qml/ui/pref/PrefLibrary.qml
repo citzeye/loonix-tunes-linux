@@ -12,13 +12,13 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar {
         policy: ScrollBar.AsNeeded
-        width: 6
+        width: 4
         z: 1
-        background: Rectangle { implicitWidth: 6; color: theme.colormap.bgmain; opacity: 0.0 }
+        background: Rectangle { implicitWidth: 4; color: theme.colormap.bgmain; opacity: 0.0 }
         contentItem: Rectangle {
-            implicitWidth: 6
-            radius: 3
-            color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
+            implicitWidth: 4
+            radius: 2
+            color: theme.colormap.playeraccent
             Behavior on color { ColorAnimation { duration: 200 } }
         }
     }

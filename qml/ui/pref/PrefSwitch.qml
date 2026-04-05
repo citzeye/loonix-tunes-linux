@@ -38,13 +38,13 @@ RowLayout {
     // Custom Switch UI
     Rectangle {
         Layout.alignment: Qt.AlignVCenter
-        width: 40; height: 22
-        radius: 11
+        width: 30; height: 16
+        radius: 8
         color: checked ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
 
         Rectangle {
-            width: 18; height: 18
-            radius: 9
+            width: 12; height: 12
+            radius: 6
             color: theme.colormap["bgmain"]
             y: 2
             x: checked ? parent.width - width - 2 : 2

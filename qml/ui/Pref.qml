@@ -30,7 +30,7 @@ Item {
     // === MAIN CONTAINER ===
     Rectangle {
         id: popupContainer
-        width: Math.max(Math.min(parent.width * 0.6, 600), 450)
+        width: parent.width * 0.9
         height: parent.height * 0.8 - 10
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
@@ -130,7 +130,7 @@ Item {
 
                 // --- LEFT BOX (SIDEBAR) ---
                 Rectangle {
-                    Layout.preferredWidth: 80
+                    Layout.preferredWidth: 120
                     Layout.fillHeight: true
                     color: theme.colormap["bgoverlay"]
                     radius: 0
@@ -197,7 +197,7 @@ Item {
                         anchors.leftMargin: 10
                         anchors.topMargin: 10
                         anchors.bottomMargin: 10
-                        anchors.rightMargin: 0
+                        anchors.rightMargin: 10
 
                         currentIndex: prefPage.currentTabIndex
 
