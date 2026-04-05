@@ -622,97 +622,7 @@ Window {
         } //END PLAYER CORE ROW
       } //END PLAYER CORE
 
-      // LOONIX DRAWER CONTAINER ==============================
-      ColumnLayout {
-        id: drawerContainer
-        Layout.fillWidth: true
-        spacing: 0
-
-        // LACI 1: EQUALIZER
-        Rectangle {
-          id: eqAccordion
-          Layout.fillWidth: true
-
-          // Definisikan property sebagai saklar
-          property bool isOpen: false
-          // Binding: Biarkan sistem yang menghitung tinggi berdasarkan state
-          Layout.preferredHeight: isOpen ? 180 : 0
-
-          clip: true
-          color: 'transparent'
-
-          Behavior on Layout.preferredHeight {
-            NumberAnimation {
-              duration: 250
-              easing.type: Easing.InOutQuad
-            }
-          }
-
-          // BORDER WAJIB
-          Rectangle {
-            width: 8
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: theme.colormap.bgoverlay
-          }
-          Rectangle {
-            width: 8
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: theme.colormap.bgoverlay
-          }
-
-          Eq {
-            anchors.fill: parent
-            anchors.margins: 15
-          }
-        }
-
-        // LACI 2: FX
-        Rectangle {
-          id: fxAccordion
-          Layout.fillWidth: true
-
-          property bool isOpen: false
-          Layout.preferredHeight: isOpen ? 180 : 0
-
-          clip: true
-          color: 'transparent'
-
-          Behavior on Layout.preferredHeight {
-            NumberAnimation {
-              duration: 250
-              easing.type: Easing.InOutQuad
-            }
-          }
-
-          // BORDER WAJIB
-          Rectangle {
-            width: 8
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: theme.colormap.bgoverlay
-          }
-          Rectangle {
-            width: 8
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            color: theme.colormap.bgoverlay
-          }
-
-          Loader {
-            anchors.fill: parent
-            anchors.margins: 10
-            active: fxAccordion.isOpen || fxAccordion.Layout.preferredHeight > 0
-            source: 'ui/Fx.qml'
-          }
-        }
-      }
-      // --- END LOONIX DRAWER CONTAINER ---
+      // LOONIX DRAWER REMOVED - EQ/FX now use popup dialogs
 
       // ==========================================
       // SECTION: SPECIAL CONTROLS
@@ -957,7 +867,7 @@ Window {
                 text: '󰯷'
                 font.family: symbols.name
                 font.pixelSize: 18
-                color: eqMASlider.containsMouse || eqAccordion.Layout.preferredHeight > 0
+                color: eqMASlider.containsMouse || eqPopup.visible
                   ? theme.colormap.playerhover
                   : theme.colormap.playersubtext
 
@@ -966,7 +876,11 @@ Window {
                   anchors.fill: parent
                   hoverEnabled: true
                   onClicked: {
-                    eqAccordion.isOpen = !eqAccordion.isOpen
+                    if (eqPopup.visible) {
+                      eqPopup.close()
+                    } else {
+                      eqPopup.open()
+                    }
                   }
                 }
               }
@@ -998,7 +912,7 @@ Window {
                 font.family: symbols.name
                 font.pixelSize: 18
 
-                color: presetMASlider.containsMouse || fxAccordion.Layout.preferredHeight > 0
+                color: presetMASlider.containsMouse || fxPopup.visible
                   ? theme.colormap.playerhover
                   : theme.colormap.playersubtext
 
@@ -1007,7 +921,11 @@ Window {
                   anchors.fill: parent
                   hoverEnabled: true
                   onClicked: {
-                    fxAccordion.isOpen = !fxAccordion.isOpen
+                    if (fxPopup.visible) {
+                      fxPopup.close()
+                    } else {
+                      fxPopup.open()
+                    }
                   }
                 }
               }
@@ -1227,17 +1145,15 @@ Window {
   EqPopup {
       id: eqPopup
       x: (parent.width - width) / 2
-      y: parent.height - height - 120
-      width: root.width > 400 ? 380 : root.width - 40
-      height: 300
+      y: (parent.height - height) / 2
+      width: parent.width * 0.9
   }
 
   FxPopup {
       id: fxPopup
       x: (parent.width - width) / 2
-      y: parent.height - height - 120
-      width: root.width > 400 ? 380 : root.width - 40
-      height: 380
+      y: (parent.height - height) / 2
+      width: parent.width * 0.9
   }
 
   Pref {

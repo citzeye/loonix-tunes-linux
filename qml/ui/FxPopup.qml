@@ -5,8 +5,8 @@ import QtQuick.Layouts
 
 Popup {
     id: fxRoot
-    width: Screen.width * 0.28
-    height: 420
+    width: root.width * 0.9
+    height: 300
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
