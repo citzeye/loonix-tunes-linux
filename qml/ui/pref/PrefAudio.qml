@@ -65,7 +65,7 @@ Flickable {
                                 Text {
                                     id: chevronText
                                     text: normalizerSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -176,7 +176,7 @@ Flickable {
                                 Text {
                                     id: reverbChevronText
                                     text: reverbSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -298,7 +298,7 @@ Flickable {
                                 Text {
                                     id: compChevronText
                                     text: compressorSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -378,7 +378,7 @@ Flickable {
                                 Text {
                                     id: pitchChevronText
                                     text: pitchSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -458,7 +458,7 @@ Flickable {
                                 Text {
                                     id: middleChevronText
                                     text: middleSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -538,7 +538,7 @@ Flickable {
                                 Text {
                                     id: stereoWidthChevronText
                                     text: stereoWidthSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -618,7 +618,7 @@ Flickable {
                                 Text {
                                     id: stereoEnhanceChevronText
                                     text: stereoEnhanceSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -698,7 +698,7 @@ Flickable {
                                 Text {
                                     id: crossfeedChevronText
                                     text: crossfeedSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -788,7 +788,7 @@ Flickable {
                                 Text {
                                     id: bassChevronText
                                     text: bassBoosterSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -877,7 +877,7 @@ Flickable {
                                 Text {
                                     id: surChevronText
                                     text: surroundSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }
@@ -957,7 +957,7 @@ Flickable {
                                 Text {
                                     id: cryChevronText
                                     text: crystalizerSection.expanded ? "󰅀" : "󰅂"
-                                    font.family: "Nerd Font"
+                                    font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
                                 }

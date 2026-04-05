@@ -3,7 +3,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Qt.labs.platform
 import "pref"
 
 Item {
@@ -76,6 +75,7 @@ Item {
                     anchors.fill: parent
                     anchors.leftMargin: 8
                     anchors.rightMargin: 8
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                     Text {
                         text: "PREFERENCES"
@@ -130,7 +130,7 @@ Item {
 
                 // --- LEFT BOX (SIDEBAR) ---
                 Rectangle {
-                    Layout.preferredWidth: 80
+                    Layout.preferredWidth: 100
                     Layout.fillHeight: true
                     color: theme.colormap["bgoverlay"]
                     radius: 0
@@ -142,37 +142,31 @@ Item {
 
                         PrefTab {
                             text: "Hardware"
-                            icon: "󰍛"
                             isActive: prefPage.currentTabIndex === 0
                             onClicked: prefPage.currentTabIndex = 0
                         }
                         PrefTab {
                             text: "Audio"
-                            icon: "󰗅"
                             isActive: prefPage.currentTabIndex === 1
                             onClicked: prefPage.currentTabIndex = 1
                         }
                         PrefTab {
                             text: "Library"
-                            icon: ""
                             isActive: prefPage.currentTabIndex === 2
                             onClicked: prefPage.currentTabIndex = 2
                         }
                         PrefTab {
                             text: "Appearance"
-                            icon: "󰸌"
                             isActive: prefPage.currentTabIndex === 3
                             onClicked: prefPage.currentTabIndex = 3
                         }
                         PrefTab {
                             text: "About"
-                            icon: "󰋽"
                             isActive: prefPage.currentTabIndex === 4
                             onClicked: prefPage.currentTabIndex = 4
                         }
                         PrefTab {
                             text: "Donate"
-                            icon: ""
                             isActive: prefPage.currentTabIndex === 5
                             onClicked: prefPage.currentTabIndex = 5
                         }
@@ -191,23 +185,6 @@ Item {
                     Layout.fillHeight: true
                     color: theme.colormap["bgoverlay"]
                     radius: 0
-
-                    StackLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.topMargin: 10
-                        anchors.bottomMargin: 10
-                        anchors.rightMargin: 0
-
-                        currentIndex: prefPage.currentTabIndex
-
-                        PrefHardware {}
-                        PrefAudio {}
-                        PrefLibrary {}
-                        PrefAppearance {}
-                        PrefAbout {}
-                        PrefDonate {}
-                    }
                 }
 
                 Rectangle {

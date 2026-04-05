@@ -79,7 +79,7 @@ ColumnLayout {
             x: control.width - width - 8
             y: (control.height - height) / 2
             text: "" // icon dropdown 
-            font.family: "Nerd Font"
+            font.family: symbols.name
             font.pixelSize: 14
             color: theme.colormap["playersubtext"]
         }

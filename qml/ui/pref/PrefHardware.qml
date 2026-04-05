@@ -1,62 +1,27 @@
-
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
-Flickable {
-    id: hardwareFlick
-    contentHeight: hardwareColumn.height
-    clip: true
-    interactive: true
-    boundsBehavior: Flickable.StopAtBounds
-    ScrollBar.vertical: ScrollBar {
-        policy: ScrollBar.AsNeeded
-        width: 6
-        z: 1
-        background: Rectangle { implicitWidth: 6; color: theme.colormap.bgmain; opacity: 0.0 }
-        contentItem: Rectangle {
-            implicitWidth: 6
-            radius: 3
-            color: parent.pressed ? theme.colormap.playeraccent : (parent.hovered ? theme.colormap.playerhover : theme.colormap.graysolid)
-            Behavior on color { ColorAnimation { duration: 200 } }
+ColumnLayout {
+    spacing: 12
+
+    PrefDropdown {
+        label: "Audio Output Device"
+        description: "Select the audio backend to route your music."
+        model: (Qt.platform.os === "windows") ? ["WASAPI (Shared)", "WASAPI (Exclusive)", "ASIO"] :
+               (Qt.platform.os === "android") ? ["AAudio (High-Res)", "OpenSL ES"] :
+               ["PipeWire", "PulseAudio", "ALSA"]
+        
+        currentIndex: (Qt.platform.os === "linux") ? 2 : 0
+        onOptionSelected: (index, value) => {
+            console.log("OS: " + Qt.platform.os + " | User milih:", value)
+            musicModel.set_output_device(index)
         }
     }
-    ColumnLayout {
-        id: hardwareColumn
-        width: hardwareFlick.width
-        spacing: 12
 
-        // PrefHeader removed - sidebar already shows current tab
-
-        PrefDropdown {
-            label: "Audio Output Device"
-            description: "Select the audio backend to route your music."
-            // EDIT DI SINI: Model ganti otomatis sesuai OS
-            model: (Qt.platform.os === "windows") ? ["WASAPI (Shared)", "WASAPI (Exclusive)", "ASIO"] :
-                   (Qt.platform.os === "android") ? ["AAudio (High-Res)", "OpenSL ES"] :
-                   ["PipeWire", "PulseAudio", "ALSA"]
-            
-            currentIndex: (Qt.platform.os === "linux") ? 2 : 0
-            onOptionSelected: (index, value) => {
-                console.log("OS: " + Qt.platform.os + " | User milih:", value)
-                musicModel.set_output_device(index)
-            }
-        }
-        
-        // SOON
-        // PrefSwitch {
-        //     visible: Qt.platform.os !== "android"
-        //     label: "Exclusive Mode"
-        //     description: "Bypass system mixer. Locks DAC to track's native sample rate. Mutes other apps."
-        //     checked: musicModel.exclusive_mode
-        //     onToggled: musicModel.toggle_exclusive_mode()
-        // }
-
-        PrefSwitch {
-            label: "High-Res 64-bit Internal Processing"
-            description: "Enables 64-bit floating-point processing for pristine audio quality"
-            checked: musicModel.highres_enabled
-            onToggled: musicModel.set_highres(checked)
-        }
+    PrefSwitch {
+        label: "High-Res 64-bit Internal Processing"
+        description: "Enables 64-bit floating-point processing for pristine audio quality"
+        checked: musicModel.highres_enabled
+        onToggled: musicModel.set_highres(checked)
     }
 }

@@ -91,7 +91,7 @@ Window {
   property bool playlistContextIsFolder: false
   property bool renameDialogVisible: false
   property int renameDialogIndex: -1
-  property bool settingsDialogVisible: false
+  property bool prefDialogVisible: false
 
   // MINIMAL: 30% dari lebar/tinggi monitor user
   minimumWidth: Screen.width * 0.3
@@ -282,7 +282,7 @@ Window {
               anchors.fill: parent
               hoverEnabled: true
               onClicked: {
-                root.settingsDialogVisible = true
+                root.prefDialogVisible = true
               }
             }
           }
@@ -1209,7 +1209,7 @@ Window {
 
   Pref {
       id: prefPopup
-      visible: root.settingsDialogVisible
+      visible: root.prefDialogVisible
   }
 
 // ==========================================
