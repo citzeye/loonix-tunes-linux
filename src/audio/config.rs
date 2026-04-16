@@ -302,6 +302,8 @@ impl AppConfig {
 pub struct EqPreset {
     pub name: String,
     pub gains: [f32; 10],
+    pub preamp: f32,
+    pub macro_val: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -309,10 +311,11 @@ pub struct FxPreset {
     pub name: String,
     pub bass_enabled: bool,
     pub bass_gain: f32,
-    #[serde(default = "default_bass_cutoff")]
     pub bass_cutoff: f32,
+    pub bass_mode: i32,
     pub crystal_enabled: bool,
     pub crystal_amount: f32,
+    pub crystal_freq: f32,
     pub surround_enabled: bool,
     pub surround_width: f32,
     pub mono_enabled: bool,
@@ -336,8 +339,10 @@ impl Default for FxPreset {
             bass_enabled: false,
             bass_gain: 6.0,
             bass_cutoff: 180.0,
+            bass_mode: 0,
             crystal_enabled: false,
             crystal_amount: 0.20,
+            crystal_freq: 8000.0,
             surround_enabled: false,
             surround_width: 1.8,
             mono_enabled: false,
@@ -359,22 +364,51 @@ impl Default for FxPreset {
 // ============================================================
 // EQ PRESETS (const - not user data)
 // ============================================================
-pub const EQ_PRESET_DATA: [(&str, [f32; 10]); 6] = [
-    (
-        "LOONIX",
-        [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
-    ),
-    ("BASS", [7.0, 6.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0]),
-    ("ROCK", [5.0, 4.0, 3.0, 1.0, -1.0, -1.0, 1.0, 3.0, 4.0, 5.0]),
-    (
-        "POP",
-        [-2.0, -1.0, 0.0, 2.0, 4.0, 0.0, 2.0, 0.0, -1.0, -2.0],
-    ),
-    (
-        "METAL",
-        [6.0, 5.0, 4.0, 0.0, -4.0, -4.0, -2.0, 2.0, 5.0, 6.0],
-    ),
-    ("JAZZ", [3.0, 2.0, 1.0, 2.0, -1.0, -1.0, 0.0, 1.0, 2.0, 3.0]),
+#[derive(Clone)]
+struct EqPresetData {
+    name: &'static str,
+    gains: [f32; 10],
+    preamp: f32,
+    macro_val: f32,
+}
+
+pub const EQ_PRESET_DATA: [EqPresetData; 6] = [
+    EqPresetData {
+        name: "LOONIX",
+        gains: [4.0, 8.0, 0.0, 0.0, -5.0, -5.0, 0.0, 0.0, 8.0, 0.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
+    EqPresetData {
+        name: "BASS",
+        gains: [7.0, 6.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
+    EqPresetData {
+        name: "ROCK",
+        gains: [5.0, 4.0, 3.0, 1.0, -1.0, -1.0, 1.0, 3.0, 4.0, 5.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
+    EqPresetData {
+        name: "POP",
+        gains: [-2.0, -1.0, 0.0, 2.0, 4.0, 0.0, 2.0, 0.0, -1.0, -2.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
+    EqPresetData {
+        name: "METAL",
+        gains: [6.0, 5.0, 4.0, 0.0, -4.0, -4.0, -2.0, 2.0, 5.0, 6.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
+    EqPresetData {
+        name: "JAZZ",
+        gains: [3.0, 2.0, 1.0, 2.0, -1.0, -1.0, 0.0, 1.0, 2.0, 3.0],
+        preamp: 0.0,
+        macro_val: 0.0,
+    },
 ];
 
 // ============================================================
@@ -386,8 +420,10 @@ struct FxPresetData {
     bass_enabled: bool,
     bass_gain: f32,
     bass_cutoff: f32,
+    bass_mode: i32,
     crystal_enabled: bool,
     crystal_amount: f32,
+    crystal_freq: f32,
     surround_enabled: bool,
     surround_width: f32,
     mono_enabled: bool,
@@ -406,34 +442,38 @@ struct FxPresetData {
 
 const FX_PRESET_DATA: [FxPresetData; 6] = [
     FxPresetData {
-        name: "OFF",
-        bass_enabled: false,
+        name: "LOONIX",
+        bass_enabled: true,
         bass_gain: 6.0,
         bass_cutoff: 180.0,
-        crystal_enabled: false,
-        crystal_amount: 0.2,
-        surround_enabled: false,
-        surround_width: 1.8,
+        bass_mode: 2,
+        crystal_enabled: true,
+        crystal_amount: 0.5,
+        crystal_freq: 8000.0,
+        surround_enabled: true,
+        surround_width: 1.5,
         mono_enabled: false,
         mono_width: 1.0,
         pitch_enabled: false,
         pitch_semitones: 0.0,
         middle_enabled: false,
         middle_amount: 0.0,
-        stereo_enabled: false,
-        stereo_amount: 0.0,
+        stereo_enabled: true,
+        stereo_amount: 0.4,
         crossfeed_enabled: false,
         crossfeed_amount: 0.0,
-        compressor_enabled: false,
-        compressor_threshold: -18.0,
+        compressor_enabled: true,
+        compressor_threshold: -10.0,
     },
     FxPresetData {
         name: "BASS BOOST",
         bass_enabled: true,
         bass_gain: 12.0,
         bass_cutoff: 180.0,
+        bass_mode: 2,
         crystal_enabled: false,
         crystal_amount: 0.2,
+        crystal_freq: 8000.0,
         surround_enabled: false,
         surround_width: 1.8,
         mono_enabled: false,
@@ -454,8 +494,10 @@ const FX_PRESET_DATA: [FxPresetData; 6] = [
         bass_enabled: false,
         bass_gain: 6.0,
         bass_cutoff: 180.0,
-        crystal_enabled: true,
-        crystal_amount: 0.40,
+        bass_mode: 0,
+        crystal_enabled: false,
+        crystal_amount: 0.2,
+        crystal_freq: 8000.0,
         surround_enabled: false,
         surround_width: 1.8,
         mono_enabled: false,
@@ -476,8 +518,10 @@ const FX_PRESET_DATA: [FxPresetData; 6] = [
         bass_enabled: false,
         bass_gain: 6.0,
         bass_cutoff: 180.0,
+        bass_mode: 0,
         crystal_enabled: false,
         crystal_amount: 0.2,
+        crystal_freq: 8000.0,
         surround_enabled: true,
         surround_width: 2.0,
         mono_enabled: false,
@@ -498,8 +542,10 @@ const FX_PRESET_DATA: [FxPresetData; 6] = [
         bass_enabled: false,
         bass_gain: 6.0,
         bass_cutoff: 180.0,
+        bass_mode: 0,
         crystal_enabled: false,
         crystal_amount: 0.2,
+        crystal_freq: 8000.0,
         surround_enabled: true,
         surround_width: 1.5,
         mono_enabled: false,
@@ -520,8 +566,10 @@ const FX_PRESET_DATA: [FxPresetData; 6] = [
         bass_enabled: true,
         bass_gain: 10.0,
         bass_cutoff: 180.0,
+        bass_mode: 2,
         crystal_enabled: true,
         crystal_amount: 0.30,
+        crystal_freq: 8000.0,
         surround_enabled: false,
         surround_width: 1.8,
         mono_enabled: false,
@@ -543,9 +591,11 @@ impl AppConfig {
     pub fn get_eq_presets() -> Vec<EqPreset> {
         EQ_PRESET_DATA
             .iter()
-            .map(|(name, gains)| EqPreset {
-                name: name.to_string(),
-                gains: *gains,
+            .map(|p| EqPreset {
+                name: p.name.to_string(),
+                gains: p.gains,
+                preamp: p.preamp,
+                macro_val: p.macro_val,
             })
             .collect()
     }
@@ -558,8 +608,10 @@ impl AppConfig {
                 bass_enabled: p.bass_enabled,
                 bass_gain: p.bass_gain,
                 bass_cutoff: p.bass_cutoff,
+                bass_mode: p.bass_mode,
                 crystal_enabled: p.crystal_enabled,
                 crystal_amount: p.crystal_amount,
+                crystal_freq: p.crystal_freq,
                 surround_enabled: p.surround_enabled,
                 surround_width: p.surround_width,
                 mono_enabled: p.mono_enabled,

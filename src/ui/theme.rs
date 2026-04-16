@@ -679,7 +679,7 @@ impl ThemeManager {
                     "dspeq10handle", "#00ffdd",
                     "dspeq10bg", "#1e1e1e",
                     "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderhandle", "#00ffdd",
                     "dspeqfaderbg", "#1e1e1e",
                     "dspeqmixslider", "#00ffdd",
                     "dspeqmixhandle", "#843ff3",

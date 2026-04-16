@@ -62,336 +62,127 @@ Popup {
 
         function loadPresetByIndex(index) {
             activePresetIndex = index;
-            var gains;
-            var macroVal = 0;
-            if (index >= 0 && index < 6) {
-                gains = dspContent.defaultPresetValues[index];
-            } else if (index >= 6 && index < 12) {
-                var preset = index - 6;
-                gains = musicModel.get_user_eq_gains(preset);
-                macroVal = musicModel.get_user_eq_macro(preset);
-            } else {
+            
+            if (index < 0 || index >= 12) {
                 return;
             }
-            musicModel.set_eq_instant_apply();
-            for (var i = 0; i < 10; ++i) {
-                var slider = eqRepeater.itemAt(i).children[0].children[1];
-                slider.value = gains[i];
-                musicModel.set_eq_band(i, gains[i]);
-            }
-            gainSlider.value = macroVal;
+            
+            // Use reactive preset loading methods
+            // EQ and FX presets are paired (index 0 = LOONIX for both)
+            musicModel.load_eq_preset(index);
+            musicModel.load_fx_preset(index);
+            
+            musicModel.set_active_preset_index(index);
         }
 
-        function resetEQ() {
-            activePresetIndex = -1;
-            musicModel.set_eq_instant_apply();
-            for (var i = 0; i < 10; ++i) {
-                var slider = eqRepeater.itemAt(i).children[0].children[1];
-                slider.value = 0;
-                musicModel.set_eq_band(i, 0);
-            }
-            gainSlider.value = 0;
-        }
-
-        // EQ Sliders (Rectangle)
-        Rectangle {
+        // EQ Section
+        RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 100
-            color: theme.colormap.dspeqbg
-            radius: 4
-            border.color: theme.colormap.dspborder
 
-            RowLayout {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.topMargin: 4
-                anchors.bottomMargin: 4
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 3
+            Item { Layout.fillWidth: true } // spacer left
 
-                // AMP SLIDER
-                ColumnLayout {
-                    Layout.preferredWidth: 28
-                    Layout.fillHeight: true
-                    spacing: 3
+            GridLayout {
+                Layout.preferredHeight: 100
+                columns: 12
+                rows: 3
+                rowSpacing: 5
+                columnSpacing: 3
 
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.fillHeight: true
-                        text: ampSlider.pressed ? (ampSlider.value > 0 ? "+" + ampSlider.value + " dB" : ampSlider.value + " dB") : (ampSlider.value > 0 ? "+" + ampSlider.value : ampSlider.value)
-                        color: ampSlider.pressed ? theme.colormap.dspeqpresetactive : theme.colormap.dspfxsubtext
-                        font.family: sansSerif.name
-                        font.pixelSize: 11
-                    }
+                // Row 1: Numbers (atas) - connected to sliders
+                EqNumberBox { id: numPreamp; displayText: eqPreamp.currentValue > 0 ? "+" + Math.round(eqPreamp.currentValue) : "" + Math.round(eqPreamp.currentValue) }
+                EqNumberBox { id: num31; displayText: Math.round(eq31.currentValue) }
+                EqNumberBox { id: num62; displayText: Math.round(eq62.currentValue) }
+                EqNumberBox { id: num125; displayText: Math.round(eq125.currentValue) }
+                EqNumberBox { id: num250; displayText: Math.round(eq250.currentValue) }
+                EqNumberBox { id: num500; displayText: Math.round(eq500.currentValue) }
+                EqNumberBox { id: num1k; displayText: Math.round(eq1k.currentValue) }
+                EqNumberBox { id: num2k; displayText: Math.round(eq2k.currentValue) }
+                EqNumberBox { id: num4k; displayText: Math.round(eq4k.currentValue) }
+                EqNumberBox { id: num8k; displayText: Math.round(eq8k.currentValue) }
+                EqNumberBox { id: num16k; displayText: Math.round(eq16k.currentValue) }
+                EqNumberBox { id: numFader; displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%" }
 
-                    Slider {
-                        id: ampSlider
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 28
-                        orientation: Qt.Vertical
-                        from: -20
-                        to: 20
-                        value: musicModel.get_preamp_gain()
-                        stepSize: 1
-                        padding: 0
-
-                        onValueChanged: {
-                            if (pressed || hovered) {
-                                musicModel.set_preamp_gain(ampSlider.value);
-                            }
-                        }
-
-                        background: Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: 3
-                            height: parent.height
-                            radius: 1.5
-                            color: theme.colormap.dspeqfaderbg
-                            Rectangle {
-                                width: parent.width
-                                y: ampSlider.visualPosition * parent.height
-                                height: parent.height - y
-                                color: theme.colormap.dspeqfaderslider
-                                radius: 1.5
-                                opacity: 0.6
-                            }
-                        }
-                        handle: Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: ampSlider.topPadding + ampSlider.visualPosition * (ampSlider.availableHeight - height)
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: ampSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
-                            border.color: theme.colormap.dspfxborder
-                            border.width: 1
-                        }
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "PREAMP"
-                        color: theme.colormap.dspfxsubtext
-                        font.family: kodeMono.name
-                        font.pixelSize: 11
-                    }
-
-                    MouseArea {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        acceptedButtons: Qt.NoButton
-                        onWheel: function (wheel) {
-                            let delta = wheel.angleDelta.y > 0 ? 1 : -1;
-                            let newVal = Math.max(-20, Math.min(20, ampSlider.value + delta));
-                            ampSlider.value = newVal;
-                            musicModel.set_preamp_gain(newVal);
-                        }
+                // Row 2: Sliders (tengah) - connected to backend
+                EqSliderBox {
+                    id: eqPreamp
+                    controlValue: musicModel.get_preamp_gain()
+                    onSliderChanged: musicModel.set_preamp_gain(val)
+                }
+                EqSliderBox {
+                    id: eq31
+                    controlValue: musicModel.eq_band_0
+                    onSliderChanged: musicModel.eq_band_0 = val
+                }
+                EqSliderBox {
+                    id: eq62
+                    controlValue: musicModel.eq_band_1
+                    onSliderChanged: musicModel.eq_band_1 = val
+                }
+                EqSliderBox {
+                    id: eq125
+                    controlValue: musicModel.eq_band_2
+                    onSliderChanged: musicModel.eq_band_2 = val
+                }
+                EqSliderBox {
+                    id: eq250
+                    controlValue: musicModel.eq_band_3
+                    onSliderChanged: musicModel.eq_band_3 = val
+                }
+                EqSliderBox {
+                    id: eq500
+                    controlValue: musicModel.eq_band_4
+                    onSliderChanged: musicModel.eq_band_4 = val
+                }
+                EqSliderBox {
+                    id: eq1k
+                    controlValue: musicModel.eq_band_5
+                    onSliderChanged: musicModel.eq_band_5 = val
+                }
+                EqSliderBox {
+                    id: eq2k
+                    controlValue: musicModel.eq_band_6
+                    onSliderChanged: musicModel.eq_band_6 = val
+                }
+                EqSliderBox {
+                    id: eq4k
+                    controlValue: musicModel.eq_band_7
+                    onSliderChanged: musicModel.eq_band_7 = val
+                }
+                EqSliderBox {
+                    id: eq8k
+                    controlValue: musicModel.eq_band_8
+                    onSliderChanged: musicModel.eq_band_8 = val
+                }
+                EqSliderBox {
+                    id: eq16k
+                    controlValue: musicModel.eq_band_9
+                    onSliderChanged: musicModel.eq_band_9 = val
+                }
+                EqSliderBox {
+                    id: eqFader
+                    controlValue: 0
+                    onSliderChanged: {
+                        // Fader macro - adjust all bands
                     }
                 }
 
-                // 10-BAND EQ
-                RowLayout {
-                    Layout.fillHeight: true
-                    spacing: 3
-
-                    Repeater {
-                        id: eqRepeater
-                        model: 10
-                        delegate: Item {
-                            Layout.preferredWidth: 28
-                            Layout.fillHeight: true
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                spacing: 5
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: Math.round(innerSlider.value)
-                                    color: innerSlider.pressed ? theme.colormap.dspeqpresetactive : theme.colormap.dspfxsubtext
-                                    font.family: sansSerif.name
-                                    font.pixelSize: 11
-                                }
-
-                                Slider {
-                                    id: innerSlider
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.fillHeight: true
-                                    Layout.preferredWidth: 20
-                                    orientation: Qt.Vertical
-                                    from: -20
-                                    to: 20
-                                    value: musicModel.get_eq_band_value(index)
-                                    stepSize: 1
-                                    padding: 0
-
-                                    onValueChanged: {
-                                        if (innerSlider.pressed || innerSlider.hovered) {
-                                            musicModel.set_eq_band(index, innerSlider.value);
-                                        }
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: 3
-                                        height: parent.height
-                                        radius: 1.5
-                                        color: theme.colormap.dspeq10bg
-
-                                        Rectangle {
-                                            width: parent.width
-                                            y: innerSlider.visualPosition * parent.height
-                                            height: parent.height - y
-                                            color: theme.colormap.dspeq10slider
-                                            radius: 1.5
-                                            opacity: 0.6
-                                        }
-                                    }
-
-                                    handle: Rectangle {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        y: innerSlider.topPadding + innerSlider.visualPosition * (innerSlider.availableHeight - height)
-                                        width: 10
-                                        height: 10
-                                        radius: 5
-                                        color: innerSlider.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
-                                        border.color: theme.colormap.dspfxborder
-                                        border.width: 1
-                                    }
-                                }
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: dspContent.freqLabels[index]
-                                    color: theme.colormap.dspfxsubtext
-                                    font.family: sansSerif.name
-                                    font.pixelSize: 11
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.NoButton
-                                onWheel: function (wheel) {
-                                    let delta = wheel.angleDelta.y > 0 ? 1 : -1;
-                                    let newVal = Math.max(-20, Math.min(20, innerSlider.value + delta));
-                                    innerSlider.value = newVal;
-                                    musicModel.set_eq_band(index, newVal);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // FADER MACRO
-                ColumnLayout {
-                    Layout.preferredWidth: 28
-                    Layout.fillHeight: true
-                    spacing: 3
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.fillHeight: true
-                        text: gainSlider.pressed ? (Math.round((gainSlider.value + 20) * 2.5) - 100) + "%" : ""
-                        color: gainSlider.pressed ? theme.colormap.dspeqpresetactive : "transparent"
-                        font.family: kodeMono.name
-                        font.pixelSize: 9
-                    }
-
-                    Slider {
-                        id: gainSlider
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 20
-                        orientation: Qt.Vertical
-                        from: -20
-                        to: 20
-                        value: 0
-                        stepSize: 1
-                        padding: 0
-
-                        property real previousValue: 0
-
-                        onPressedChanged: {
-                            if (pressed) {
-                                previousValue = value;
-                            }
-                            if (!pressed && value !== 0) {
-                                Timer.singleShot(100, function () {
-                                    gainSlider.value = 0;
-                                });
-                            }
-                        }
-
-                        onValueChanged: {
-                            if (pressed) {
-                                let delta = value - previousValue;
-                                if (delta !== 0) {
-                                    for (let i = 0; i < 10; ++i) {
-                                        let slider = eqRepeater.itemAt(i).children[0].children[1];
-                                        let newVal = Math.max(-20, Math.min(20, slider.value + delta));
-                                        slider.value = newVal;
-                                        musicModel.set_eq_band(i, newVal);
-                                    }
-                                    previousValue = value;
-                                }
-                            }
-                        }
-
-                        background: Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: 3
-                            height: parent.height
-                            radius: 1.5
-                            color: theme.colormap.dspeqfaderbg
-                            Rectangle {
-                                width: parent.width
-                                y: gainSlider.visualPosition * parent.height
-                                height: parent.height - y
-                                color: theme.colormap.dspeqfaderslider
-                                radius: 1.5
-                                opacity: 0.6
-                            }
-                        }
-                        handle: Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: gainSlider.topPadding + gainSlider.visualPosition * (gainSlider.availableHeight - height)
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: gainSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
-                            border.color: theme.colormap.dspfxborder
-                            border.width: 1
-                        }
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "FADER"
-                        color: theme.colormap.dspfxsubtext
-                        font.family: kodeMono.name
-                        font.pixelSize: 9
-                    }
-
-                    MouseArea {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        acceptedButtons: Qt.NoButton
-                        onWheel: function (wheel) {
-                            let delta = wheel.angleDelta.y > 0 ? 1 : -1;
-                            let newVal = Math.max(-20, Math.min(20, gainSlider.value + delta));
-                            gainSlider.value = newVal;
-                            for (let i = 0; i < 10; ++i) {
-                                let slider = eqRepeater.itemAt(i).children[0].children[1];
-                                slider.value = Math.max(-20, Math.min(20, slider.value + delta));
-                                musicModel.set_eq_band(i, slider.value);
-                            }
-                        }
-                    }
-                }
+                // Row 3: Names (bawah)
+                EqNameBox { nameLabel: "A" }
+                EqNameBox { nameLabel: "31" }
+                EqNameBox { nameLabel: "62" }
+                EqNameBox { nameLabel: "125" }
+                EqNameBox { nameLabel: "250" }
+                EqNameBox { nameLabel: "500" }
+                EqNameBox { nameLabel: "1k" }
+                EqNameBox { nameLabel: "2k" }
+                EqNameBox { nameLabel: "4k" }
+                EqNameBox { nameLabel: "8k" }
+                EqNameBox { nameLabel: "16k" }
+                EqNameBox { nameLabel: "F" }
             }
+
+            Item { Layout.fillWidth: true } // spacer right
         }
 
         // FX Section
@@ -422,6 +213,7 @@ Popup {
                 FxValueBox {
                     enabled: compToggle.isOn && musicModel.dsp_enabled
                     sliderValue: compSlider.currentValue
+                    showDbCompressor: true
                 }
                 FxResetButton {
                     enabled: compToggle.isOn && musicModel.dsp_enabled
@@ -450,7 +242,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
-                    sliderValue: surrSlider.currentValue
+                    sliderValue: surrSlider.currentValue / 2.0
                 }
                 FxResetButton {
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
@@ -479,7 +271,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: monoToggle.isOn && musicModel.dsp_enabled
-                    sliderValue: monoSlider.controlValue
+                    sliderValue: monoSlider.currentValue
                 }
                 FxResetButton {
                     enabled: monoToggle.isOn && musicModel.dsp_enabled
@@ -508,7 +300,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: midToggle.isOn
-                    sliderValue: midSlider.controlValue
+                    sliderValue: midSlider.currentValue
                 }
                 FxResetButton {
                     enabled: midToggle.isOn
@@ -537,7 +329,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: stereoEnhToggle.isOn
-                    sliderValue: stereoSlider.controlValue
+                    sliderValue: stereoSlider.currentValue
                 }
                 FxResetButton {
                     enabled: stereoEnhToggle.isOn
@@ -566,7 +358,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: crossfeedToggle.isOn
-                    sliderValue: crossfeedSlider.controlValue
+                    sliderValue: crossfeedSlider.currentValue
                 }
                 FxResetButton {
                     enabled: crossfeedToggle.isOn
@@ -595,7 +387,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: crystalToggle.isOn
-                    sliderValue: crystalAmtSlider.controlValue
+                    sliderValue: crystalAmtSlider.currentValue
                 }
                 FxResetButton {
                     enabled: crystalToggle.isOn
@@ -621,8 +413,7 @@ Popup {
                     boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
                     Layout.fillWidth: true
                     onModeChanged: mode => {
-                        var freqs = [50, 60, 90, 150];
-                        musicModel.setStdBassCutoff(freqs[mode]);
+                        musicModel.set_bass_mode(mode);
                     }
                 }
 
@@ -659,7 +450,7 @@ Popup {
                 }
                 FxValueBox {
                     enabled: pitchToggle.isOn
-                    sliderValue: pitchSlider.controlValue
+                    sliderValue: pitchSlider.currentValue
                     showSemitones: true
                 }
                 FxResetButton {
@@ -859,7 +650,7 @@ Popup {
         signal sliderChanged(real val)
 
         onControlValueChanged: {
-            if (sld && !sld.pressed) {
+            if (sld) {
                 sld.value = controlValue;
                 rootItem.currentValue = controlValue;
             }
@@ -947,7 +738,7 @@ Popup {
         signal sliderChanged(real val)
 
         onControlValueChanged: {
-            if (svdSld && !svdSld.pressed) {
+            if (svdSld) {
                 svdSld.value = controlValue;
                 rootItem.currentValue = controlValue;
             }
@@ -1064,7 +855,7 @@ Popup {
     // Bass mode selector with state
     component BassModeSelector: Item {
         id: bassModeRoot
-        property int selectedMode: 2
+        property int selectedMode: musicModel.bass_mode
         property bool boxEnabled: true
         signal modeChanged(int mode)
 
@@ -1231,6 +1022,7 @@ Popup {
         property real hzMin: 0.0
         property real hzMax: 10000.0
         property bool showSemitones: false
+        property bool showDbCompressor: false
 
         Layout.preferredWidth: 60
         Layout.preferredHeight: 20
@@ -1241,7 +1033,10 @@ Popup {
         Text {
             anchors.centerIn: parent
             text: {
-                if (showHz) {
+                if (showDbCompressor) {
+                    var db = -60.0 + (sliderValue * 60.0);
+                    return Math.round(db) + " dB";
+                } else if (showHz) {
                     var freq = hzMin + (sliderValue * (hzMax - hzMin));
                     return Math.round(freq) + " Hz";
                 } else if (showSemitones) {
@@ -1381,6 +1176,115 @@ Popup {
                 radius: 5
                 color: theme.colormap.dspfxhandle
             }
+        }
+    }
+
+    // EQ Number Box - row 1 (atas)
+    component EqNumberBox: Rectangle {
+        id: rootItem
+        property string displayText: "0"
+
+        Layout.preferredWidth: 20
+        Layout.fillWidth: false
+        Layout.fillHeight: true
+        color: "transparent"
+
+        Text {
+            anchors.centerIn: parent
+            text: rootItem.displayText
+            font.family: sansSerif.name
+            font.pixelSize: 11
+            color: theme.colormap.dspeqsubtext
+        }
+    }
+
+    // EQ Slider Box - row 2 (tengah)
+    component EqSliderBox: Rectangle {
+        id: rootItem
+        property real controlValue: 0.0
+        property real currentValue: controlValue
+        signal sliderChanged(real val)
+
+        onControlValueChanged: {
+            if (eqSld) {
+                eqSld.value = controlValue;
+                rootItem.currentValue = controlValue;
+            }
+        }
+
+        Layout.preferredWidth: 20
+        Layout.fillWidth: false
+        Layout.preferredHeight: 50
+        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+        color: "transparent"
+
+        Slider {
+            id: eqSld
+            anchors.fill: parent
+            anchors.margins: 0
+            orientation: Qt.Vertical
+            from: -20
+            to: 20
+            stepSize: 1
+            value: rootItem.controlValue
+            onValueChanged: rootItem.currentValue = eqSld.value
+            onMoved: rootItem.sliderChanged(eqSld.value)
+
+            background: Rectangle {
+                anchors.centerIn: parent
+                width: 3
+                height: parent.height
+                radius: 1.5
+                color: theme.colormap.dspeq10bg
+                Rectangle {
+                    width: parent.width
+                    y: eqSld.visualPosition * parent.height
+                    height: parent.height - y
+                    color: theme.colormap.dspeq10slider
+                    radius: 1.5
+                    opacity: 0.6
+                }
+            }
+            handle: Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: eqSld.topPadding + eqSld.visualPosition * (eqSld.availableHeight - height)
+                width: 10
+                height: 10
+                radius: 5
+                color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
+                border.color: theme.colormap.dspfxborder
+                border.width: 1
+            }
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    var step = 1
+                    var delta = wheel.angleDelta.y > 0 ? step : -step
+                    var newVal = Math.max(-20, Math.min(20, eqSld.value + delta))
+                    eqSld.value = newVal
+                    rootItem.sliderChanged(newVal)
+                }
+            }
+        }
+    }
+
+    // EQ Name Box - row 3 (bawah)
+    component EqNameBox: Rectangle {
+        id: rootItem
+        property string nameLabel: ""
+
+        Layout.preferredWidth: 20
+        Layout.fillWidth: false
+        Layout.fillHeight: true
+        color: "transparent"
+
+        Text {
+            anchors.centerIn: parent
+            text: rootItem.nameLabel
+            font.family: sansSerif.name
+            font.pixelSize: 11
+            color: theme.colormap.dspeqsubtext
         }
     }
 }
