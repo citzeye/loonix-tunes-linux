@@ -2,7 +2,7 @@
 
 #![allow(non_snake_case)]
 
-use crate::audio::dsp::dspstd::stdabrepeat::StdABRepeat;
+use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
 use qmetaobject::prelude::*;
 use qmetaobject::QString;
@@ -26,7 +26,7 @@ pub struct PlaybackController {
     pub shuffle_queue: Vec<i32>,
     pub queue_index: usize,
 
-    pub abrepeat: StdABRepeat,
+    pub abrepeat: ABRepeat,
     pub tick_counter: u32,
 }
 
@@ -46,7 +46,7 @@ impl Default for PlaybackController {
             loop_active: false,
             shuffle_queue: Vec::new(),
             queue_index: 0,
-            abrepeat: StdABRepeat::default(),
+            abrepeat: ABRepeat::default(),
             tick_counter: 0,
         }
     }
@@ -68,7 +68,7 @@ impl PlaybackController {
             loop_active: false,
             shuffle_queue: Vec::new(),
             queue_index: 0,
-            abrepeat: StdABRepeat::default(),
+            abrepeat: ABRepeat::default(),
             tick_counter: 0,
         }
     }

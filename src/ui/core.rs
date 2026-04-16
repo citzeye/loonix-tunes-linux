@@ -5,9 +5,9 @@
 use crate::audio::audiooutput::AudioOutput;
 use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem};
 
-use crate::audio::dsp::dspstd::stdabrepeat::StdABRepeat;
-use crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_amount_arc;
-use crate::audio::dsp::dspstd::stdpitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
+use crate::audio::dsp::abrepeat::ABRepeat;
+use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
+use crate::audio::dsp::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
 use crate::audio::dsp::DspSettings;
 use crate::core::dspconfig::{DspConfigManager, DspStateView};
 use crate::core::library::LibraryManager;
@@ -90,7 +90,7 @@ pub struct MusicModel {
     #[allow(dead_code)]
     pub(crate) queue_index: usize,
     pub(crate) loop_active: bool,
-    pub(crate) abrepeat: StdABRepeat,
+    pub(crate) abrepeat: ABRepeat,
     pub(crate) tick_counter: u32,
 
     pub(crate) output: AudioOutput,
@@ -478,30 +478,30 @@ impl MusicModel {
             user_eq_names: saved_config.user_preset_names.clone(),
             user_eq_gains: saved_config.user_preset_gains,
             user_eq_macro: saved_config.user_preset_macro,
-            eq_presets: crate::audio::config::AppConfig::load_eq_presets(),
-            fx_presets: crate::audio::config::AppConfig::load_fx_presets(),
+            eq_presets: crate::audio::config::AppConfig::get_eq_presets(),
+            fx_presets: crate::audio::config::AppConfig::get_fx_presets(),
             compressor_active: saved_config.compressor_enabled,
             eq_bands: saved_config.eq_bands,
             ..Default::default()
         };
 
         // Initialize compressor atomics from saved config
-        crate::audio::dsp::dspstd::stdcompressor::get_compressor_enabled_arc().store(
+        crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
             saved_config.compressor_enabled,
             std::sync::atomic::Ordering::Relaxed,
         );
-        crate::audio::dsp::dspstd::stdcompressor::get_compressor_threshold_arc().store(
+        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
             saved_config.compressor_threshold.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
 
         // Initialize pitch ratio atomic from saved config
         let pitch_ratio = 2.0_f32.powf(saved_config.pitch_semitones / 12.0);
-        crate::audio::dsp::dspstd::stdpitchshifter::get_pitch_ratio_arc()
+        crate::audio::dsp::pitchshifter::get_pitch_ratio_arc()
             .store(pitch_ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
 
         // Initialize reverb preset ARC from saved config
-        let reverb_arc = crate::audio::dsp::dspstd::stdreverb::get_reverb_preset_arc();
+        let reverb_arc = crate::audio::dsp::reverb::get_reverb_preset_arc();
         reverb_arc.store(
             saved_config.reverb_preset,
             std::sync::atomic::Ordering::Relaxed,
@@ -541,19 +541,19 @@ impl MusicModel {
         }
 
         // Initialize normalizer smoothing atomic
-        crate::audio::dsp::dspstd::stdnormalizer::get_normalizer_smoothing_arc().store(
+        crate::audio::dsp::normalizer::get_normalizer_smoothing_arc().store(
             saved_config.normalizer_smoothing.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
 
         // Initialize EQ enabled atomic from saved config
-        crate::audio::dsp::dspstd::stdeq::get_eq_enabled_arc().store(
+        crate::audio::dsp::eq::get_eq_enabled_arc().store(
             if saved_config.eq_enabled { 1 } else { 0 },
             std::sync::atomic::Ordering::Relaxed,
         );
 
         // Initialize EQ bands atomics from saved config
-        let eq_arc = crate::audio::dsp::dspstd::stdeq::get_eq_bands_arc();
+        let eq_arc = crate::audio::dsp::eq::get_eq_bands_arc();
         for i in 0..10 {
             eq_arc[i].store(
                 saved_config.eq_bands[i].to_bits(),
@@ -747,7 +747,7 @@ impl MusicModel {
                         if !cfg.locked_folders.contains(&new_index) {
                             cfg.locked_folders.push(new_index);
                         }
-                        cfg.save();
+                        let _ = cfg.save();
                     }
                 }
 
@@ -995,7 +995,7 @@ impl MusicModel {
                 cfg.custom_folders = self.custom_folders.clone();
                 cfg.volume = self.volume as f64;
                 cfg.balance = self.balance as f64;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -1094,7 +1094,7 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.favorites = self.favorites.clone();
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -1112,7 +1112,7 @@ impl MusicModel {
                 if let Some(ref config) = &self.saved_config {
                     if let Ok(mut cfg) = config.lock() {
                         cfg.custom_folders = self.custom_folders.clone();
-                        cfg.save();
+                        let _ = cfg.save();
                     }
                 }
                 self.switch_to_folder(new_path);
@@ -1236,7 +1236,7 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.custom_folders = self.custom_folders.clone();
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -1274,7 +1274,7 @@ impl MusicModel {
                     cfg.custom_folders = self.custom_folders.clone();
                     cfg.volume = self.volume as f64;
                     cfg.balance = self.balance as f64;
-                    cfg.save();
+                    let _ = cfg.save();
                 }
             }
             self.folder_lock_version += 1;
@@ -1595,7 +1595,7 @@ impl MusicModel {
             _ => 0,
         };
 
-        crate::audio::dsp::dspstd::stdreverb::get_reverb_preset_arc()
+        crate::audio::dsp::reverb::get_reverb_preset_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_preset = preset_id;
@@ -1619,7 +1619,7 @@ impl MusicModel {
             0
         };
 
-        crate::audio::dsp::dspstd::stdreverb::get_reverb_preset_arc()
+        crate::audio::dsp::reverb::get_reverb_preset_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_preset = preset_id;
@@ -1638,7 +1638,7 @@ impl MusicModel {
         let val = val.clamp(0.0, 1.0);
         self.reverb_room_size = val;
         self.reverb_params_changed();
-        crate::audio::dsp::dspstd::stdreverb::get_reverb_room_size_arc()
+        crate::audio::dsp::reverb::get_reverb_room_size_arc()
             .store((val as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.save_dsp_config();
     }
@@ -1647,7 +1647,7 @@ impl MusicModel {
         let val = val.clamp(0.0, 1.0);
         self.reverb_damp = val;
         self.reverb_params_changed();
-        crate::audio::dsp::dspstd::stdreverb::get_reverb_damp_arc()
+        crate::audio::dsp::reverb::get_reverb_damp_arc()
             .store((val as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1660,19 +1660,19 @@ impl MusicModel {
         if self.bass_magic_active {
             self.bass_gain = 5.5;
             self.bass_cutoff = 85.0;
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_gain_arc()
+            crate::audio::dsp::bassbooster::get_bass_gain_arc()
                 .store(5.5_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_freq_arc()
+            crate::audio::dsp::bassbooster::get_bass_freq_arc()
                 .store(85.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_q_arc()
+            crate::audio::dsp::bassbooster::get_bass_q_arc()
                 .store(0.7_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
         } else {
             self.bass_gain = 0.0;
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_gain_arc()
+            crate::audio::dsp::bassbooster::get_bass_gain_arc()
                 .store(0.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        crate::audio::dsp::dspstd::stdbassbooster::get_bass_enabled_arc()
+        crate::audio::dsp::bassbooster::get_bass_enabled_arc()
             .store(self.bass_magic_active, std::sync::atomic::Ordering::Relaxed);
 
         self.bass_params_changed();
@@ -1684,7 +1684,7 @@ impl MusicModel {
         self.bass_params_changed();
 
         if self.bass_magic_active {
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_gain_arc().store(
+            crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
                 (self.bass_gain as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
@@ -1698,7 +1698,7 @@ impl MusicModel {
         self.bass_params_changed();
 
         if self.bass_magic_active {
-            crate::audio::dsp::dspstd::stdbassbooster::get_bass_freq_arc().store(
+            crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
                 (self.bass_cutoff as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
@@ -1713,17 +1713,17 @@ impl MusicModel {
 
         if self.surround_magic_active {
             self.surround_width = 1.3;
-            crate::audio::dsp::dspstd::stdsurround::get_surround_width_arc()
+            crate::audio::dsp::surround::get_surround_width_arc()
                 .store(1.3_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::dspstd::stdsurround::get_surround_bass_safe_arc()
+            crate::audio::dsp::surround::get_surround_bass_safe_arc()
                 .store(1u32, std::sync::atomic::Ordering::Relaxed);
         } else {
             self.surround_width = 1.0;
-            crate::audio::dsp::dspstd::stdsurround::get_surround_width_arc()
+            crate::audio::dsp::surround::get_surround_width_arc()
                 .store(1.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        crate::audio::dsp::dspstd::stdsurround::get_surround_enabled_arc().store(
+        crate::audio::dsp::surround::get_surround_enabled_arc().store(
             self.surround_magic_active,
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1738,11 +1738,11 @@ impl MusicModel {
         if !self.surround_magic_active {
             self.surround_magic_active = true;
             self.surround_magic_changed();
-            crate::audio::dsp::dspstd::stdsurround::get_surround_enabled_arc()
+            crate::audio::dsp::surround::get_surround_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed);
         }
 
-        crate::audio::dsp::dspstd::stdsurround::get_surround_width_arc().store(
+        crate::audio::dsp::surround::get_surround_width_arc().store(
             (self.surround_width as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1758,16 +1758,16 @@ impl MusicModel {
             if self.crystal_amount <= 0.0 {
                 self.crystal_amount = 0.2;
             }
-            crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_amount_arc().store(
+            crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
                 (self.crystal_amount as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
         } else {
-            crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_amount_arc()
+            crate::audio::dsp::crystalizer::get_crystal_amount_arc()
                 .store(0.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_enabled_arc().store(
+        crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
             self.crystal_magic_active,
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1779,7 +1779,7 @@ impl MusicModel {
         self.compressor_active = !self.compressor_active;
         self.compressor_changed();
 
-        crate::audio::dsp::dspstd::stdcompressor::get_compressor_enabled_arc()
+        crate::audio::dsp::compressor::get_compressor_enabled_arc()
             .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1820,7 +1820,7 @@ impl MusicModel {
 
     pub fn setStdCompressorThreshold(&mut self, val: f64) {
         let threshold_db = -60.0 + (val * 60.0);
-        crate::audio::dsp::dspstd::stdcompressor::get_compressor_threshold_arc().store(
+        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
             (threshold_db as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1829,7 +1829,7 @@ impl MusicModel {
     }
 
     pub fn getStdCompressorThreshold(&self) -> f64 {
-        let bits = crate::audio::dsp::dspstd::stdcompressor::get_compressor_threshold_arc()
+        let bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
             .load(std::sync::atomic::Ordering::Relaxed);
         let threshold_db = f32::from_bits(bits);
         ((threshold_db + 60.0) / 60.0) as f64
@@ -1839,7 +1839,7 @@ impl MusicModel {
         self.pitch_active = !self.pitch_active;
         self.pitch_changed();
 
-        crate::audio::dsp::dspstd::stdpitchshifter::get_pitch_enabled_arc()
+        crate::audio::dsp::pitchshifter::get_pitch_enabled_arc()
             .store(self.pitch_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1861,7 +1861,7 @@ impl MusicModel {
         self.middle_active = !self.middle_active;
         self.middle_changed();
 
-        crate::audio::dsp::dspstd::stdmiddleclarity::get_middle_enabled_arc()
+        crate::audio::dsp::middleclarity::get_middle_enabled_arc()
             .store(self.middle_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1870,7 +1870,7 @@ impl MusicModel {
     pub fn setStdMiddleClarityAmount(&mut self, val: f64) {
         self.middle_amount = val.max(0.0).min(1.0);
         self.middle_amount_changed();
-        crate::audio::dsp::dspstd::stdmiddleclarity::get_middle_amount_arc().store(
+        crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
             (self.middle_amount as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1881,7 +1881,7 @@ impl MusicModel {
         self.mono_active = !self.mono_active;
         self.mono_changed();
 
-        crate::audio::dsp::dspstd::stdstereowidth::get_mono_enabled_arc()
+        crate::audio::dsp::stereowidth::get_mono_enabled_arc()
             .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1890,7 +1890,7 @@ impl MusicModel {
     pub fn setStdStereoWidthAmount(&mut self, val: f64) {
         self.mono_width = val.max(0.0).min(1.0);
         self.mono_width_changed();
-        crate::audio::dsp::dspstd::stdstereowidth::get_mono_width_arc().store(
+        crate::audio::dsp::stereowidth::get_mono_width_arc().store(
             (self.mono_width as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1902,11 +1902,11 @@ impl MusicModel {
         self.stereo_changed();
 
         // Update enabled atomic
-        crate::audio::dsp::dspstd::stdstereoenhance::get_stereo_enabled_arc()
+        crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
             .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
 
         // Update amount atomic
-        crate::audio::dsp::dspstd::stdstereoenhance::get_stereo_amount_arc().store(
+        crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
             (self.stereo_amount as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -1917,7 +1917,7 @@ impl MusicModel {
     pub fn setStdStereoEnhanceAmount(&mut self, val: f64) {
         self.stereo_amount = val.max(0.0).min(1.0);
         self.stereo_amount_changed();
-        let arc = crate::audio::dsp::dspstd::stdstereoenhance::get_stereo_amount_arc();
+        let arc = crate::audio::dsp::stereoenhance::get_stereo_amount_arc();
         arc.store(
             (self.stereo_amount as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
@@ -1930,7 +1930,7 @@ impl MusicModel {
         self.crossfeed_active = !self.crossfeed_active;
         self.crossfeed_changed();
 
-        crate::audio::dsp::dspstd::stdcrossfeed::get_crossfeed_enabled_arc()
+        crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc()
             .store(self.crossfeed_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_dsp_config();
@@ -1939,7 +1939,7 @@ impl MusicModel {
     pub fn setStdCrossfeedAmount(&mut self, val: f64) {
         self.crossfeed_amount = val.max(0.0).min(1.0);
         self.crossfeed_amount_changed();
-        crate::audio::dsp::dspstd::stdcrossfeed::get_crossfeed_amount_arc().store(
+        crate::audio::dsp::crossfeed::get_crossfeed_amount_arc().store(
             (self.crossfeed_amount as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -2050,7 +2050,7 @@ impl MusicModel {
     pub fn toggleStdLimiter(&mut self) {
         self.limiter_active = !self.limiter_active;
         self.limiter_changed();
-        crate::audio::dsp::limiter::get_limiter_enabled_arc()
+        crate::audio::dsp::get_limiter_enabled_arc()
             .store(self.limiter_active, std::sync::atomic::Ordering::Relaxed);
         self.save_dsp_config();
     }
@@ -2068,8 +2068,7 @@ impl MusicModel {
     }
 
     pub fn get_limiter_enabled(&self) -> bool {
-        crate::audio::dsp::limiter::get_limiter_enabled_arc()
-            .load(std::sync::atomic::Ordering::Relaxed)
+        crate::audio::dsp::get_limiter_enabled_arc().load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub fn set_normalizer_target_lufs(&mut self, val: f64) {
@@ -2087,7 +2086,7 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.normalizer_target_lufs = clamped as f32;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -2107,7 +2106,7 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.normalizer_true_peak_dbtp = clamped as f32;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -2127,7 +2126,7 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.normalizer_max_gain_db = clamped as f32;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -2138,7 +2137,7 @@ impl MusicModel {
         self.normalizer_params_changed();
 
         // Update the shared atomic (lock-free, read by audio callback)
-        crate::audio::dsp::dspstd::stdnormalizer::get_normalizer_smoothing_arc().store(
+        crate::audio::dsp::normalizer::get_normalizer_smoothing_arc().store(
             (clamped as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -2146,13 +2145,13 @@ impl MusicModel {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.normalizer_smoothing = clamped as f32;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
 
     pub fn get_normalizer_smoothing_label(&self) -> QString {
-        let label = crate::audio::dsp::dspstd::stdnormalizer::SmoothingPreset::from_factor(
+        let label = crate::audio::dsp::normalizer::SmoothingPreset::from_factor(
             self.normalizer_smoothing as f32,
         );
         QString::from(label)
@@ -2197,7 +2196,7 @@ impl MusicModel {
             self.eq_bands[band] = gain as f32;
 
             // Lock-free: push directly to atomic (no chain rebuild)
-            let arc = crate::audio::dsp::dspstd::stdeq::get_eq_bands_arc();
+            let arc = crate::audio::dsp::eq::get_eq_bands_arc();
             arc[band].store(
                 (gain as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
@@ -2211,7 +2210,7 @@ impl MusicModel {
     pub fn set_eq_enabled(&mut self, enabled: bool) {
         self.eq_enabled = enabled;
 
-        let arc = crate::audio::dsp::dspstd::stdeq::get_eq_enabled_arc();
+        let arc = crate::audio::dsp::eq::get_eq_enabled_arc();
         arc.store(
             if enabled { 1 } else { 0 },
             std::sync::atomic::Ordering::Relaxed,
@@ -2245,14 +2244,14 @@ impl MusicModel {
     }
 
     pub fn get_preamp_gain(&self) -> f64 {
-        let bits = crate::audio::dsp::dspstd::stdeq::get_eq_preamp_arc()
-            .load(std::sync::atomic::Ordering::Relaxed);
+        let bits =
+            crate::audio::dsp::eq::get_eq_preamp_arc().load(std::sync::atomic::Ordering::Relaxed);
         f32::from_bits(bits) as f64
     }
 
     pub fn set_preamp_gain(&mut self, gain: f64) {
         let clamped = gain.clamp(-20.0, 20.0);
-        crate::audio::dsp::dspstd::stdeq::get_eq_preamp_arc().store(
+        crate::audio::dsp::eq::get_eq_preamp_arc().store(
             (clamped as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -2391,7 +2390,7 @@ impl MusicModel {
     fn get_dsp_state_view(&self) -> DspStateView {
         DspStateView {
             dsp_enabled: self.dsp_enabled,
-            eq_bands: self.eq_bands,
+            dsp_bands: self.eq_bands,
             eq_enabled: self.eq_enabled,
             active_preset_index: self.active_preset_index,
             bass_magic_active: self.bass_magic_active,
@@ -2399,7 +2398,7 @@ impl MusicModel {
             bass_cutoff: self.bass_cutoff,
             crystal_magic_active: self.crystal_magic_active,
             crystal_amount: self.crystal_amount,
-            crystal_freq: self.crystal_freq,
+            crystal_frdsp: self.crystal_freq,
             surround_magic_active: self.surround_magic_active,
             surround_width: self.surround_width,
             mono_active: self.mono_active,
@@ -2439,7 +2438,7 @@ impl MusicModel {
         let freq = freq.max(2000.0).min(12000.0);
         self.crystal_freq = freq;
         self.crystal_magic_changed();
-        crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_freq_arc().store(
+        crate::audio::dsp::crystalizer::get_crystal_freq_arc().store(
             (freq as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
@@ -2458,9 +2457,9 @@ impl MusicModel {
 
         // Emit signals for QML UI
         let state_val = match self.abrepeat.state() {
-            crate::audio::dsp::dspstd::stdabrepeat::StdABRepeatState::Off => 0,
-            crate::audio::dsp::dspstd::stdabrepeat::StdABRepeatState::ASet => 1,
-            crate::audio::dsp::dspstd::stdabrepeat::StdABRepeatState::Active => 2,
+            crate::audio::dsp::abrepeat::ABRepeatState::Off => 0,
+            crate::audio::dsp::abrepeat::ABRepeatState::ASet => 1,
+            crate::audio::dsp::abrepeat::ABRepeatState::Active => 2,
         };
         self.ab_state = state_val;
         self.ab_state_changed();
@@ -2680,9 +2679,8 @@ impl MusicModel {
                 cfg.middle_amount = self.middle_amount as f32;
                 cfg.reverb_preset = self.reverb_preset;
                 cfg.compressor_enabled = self.compressor_active;
-                let threshold_bits =
-                    crate::audio::dsp::dspstd::stdcompressor::get_compressor_threshold_arc()
-                        .load(std::sync::atomic::Ordering::Relaxed);
+                let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
+                    .load(std::sync::atomic::Ordering::Relaxed);
                 cfg.compressor_threshold = f32::from_bits(threshold_bits);
 
                 // Save current track only (not position)
@@ -2693,7 +2691,7 @@ impl MusicModel {
                         self.display_list[self.current_index as usize].path.clone();
                 }
 
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -2705,7 +2703,7 @@ impl MusicModel {
                 cfg.window_y = y;
                 cfg.window_width = width;
                 cfg.window_height = height;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -2749,7 +2747,7 @@ impl MusicModel {
                 }
 
                 // Save the config
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }

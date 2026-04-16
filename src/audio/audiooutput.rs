@@ -1,22 +1,23 @@
 /* --- LOONIX-TUNES src/audio/audiooutput.rs --- */
 
-use crate::audio::dsp::dspstd::stdcrystalizer::get_crystal_amount_arc;
+use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
 use libpulse_binding as pa;
+use libpulse_binding::def::BufferAttr;
+use libpulse_binding::sample::{Format, Spec};
+use libpulse_binding::stream::Direction;
 use libpulse_simple_binding as pa_simple;
-use pa::sample::{Format, Spec};
-use pa::stream::Direction;
 use ringbuf::traits::{Consumer, Observer};
 use ringbuf::HeapCons;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 use thread_priority::{set_current_thread_priority, ThreadPriority};
 
 // Audio Commands for the background thread (Lock-Free Communication)
-// Thread owns: PulseAudio handle, Ring Buffer Consumer, DSP chain, all processing state
 pub enum AudioCommand {
     Play {
         handle: pa_simple::Simple,
@@ -32,16 +33,28 @@ pub enum AudioCommand {
         dsp_chain: DspChain,
         dsp_enabled: Arc<AtomicBool>,
         normalizer_enabled: Arc<AtomicBool>,
-        normalizer: Arc<Mutex<crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer>>,
+        normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
+        device_name: Option<String>,
     },
     Stop,
     Flush,
+    ChangeDevice {
+        device_name: Option<String>,
+        result_tx: std::sync::mpsc::Sender<Result<(), String>>,
+    },
     Exit,
 }
 
-// Helper to convert f32 to u32 bits for atomic storage
+// Audio device info for enumeration
+#[derive(Debug, Clone)]
+pub struct AudioDevice {
+    pub name: String,
+    pub description: String,
+    pub index: u32,
+}
+
 fn f32_to_bits(f: f32) -> u32 {
     f.to_bits()
 }
@@ -50,74 +63,48 @@ fn bits_to_f32(bits: u32) -> f32 {
     f32::from_bits(bits)
 }
 
-// Constants for audio processing
 const BUFFER_EMPTY_THRESHOLD: u32 = 100;
 
-// Get list of available output devices
-pub fn getAvailableDevices() -> Vec<String> {
-    // TODO: Implement with libpulse-binding
-    vec!["Default".to_string()]
-}
+// Latency target: 60ms for tlength
+const TARGET_LATENCY_MS: u32 = 60;
+const TARGET_MINREQ_MS: u32 = 15;
 
 pub struct AudioOutput {
     is_running: Arc<AtomicBool>,
     is_started: Arc<AtomicBool>,
     should_stop: Arc<AtomicBool>,
-    // FIX #1: Use AtomicU32 for volume/balance (lock-free)
     volume_bits: Arc<AtomicU32>,
     balance_bits: Arc<AtomicU32>,
-    // Mode is rarely changed, keep Mutex but avoid locking in callback if possible
-    // For now, we keep Mutex but minimize locking
-    pub mode_shared: Arc<Mutex<OutputMode>>,
+    mode_shared: Arc<Mutex<OutputMode>>,
     pub mode: OutputMode,
-    // Command channel to background thread (Lock-Free Actor Pattern)
     command_tx: mpsc::Sender<AudioCommand>,
-    // FIX: Thread handle for proper cleanup lifecycle
     thread_handle: Option<thread::JoinHandle<()>>,
-    // DSP Chain (lock-free via AtomicPtr)
     dsp_chain: DspChain,
-    // True bypass switch for DSP (Send/Return)
     pub dsp_enabled: Arc<AtomicBool>,
-    // Sample counter for audio clock
     samples_played: Arc<AtomicU64>,
     sample_rate: u32,
-    // Ring buffer capacity (known at creation)
     ring_buffer_capacity: usize,
-    // Callback starvation counter for end-of-track detection
     empty_callback_count: Arc<AtomicU32>,
-    // Flag to reset samples on loop
     loop_reset: Arc<AtomicBool>,
-    // Consumer for buffer access (owned by callback, not shared)
     _consumer: Option<HeapCons<f32>>,
-    // Clear request flag - set by engine, cleared by audio callback
     clear_request: Arc<AtomicBool>,
-    // Fade-in remaining samples after seek complete (25ms @ 48kHz = 2400 samples stereo)
     seek_fade_remaining: Arc<AtomicU32>,
-    // Seek mode - unconditional silence when true
     seek_mode: Arc<AtomicBool>,
-    // Pause mode - outputs silence but keeps buffer intact for resume
     paused: Arc<AtomicBool>,
-    // Flush requested flag - set by engine, cleared by audio thread after draining
     flush_requested: Arc<AtomicBool>,
-    // Resume pending counter - frames to wait before unmuting
     resume_frame_counter: Arc<AtomicU32>,
-    // Shadow Preset: shared handle to consumer for crossfade on track change
     shared_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
-    // Old track consumer: holds old track's consumer during 50ms overlap
     old_track_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
-    // Exclusive mode (PipeWire bypass on Linux)
-    // Normalizer enabled (EBU R128 loudness normalization)
     normalizer_enabled: Arc<AtomicBool>,
-    // Normalizer processor (EBU R128) - wrapped in Arc<Mutex> for thread-safe mutable access
-    normalizer: Arc<Mutex<crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer>>,
-    // Normalizer buffers (pre-allocated, zero-alloc in callback)
+    normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
     norm_input: Vec<f32>,
     norm_output: Vec<f32>,
-    // Selected audio device (None = use default)
     selected_device_index: Arc<Mutex<Option<usize>>>,
-    // Bluetooth detection (PulseAudio-based)
-    #[allow(dead_code)]
     is_bluetooth_detected: Arc<AtomicBool>,
+    switching: Arc<AtomicBool>,
+    reconnecting: Arc<AtomicBool>,
+    current_device_name: Arc<Mutex<Option<String>>>,
+    available_devices: Arc<Mutex<Vec<AudioDevice>>>,
 }
 
 impl Default for AudioOutput {
@@ -128,10 +115,8 @@ impl Default for AudioOutput {
 
 impl AudioOutput {
     pub fn new() -> Self {
-        // Create command channel for background thread
         let (tx, rx) = mpsc::channel();
 
-        // Spawn the audio background thread and STORE the handle
         let thread_handle = thread::Builder::new()
             .name("pulseaudio".to_string())
             .spawn(move || {
@@ -167,12 +152,16 @@ impl AudioOutput {
             old_track_consumer: Arc::new(Mutex::new(None)),
             normalizer_enabled: Arc::new(AtomicBool::new(false)),
             normalizer: Arc::new(Mutex::new(
-                crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer::new(true, -14.0),
+                crate::audio::dsp::normalizer::AudioNormalizer::new(true, -14.0),
             )),
             norm_input: vec![0.0f32; 16384],
             norm_output: vec![0.0f32; 16384],
             selected_device_index: Arc::new(Mutex::new(None)),
             is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
+            switching: Arc::new(AtomicBool::new(false)),
+            reconnecting: Arc::new(AtomicBool::new(false)),
+            current_device_name: Arc::new(Mutex::new(None)),
+            available_devices: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -210,10 +199,7 @@ impl AudioOutput {
         self.samples_played.store(samples, Ordering::SeqCst);
     }
 
-    // Clear ring buffer - use atomic flag (synchronized, NOT via channel)
-    // This works even when push_loop_owned() is running
     pub fn clear_buffer(&self) {
-        // Set flush flag - push_loop_owned() will check this in its loop
         self.flush_requested.store(true, Ordering::SeqCst);
     }
 
@@ -226,7 +212,6 @@ impl AudioOutput {
         true
     }
 
-    // Legacy alias
     pub fn is_ring_buffer_empty(&self) -> bool {
         self.is_buffer_empty()
     }
@@ -235,13 +220,9 @@ impl AudioOutput {
         self.empty_callback_count.load(Ordering::Relaxed) >= BUFFER_EMPTY_THRESHOLD
     }
 
-    // Get ring buffer length (samples available to play)
     pub fn get_buffer_len(&self) -> usize {
         if let Ok(cons) = self.shared_consumer.lock() {
             if let Some(ref c) = *cons {
-                // Use known capacity + is_empty check
-                // If not empty, assume full capacity (conservative estimate)
-                // This is accurate enough for the hysteresis check
                 if !c.is_empty() {
                     return self.ring_buffer_capacity;
                 }
@@ -251,7 +232,6 @@ impl AudioOutput {
         0
     }
 
-    // Check if ring buffer has data (for FIX 5 - buffer guarantee)
     pub fn is_ring_buffer_ready(&self) -> bool {
         if let Ok(cons) = self.shared_consumer.lock() {
             if let Some(ref c) = *cons {
@@ -261,25 +241,20 @@ impl AudioOutput {
         false
     }
 
-    // Check if in seek mode
     pub fn is_seek_mode(&self) -> bool {
         self.seek_mode.load(Ordering::SeqCst)
     }
 
-    // Reset DSP chain (clear effect tails)
     pub fn reset_dsp(&self) {
         self.dsp_chain.reset();
     }
 
-    // Update DSP chain with new settings
     pub fn update_dsp(&mut self, _settings: &crate::audio::dsp::DspSettings) {
         let rack = crate::audio::dsp::DspRack::build_rack(false);
         self.dsp_chain.swap_chain(rack);
     }
 
-    // Fungsi sinkronisasi saat mode berubah di core.rs
     pub fn update_mode_internal(&self) {
-        // Only lock when actually changing mode (rare)
         if let Ok(mut m) = self.mode_shared.lock() {
             *m = self.mode;
         }
@@ -313,16 +288,25 @@ impl AudioOutput {
         }
     }
 
-    pub fn get_normalizer_arc(
-        &self,
-    ) -> Arc<Mutex<crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer>> {
+    pub fn get_normalizer_arc(&self) -> Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>> {
         self.normalizer.clone()
     }
 
-    #[allow(deprecated)]
+    pub fn get_available_devices(&self) -> Vec<AudioDevice> {
+        self.available_devices
+            .lock()
+            .ok()
+            .map(|d| d.clone())
+            .unwrap_or_default()
+    }
+
     pub fn get_output_devices(&self) -> Vec<String> {
-        // TODO: Implement with libpulse-binding
-        vec!["Default".to_string()]
+        if let Ok(devs) = self.available_devices.lock() {
+            if !devs.is_empty() {
+                return devs.iter().map(|d| d.description.clone()).collect();
+            }
+        }
+        vec!["Default Output".to_string()]
     }
 
     pub fn set_output_device(&self, index: usize) {
@@ -339,16 +323,69 @@ impl AudioOutput {
     }
 
     pub fn select_device(&mut self, device_name: String) {
-        // TODO: Implement with libpulse-binding device enumeration
-        let _ = device_name;
+        if let Ok(mut selected) = self.selected_device_index.lock() {
+            *selected = Some(device_name.parse().unwrap_or(0));
+        }
     }
 
-    pub fn selectDevice(&mut self, _deviceName: String) {
-        // TODO: Implement with libpulse-binding
+    pub fn selectDevice(&mut self, deviceName: String) {
+        self.select_device(deviceName);
+    }
+
+    pub fn change_device(&self, device_name: Option<String>) -> Result<(), String> {
+        let (tx, rx) = mpsc::channel();
+        self.switching.store(true, Ordering::SeqCst);
+
+        self.command_tx
+            .send(AudioCommand::ChangeDevice {
+                device_name,
+                result_tx: tx,
+            })
+            .map_err(|e| format!("Failed to send device change command: {}", e))?;
+
+        rx.recv()
+            .map_err(|e| format!("Device change failed: {}", e))?
+    }
+
+    pub fn get_current_device_name(&self) -> Option<String> {
+        self.current_device_name.lock().ok()?.clone()
+    }
+
+    fn create_pa_simple_with_latency(
+        device_name: Option<&str>,
+        sample_rate: u32,
+    ) -> Result<pa_simple::Simple, String> {
+        let spec = Spec {
+            format: Format::F32le,
+            channels: 2,
+            rate: sample_rate,
+        };
+
+        let latency_bytes = (sample_rate * 2 * 4 * TARGET_LATENCY_MS / 1000) as u32;
+        let minreq_bytes = (sample_rate * 2 * 4 * TARGET_MINREQ_MS / 1000) as u32;
+
+        let buffer_attr = BufferAttr {
+            maxlength: u32::MAX,
+            tlength: latency_bytes,
+            prebuf: 0,
+            minreq: minreq_bytes,
+            fragsize: minreq_bytes / 2,
+        };
+
+        pa_simple::Simple::new(
+            None,
+            "loonix-tunes",
+            Direction::Playback,
+            device_name,
+            "Music",
+            &spec,
+            None,
+            Some(&buffer_attr),
+        )
+        .map_err(|e| format!("pa_simple::new failed: {}", e))
     }
 
     pub fn start(&mut self, consumer: HeapCons<f32>, clear_old: bool, buffer_capacity: usize) {
-        // Clear old track consumer if this is a fresh start
         if clear_old {
             if let Ok(mut xf) = self.old_track_consumer.lock() {
                 *xf = None;
@@ -358,27 +395,19 @@ impl AudioOutput {
 
         self.ring_buffer_capacity = buffer_capacity;
 
-        // Create PulseAudio Simple stream with FLOAT32 format
-        let spec = Spec {
-            format: Format::F32le,
-            channels: 2,
-            rate: self.sample_rate,
+        let device_name = {
+            let selected = self.selected_device_index.lock().ok();
+            selected.and_then(|s| s.map(|_| None::<&str>)).flatten()
         };
 
-        match pa_simple::Simple::new(
-            None,
-            "loonix-tunes",
-            Direction::Playback,
-            None,
-            "playback",
-            &spec,
-            None,
-            None,
-        ) {
+        match Self::create_pa_simple_with_latency(device_name, self.sample_rate) {
             Ok(handle) => {
-                // Use the should_stop flag from the struct, not a local one
                 self.should_stop.store(false, Ordering::SeqCst);
                 self.is_running.store(true, Ordering::SeqCst);
+
+                if let Ok(mut current) = self.current_device_name.lock() {
+                    *current = device_name.map(|s| s.to_string());
+                }
 
                 let _ = self.command_tx.send(AudioCommand::Play {
                     handle,
@@ -397,12 +426,13 @@ impl AudioOutput {
                     normalizer: self.normalizer.clone(),
                     samples_played: self.samples_played.clone(),
                     empty_callback_count: self.empty_callback_count.clone(),
+                    device_name: device_name.map(|s| s.to_string()),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
             }
-            Err(_) => {
-                // Failed to create PulseAudio stream
+            Err(e) => {
+                eprintln!("[AudioOutput] Failed to create PulseAudio stream: {}", e);
             }
         }
     }
@@ -410,18 +440,13 @@ impl AudioOutput {
     pub fn stop(&self) {
         self.is_running.store(false, Ordering::SeqCst);
         self.should_stop.store(true, Ordering::SeqCst);
-
-        // Reset state for clean transition
         self.seek_mode.store(false, Ordering::SeqCst);
         self.seek_fade_remaining.store(0, Ordering::SeqCst);
         self.resume_frame_counter.store(0, Ordering::SeqCst);
-
-        // Reset filter state to prevent pop on next track
         self.reset_dsp();
     }
 
     pub fn start_consumers(&self) {
-        // PHASE 3: Resume - restart audio processing
         self.is_running.store(true, Ordering::SeqCst);
     }
 
@@ -433,10 +458,8 @@ impl AudioOutput {
         self.paused.load(Ordering::SeqCst)
     }
 
-    /// Trigger seek fade-in - 25ms smooth ramp at seek completion
     pub fn trigger_seek_fade(&self) {
-        // 25ms fade IN at current sample rate (~2400 samples stereo)
-        let fade_samples = (self.sample_rate as f32 * 0.025) as u32;
+        let fade_samples = (self.sample_rate as f32 * 0.015) as u32;
         self.seek_fade_remaining
             .store(fade_samples, Ordering::SeqCst);
     }
@@ -445,14 +468,10 @@ impl AudioOutput {
         self.seek_mode.store(seeking, Ordering::SeqCst);
     }
 
-    /// Trigger resume with delay - waits a few frames before unmuting
     pub fn trigger_delayed_resume(&self) {
-        // Wait ~2 frames (~84ms at 24fps) before unmuting
         self.resume_frame_counter.store(2, Ordering::SeqCst);
     }
 
-    /// Called from audio callback to check if we should unmute
-    /// Returns true if seek mode should be disabled
     pub fn check_resume_counter(&self) -> bool {
         let remaining = self.resume_frame_counter.load(Ordering::SeqCst);
         if remaining > 0 {
@@ -468,22 +487,48 @@ impl AudioOutput {
         self.is_running.store(true, Ordering::SeqCst);
     }
 
-    // Background Thread Loop - Channel-based State Machine
-    // This thread owns: PulseAudio handle, Ring Buffer Consumer, DSP chain
-    // Loop runs forever until Exit command - doesn't depend on is_running
+    fn handle_write_error(read_buffer: &[f32], samples_per_write: usize) {
+        let silence = unsafe {
+            std::slice::from_raw_parts(read_buffer.as_ptr() as *const u8, samples_per_write * 4)
+        };
+        let _ = silence;
+    }
+
+    fn reconnect_device(
+        device_name: Option<&str>,
+        sample_rate: u32,
+        max_retries: u32,
+    ) -> Result<pa_simple::Simple, String> {
+        for attempt in 0..max_retries {
+            match Self::create_pa_simple_with_latency(device_name, sample_rate) {
+                Ok(handle) => return Ok(handle),
+                Err(e) => {
+                    eprintln!(
+                        "[AudioOutput] Reconnect attempt {} failed: {}",
+                        attempt + 1,
+                        e
+                    );
+                    if attempt < max_retries - 1 {
+                        thread::sleep(Duration::from_millis(500));
+                    }
+                }
+            }
+        }
+        Err(format!(
+            "Failed to reconnect after {} attempts",
+            max_retries
+        ))
+    }
+
     fn audio_thread_loop(rx: mpsc::Receiver<AudioCommand>) {
-        // Try to promote thread priority for real-time audio
         let _ = set_current_thread_priority(ThreadPriority::Max);
 
         let mut current_handle: Option<pa_simple::Simple> = None;
         let mut current_flush: Option<Arc<AtomicBool>> = None;
 
         loop {
-            // Wait for next command (blocking receive)
             match rx.recv() {
-                Ok(AudioCommand::Exit) => {
-                    break;
-                }
+                Ok(AudioCommand::Exit) => break,
                 Ok(AudioCommand::Play {
                     handle,
                     consumer,
@@ -501,11 +546,11 @@ impl AudioOutput {
                     normalizer,
                     samples_played,
                     empty_callback_count,
+                    device_name: _device_name,
                 }) => {
                     current_handle = Some(handle);
                     current_flush = Some(flush_req);
 
-                    // Start the push loop
                     if let (Some(h), Some(flush_flag)) =
                         (current_handle.take(), current_flush.take())
                     {
@@ -532,28 +577,30 @@ impl AudioOutput {
                     current_handle = None;
                     current_flush = None;
                 }
-                Ok(AudioCommand::Stop) => {
-                    // Set should_stop to interrupt push_loop immediately
-                    // Note: is_running is handled in push_loop
-                }
+                Ok(AudioCommand::Stop) => {}
                 Ok(AudioCommand::Flush) => {
-                    // Flush handle if exists
                     if let Some(ref handle) = current_handle {
                         let _ = handle.flush();
                     }
                 }
-                Err(_) => {
-                    break;
+                Ok(AudioCommand::ChangeDevice {
+                    device_name,
+                    result_tx,
+                }) => {
+                    let sample_rate = 48000;
+                    let result =
+                        Self::create_pa_simple_with_latency(device_name.as_deref(), sample_rate)
+                            .map(|_| ());
+                    let _ = result_tx.send(result);
                 }
+                Err(_) => break,
             }
         }
     }
 
-    // Pure Push Loop - Runs until consumer empty (decoder done) or stopped
-    // SINGLE AUTHORITY: Only seek_mode and paused determine silence vs audio
     #[allow(clippy::too_many_arguments)]
     fn push_loop_owned(
-        mut handle: pa_simple::Simple,
+        handle: pa_simple::Simple,
         mut consumer: HeapCons<f32>,
         should_stop: Arc<AtomicBool>,
         seek_mode: Arc<AtomicBool>,
@@ -566,7 +613,7 @@ impl AudioOutput {
         dsp_chain: DspChain,
         dsp_enabled: Arc<AtomicBool>,
         normalizer_enabled: Arc<AtomicBool>,
-        normalizer: Arc<Mutex<crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer>>,
+        normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
     ) {
@@ -574,16 +621,15 @@ impl AudioOutput {
         let frames_per_write = 1024usize;
         let samples_per_write = frames_per_write * channels;
 
-        // Pre-allocated buffers for DSP processing
         let mut read_buffer = vec![0.0f32; samples_per_write];
         let mut processed_buffer = vec![0.0f32; samples_per_write];
         let mut norm_input = vec![0.0f32; samples_per_write];
         let mut norm_output = vec![0.0f32; samples_per_write];
 
         let mut empty_count = 0u32;
-        const FLUSH_MAX_ITERATIONS: u32 = 1000;
+        let mut reconnect_attempts = 0u32;
+        const MAX_RECONNECT_ATTEMPTS: u32 = 2;
 
-        // Cache mode once before loop (avoid hot-path mutex lock)
         let current_mode = *mode.lock().unwrap_or_else(|e| e.into_inner());
 
         loop {
@@ -591,31 +637,24 @@ impl AudioOutput {
                 break;
             }
 
-            // FLUSH HANDLING: Draining old buffer data before seek prebuffer fills it
             if flush_flag.load(Ordering::SeqCst) {
-                // Drain entire consumer buffer
                 loop {
                     let drained = consumer.pop_slice(&mut read_buffer);
                     if drained == 0 {
                         break;
                     }
                 }
-                // Reset empty counter since we just cleared
                 empty_count = 0;
                 empty_callback_count.store(0, Ordering::Relaxed);
-                // Clear flush flag - buffer is now clean
                 flush_flag.store(false, Ordering::SeqCst);
-                // Reset sample counter so it starts fresh from exact position
-                // (will be set by engine via reset_samples_played)
-                // Continue to next iteration to check seek_mode
+
+                let _ = handle.flush();
             }
 
-            // SINGLE GATE: Only seek_mode determines silence
-            // Engine state is managed externally - audio thread only obeys seek_mode
             let is_seeking = seek_mode.load(Ordering::SeqCst);
+            let is_paused = paused.load(Ordering::SeqCst);
 
             if is_seeking {
-                // During seek: Just output silence. Do NOT drain consumer so decoder can pre-fill.
                 read_buffer.fill(0.0);
                 let silence = unsafe {
                     std::slice::from_raw_parts(
@@ -623,15 +662,20 @@ impl AudioOutput {
                         samples_per_write * 4,
                     )
                 };
-                let _ = handle.write(silence);
-                // Give decoder a small window to fill the buffer
-                std::thread::sleep(std::time::Duration::from_millis(2));
+                match handle.write(silence) {
+                    Ok(_) => {
+                        reconnect_attempts = 0;
+                    }
+                    Err(e) => {
+                        eprintln!("[AudioOutput] Write error during seek: {}", e);
+                        Self::handle_write_error(&read_buffer, samples_per_write);
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(2));
                 continue;
             }
 
-            // PAUSE: Output silence but keep buffer intact for resume
-            // Unlike seek, we don't sleep here - just output silence at normal pace
-            if paused.load(Ordering::SeqCst) {
+            if is_paused {
                 read_buffer.fill(0.0);
                 let silence = unsafe {
                     std::slice::from_raw_parts(
@@ -639,11 +683,18 @@ impl AudioOutput {
                         samples_per_write * 4,
                     )
                 };
-                let _ = handle.write(silence);
+                match handle.write(silence) {
+                    Ok(_) => {
+                        reconnect_attempts = 0;
+                    }
+                    Err(e) => {
+                        eprintln!("[AudioOutput] Write error during pause: {}", e);
+                        Self::handle_write_error(&read_buffer, samples_per_write);
+                    }
+                }
                 continue;
             }
 
-            // 1. Read from ring buffer (only when NOT seeking and NOT paused)
             read_buffer.fill(0.0);
             let samples_read = consumer.pop_slice(&mut read_buffer);
 
@@ -651,27 +702,35 @@ impl AudioOutput {
                 empty_callback_count.fetch_add(1, Ordering::Relaxed);
                 empty_count += 1;
 
-                // Exit if decoder is done
                 if empty_count > BUFFER_EMPTY_THRESHOLD {
                     break;
                 }
 
+                read_buffer.fill(0.0);
                 let silence = unsafe {
                     std::slice::from_raw_parts(
                         read_buffer.as_ptr() as *const u8,
                         samples_per_write * 4,
                     )
                 };
-                let _ = handle.write(silence);
+                match handle.write(silence) {
+                    Ok(_) => {
+                        reconnect_attempts = 0;
+                    }
+                    Err(e) => {
+                        eprintln!("[AudioOutput] Write error on empty: {}", e);
+                        Self::handle_write_error(&read_buffer, samples_per_write);
+                    }
+                }
                 continue;
             }
 
             empty_callback_count.store(0, Ordering::Relaxed);
+            reconnect_attempts = 0;
+            empty_count = 0;
 
-            // 2. Update sample counter
             samples_played.fetch_add(samples_read as u64, Ordering::SeqCst);
 
-            // 3. Apply DSP Chain if enabled
             let process_len = samples_read.min(read_buffer.len());
             if dsp_enabled.load(Ordering::SeqCst) {
                 dsp_chain.process(
@@ -682,7 +741,6 @@ impl AudioOutput {
                 processed_buffer[..process_len].copy_from_slice(&read_buffer[..process_len]);
             }
 
-            // 4. Apply Normalizer if enabled
             if normalizer_enabled.load(Ordering::SeqCst) {
                 norm_input[..process_len].copy_from_slice(&processed_buffer[..process_len]);
                 if let Ok(mut norm) = normalizer.lock() {
@@ -691,27 +749,21 @@ impl AudioOutput {
                 }
             }
 
-            // 5. Apply Volume & Balance
             let vol = f32::from_bits(volume_bits.load(Ordering::Relaxed));
             let bal = f32::from_bits(balance_bits.load(Ordering::Relaxed));
             let left_gain = if bal > 0.0 { 1.0 - bal } else { 1.0 };
             let right_gain = if bal < 0.0 { 1.0 + bal } else { 1.0 };
 
-            // 6. Apply Output Mode, Volume, and Seek Fade-in
             let num_frames = process_len / 2;
-
-            // Check fade-in remaining
             let fade_samples = seek_fade_remaining.load(Ordering::Acquire);
 
             for frame in 0..num_frames {
                 let mut left = processed_buffer[frame * 2];
                 let mut right = processed_buffer[frame * 2 + 1];
 
-                // Apply balance
                 left *= left_gain;
                 right *= right_gain;
 
-                // Apply mode (Mono/Surround/Stereo)
                 match current_mode {
                     OutputMode::Mono => {
                         let mono = (left + right) * 0.5;
@@ -726,13 +778,10 @@ impl AudioOutput {
                     OutputMode::Stereo => {}
                 }
 
-                // Apply volume
                 left *= vol;
                 right *= vol;
 
-                // Apply seek fade-in (25ms smooth ramp)
                 if fade_samples > 0 {
-                    // Calculate how many frames to fade in this batch
                     let frames_remaining = (fade_samples / 2) as usize;
                     let fade_this_frame = frame.min(frames_remaining.saturating_sub(1));
                     let fade_gain = if frames_remaining > 0 {
@@ -740,13 +789,11 @@ impl AudioOutput {
                     } else {
                         1.0
                     };
-                    // Use sqrt for perceptual smoothness (natural volume curve)
                     let fade_factor = fade_gain.sqrt();
                     left *= fade_factor;
                     right *= fade_factor;
                 }
 
-                // Safety clamp
                 if !left.is_finite() {
                     left = 0.0;
                 }
@@ -760,7 +807,6 @@ impl AudioOutput {
                 processed_buffer[frame * 2 + 1] = right;
             }
 
-            // Decrement fade counter after applying fade to all frames
             if fade_samples > 0 {
                 let frames_used = (num_frames as u32).min(fade_samples / 2);
                 if frames_used > 0 {
@@ -768,13 +814,30 @@ impl AudioOutput {
                 }
             }
 
-            // 7. Write to PulseAudio (blocking - auto-paces with hardware)
             let bytes: &[u8] = unsafe {
                 std::slice::from_raw_parts(processed_buffer.as_ptr() as *const u8, process_len * 4)
             };
 
-            if let Err(_e) = handle.write(bytes) {
-                // Write error
+            match handle.write(bytes) {
+                Ok(_) => {
+                    reconnect_attempts = 0;
+                }
+                Err(e) => {
+                    reconnect_attempts += 1;
+
+                    eprintln!(
+                        "[AudioOutput] Write error (attempt {}/{}): {:?}",
+                        reconnect_attempts, MAX_RECONNECT_ATTEMPTS, e
+                    );
+
+                    if reconnect_attempts > MAX_RECONNECT_ATTEMPTS {
+                        eprintln!(
+                            "[AudioOutput] Max reconnect attempts reached, stopping: {:?}",
+                            e
+                        );
+                        break;
+                    }
+                }
             }
         }
     }
@@ -782,14 +845,11 @@ impl AudioOutput {
 
 impl Drop for AudioOutput {
     fn drop(&mut self) {
-        // Stop processing first
         self.is_running.store(false, Ordering::SeqCst);
         self.is_started.store(false, Ordering::SeqCst);
 
-        // FIX: Send Exit command and wait for thread to finish
         let _ = self.command_tx.send(AudioCommand::Exit);
 
-        // Join thread to ensure clean shutdown
         if let Some(handle) = self.thread_handle.take() {
             let _ = handle.join();
         }

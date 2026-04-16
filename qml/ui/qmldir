@@ -10,8 +10,7 @@ PlaylistContextMenu 1.0 contextmenu/PlaylistContextMenu.qml
 AppearanceContextMenu 1.0 contextmenu/AppearanceContextMenu.qml
 Playlist 1.0 Playlist.qml
 Pref 1.0 Pref.qml
-Eq 1.0 Eq.qml
-Fx 1.0 Fx.qml
+Dsp 1.0 Dsp.qml
 ThemeSlider 1.0 ThemeSlider.qml
 RenameDialog 1.0 RenameDialog.qml
 PrefButton 1.0 pref/PrefButton.qml

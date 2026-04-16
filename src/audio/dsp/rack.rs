@@ -1,39 +1,21 @@
 /* --- LOONIX-TUNES src/audio/dsp/rack.rs --- */
 
 #![allow(non_snake_case)]
-#![allow(unused_imports)]
 
 use std::sync::atomic::Ordering;
 
-use crate::audio::dsp::dspstd::{
-    StdAudioNormalizer, StdBassBooster, StdCompressor, StdCrossfeed, StdCrystalizer, StdEqPreamp,
-    StdEqProcessor, StdLimiter, StdMiddleClarity, StdPitchShifter, StdReverb, StdStereoEnhance,
-    StdStereoWidth, StdSurroundProcessor,
-};
-
-use crate::audio::dsp::biquad::BiquadLowShelf;
-use crate::audio::dsp::dspstd::stdbassbooster::{
+use crate::audio::dsp::{
     get_bass_enabled_arc, get_bass_freq_arc, get_bass_gain_arc, get_bass_q_arc,
+    get_compressor_enabled_arc, get_compressor_threshold_arc, get_crossfeed_amount_arc,
+    get_crossfeed_enabled_arc, get_crystal_amount_arc, get_crystal_enabled_arc,
+    get_crystal_freq_arc, get_eq_band_arc, get_eq_bands_arc, get_eq_enabled_arc,
+    get_limiter_enabled_arc, get_middle_amount_arc, get_middle_enabled_arc, get_mono_enabled_arc,
+    get_mono_width_arc, get_pitch_enabled_arc, get_pitch_ratio_arc, get_preamp_enabled_arc,
+    get_preamp_gain_arc, get_stereo_amount_arc, get_stereo_enabled_arc, get_surround_enabled_arc,
+    get_surround_width_arc, AudioNormalizer, BassBooster, Compressor, Crossfeed, Crystalizer,
+    DspProcessor, DspSettings, EqPreamp, EqProcessor, Limiter, MiddleClarity, PitchShifter, Reverb,
+    StereoEnhance, StereoWidth, SurroundProcessor,
 };
-use crate::audio::dsp::dspstd::stdcrossfeed::{
-    get_crossfeed_amount_arc, get_crossfeed_enabled_arc,
-};
-use crate::audio::dsp::dspstd::stdcrystalizer::{
-    get_crystal_amount_arc, get_crystal_enabled_arc, get_crystal_freq_arc,
-};
-
-use crate::audio::dsp::dspstd::stdcompressor::{
-    get_compressor_enabled_arc, get_compressor_threshold_arc,
-};
-use crate::audio::dsp::dspstd::stdmiddleclarity::{get_middle_amount_arc, get_middle_enabled_arc};
-use crate::audio::dsp::dspstd::stdpitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
-use crate::audio::dsp::dspstd::stdstereoenhance::{get_stereo_amount_arc, get_stereo_enabled_arc};
-use crate::audio::dsp::dspstd::stdstereowidth::{get_mono_enabled_arc, get_mono_width_arc};
-use crate::audio::dsp::dspstd::stdsurround::{get_surround_enabled_arc, get_surround_width_arc};
-use crate::audio::dsp::limiter::get_limiter_enabled_arc;
-use crate::audio::dsp::preamp::{get_preamp_enabled_arc, get_preamp_gain_arc};
-
-use crate::audio::dsp::{DspProcessor, DspSettings};
 
 pub struct DspRack {
     pub processors: Vec<Box<dyn DspProcessor + Send + Sync>>,
@@ -65,48 +47,48 @@ impl DspRack {
 
         get_preamp_enabled_arc().store(true, Ordering::Relaxed);
         get_preamp_gain_arc().store(1.0_f32.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdEqPreamp::new()) as B);
+        processors.push(Box::new(EqPreamp::new()) as B);
 
-        processors.push(Box::new(StdAudioNormalizer::new(true, -14.0)) as B);
+        processors.push(Box::new(AudioNormalizer::new(true, -14.0)) as B);
 
-        processors.push(Box::new(StdEqProcessor::with_bands(settings.eq_bands)) as B);
+        processors.push(Box::new(EqProcessor::with_bands(settings.eq_bands)) as B);
 
         let default_threshold = (-20.0_f32).to_bits();
         get_compressor_threshold_arc().store(default_threshold, Ordering::Relaxed);
-        processors.push(Box::new(StdCompressor::new()) as B);
+        processors.push(Box::new(Compressor::new()) as B);
 
         get_crystal_amount_arc().store(settings.crystal_amount.to_bits(), Ordering::Relaxed);
         get_crystal_freq_arc().store(4000.0_f32.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdCrystalizer::new(48000.0)) as B);
+        processors.push(Box::new(Crystalizer::new(48000.0)) as B);
 
         get_surround_width_arc().store(settings.surround_width.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdSurroundProcessor::new()) as B);
+        processors.push(Box::new(SurroundProcessor::new()) as B);
 
         get_mono_width_arc().store(settings.mono_width.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdStereoWidth::new()) as B);
+        processors.push(Box::new(StereoWidth::new()) as B);
 
         let ratio = 2.0_f32.powf(settings.pitch_semitones / 12.0);
         get_pitch_ratio_arc().store(ratio.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdPitchShifter::new()) as B);
+        processors.push(Box::new(PitchShifter::new()) as B);
 
         get_middle_amount_arc().store(settings.middle_amount.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdMiddleClarity::new()) as B);
+        processors.push(Box::new(MiddleClarity::new()) as B);
 
         get_stereo_amount_arc().store(settings.stereo_amount.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdStereoEnhance::new()) as B);
+        processors.push(Box::new(StereoEnhance::new()) as B);
 
         get_bass_gain_arc().store(settings.bass_gain.to_bits(), Ordering::Relaxed);
         get_bass_freq_arc().store(settings.bass_cutoff.to_bits(), Ordering::Relaxed);
         get_bass_q_arc().store(settings.bass_q.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdBassBooster::new()) as B);
+        processors.push(Box::new(BassBooster::new()) as B);
 
         get_crossfeed_amount_arc().store(settings.crossfeed_amount.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StdCrossfeed::new()) as B);
+        processors.push(Box::new(Crossfeed::new()) as B);
 
-        processors.push(Box::new(StdReverb::new()) as B);
+        processors.push(Box::new(Reverb::new()) as B);
 
         get_limiter_enabled_arc().store(true, Ordering::Relaxed);
-        processors.push(Box::new(StdLimiter::new()) as B);
+        processors.push(Box::new(Limiter::new()) as B);
 
         processors
     }

@@ -1,13 +1,25 @@
 /* --- LOONIX-TUNES src/audio/dsp/middleclarity.rs --- */
 
 use crate::audio::dsp::DspProcessor;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::OnceLock;
 
-/// Presence enhancer using High-Shelf filter for elegant "air" presence.
-/// Corner frequency 3.2 kHz, variable gain (0-4 dB boost).
+static MIDDLE_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
+static MIDDLE_AMOUNT: OnceLock<AtomicU32> = OnceLock::new();
+
+pub fn get_middle_enabled_arc() -> &'static AtomicBool {
+    MIDDLE_ENABLED.get_or_init(|| AtomicBool::new(false))
+}
+
+pub fn get_middle_amount_arc() -> &'static AtomicU32 {
+    MIDDLE_AMOUNT.get_or_init(|| AtomicU32::new(0.0_f32.to_bits()))
+}
+
+fn bits_to_f32(bits: u32) -> f32 {
+    f32::from_bits(bits)
+}
+
 pub struct MiddleClarity {
-    amount_bits: Arc<AtomicU32>,
     b0: f32,
     b1: f32,
     b2: f32,
@@ -23,9 +35,8 @@ pub struct MiddleClarity {
 }
 
 impl MiddleClarity {
-    pub fn new(amount: f32) -> Self {
-        let mut mc = Self {
-            amount_bits: Arc::new(AtomicU32::new(amount.to_bits())),
+    pub fn new() -> Self {
+        Self {
             b0: 1.0,
             b1: 0.0,
             b2: 0.0,
@@ -38,34 +49,17 @@ impl MiddleClarity {
             sample_rate: 48000.0,
             corner_freq: 3200.0,
             q_factor: 0.707,
-        };
-        mc.update_coefficients();
-        mc
+        }
     }
 
-    #[inline(always)]
-    fn get_amount(&self) -> f32 {
-        f32::from_bits(self.amount_bits.load(Ordering::Relaxed))
-    }
-
-    pub fn set_amount(&self, amount: f32) {
-        self.amount_bits.store(amount.to_bits(), Ordering::Relaxed);
-        // Note: need to call update_coefficients() after setting amount,
-        // but we cannot call it here because we only have &self.
-        // The caller should ensure coefficients are updated.
-        // In practice, we can update coefficients in process() each time amount changes.
-    }
-
-    fn update_coefficients(&mut self) {
-        let amount = self.get_amount();
-        let gain_db = amount * 4.0; // 0 to 4 dB boost (tame, elegant)
+    fn update_coefficients(&mut self, amount: f32) {
+        let gain_db = amount * 4.0;
         let a = 10.0_f32.powf(gain_db / 40.0);
         let w0 = 2.0 * std::f32::consts::PI * self.corner_freq / self.sample_rate;
         let cos_w0 = w0.cos();
         let sin_w0 = w0.sin();
         let alpha = sin_w0 / (2.0 * self.q_factor);
 
-        // High-Shelf filter (Audio EQ Cookbook)
         let a_plus_1 = a + 1.0;
         let a_minus_1 = a - 1.0;
         let sqrt_a_2_alpha = 2.0 * a.sqrt() * alpha;
@@ -87,8 +81,16 @@ impl MiddleClarity {
 
 impl DspProcessor for MiddleClarity {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        // Update coefficients if amount changed (simple check: recompute every buffer)
-        self.update_coefficients();
+        let is_on = get_middle_enabled_arc().load(Ordering::Relaxed);
+        let amount = bits_to_f32(get_middle_amount_arc().load(Ordering::Relaxed));
+
+        // Auto-Bypass
+        if !is_on || amount < 0.01 {
+            output.copy_from_slice(input);
+            return;
+        }
+
+        self.update_coefficients(amount);
 
         let len = input.len();
         for i in 0..len {
@@ -97,7 +99,6 @@ impl DspProcessor for MiddleClarity {
                 - self.a1 * self.y1
                 - self.a2 * self.y2;
 
-            // Shift state
             self.x2 = self.x1;
             self.x1 = x;
             self.y2 = self.y1;

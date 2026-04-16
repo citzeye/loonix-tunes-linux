@@ -73,7 +73,7 @@ impl DspConfigManager {
             stereo_amount: state.stereo_amount as f32,
             crossfeed_enabled: state.crossfeed_active,
             crossfeed_amount: state.crossfeed_amount as f32,
-            eq_bands: state.eq_bands,
+            eq_bands: state.dsp_bands,
         }
     }
 
@@ -81,7 +81,7 @@ impl DspConfigManager {
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.dsp_enabled = state.dsp_enabled;
-                cfg.eq_bands = state.eq_bands;
+                cfg.eq_bands = state.dsp_bands;
                 cfg.eq_enabled = state.eq_enabled;
                 cfg.active_preset_index = state.active_preset_index;
                 cfg.bass_enabled = state.bass_magic_active;
@@ -89,7 +89,7 @@ impl DspConfigManager {
                 cfg.bass_cutoff = state.bass_cutoff as f32;
                 cfg.crystal_enabled = state.crystal_magic_active;
                 cfg.crystal_amount = state.crystal_amount as f32;
-                cfg.crystal_freq = state.crystal_freq as f32;
+                cfg.crystal_freq = state.crystal_frdsp as f32;
                 cfg.surround_enabled = state.surround_magic_active;
                 cfg.surround_width = state.surround_width as f32;
                 cfg.mono_enabled = state.mono_active;
@@ -100,9 +100,8 @@ impl DspConfigManager {
                 cfg.middle_amount = state.middle_amount as f32;
                 cfg.reverb_preset = state.reverb_preset;
                 cfg.compressor_enabled = state.compressor_active;
-                let threshold_bits =
-                    crate::audio::dsp::dspstd::stdcompressor::get_compressor_threshold_arc()
-                        .load(std::sync::atomic::Ordering::Relaxed);
+                let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
+                    .load(std::sync::atomic::Ordering::Relaxed);
                 cfg.compressor_threshold = f32::from_bits(threshold_bits);
                 cfg.stereo_enabled = state.stereo_active;
                 cfg.stereo_amount = state.stereo_amount as f32;
@@ -111,7 +110,7 @@ impl DspConfigManager {
                 cfg.user_preset_names = state.user_eq_names.clone();
                 cfg.user_preset_gains = state.user_eq_gains;
                 cfg.user_preset_macro = state.user_eq_macro;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
         self.is_dirty = false;
@@ -124,7 +123,7 @@ impl DspConfigManager {
 
 pub struct DspStateView {
     pub dsp_enabled: bool,
-    pub eq_bands: [f32; 10],
+    pub dsp_bands: [f32; 10],
     pub eq_enabled: bool,
     pub active_preset_index: i32,
     pub bass_magic_active: bool,
@@ -132,7 +131,7 @@ pub struct DspStateView {
     pub bass_cutoff: f64,
     pub crystal_magic_active: bool,
     pub crystal_amount: f64,
-    pub crystal_freq: f64,
+    pub crystal_frdsp: f64,
     pub surround_magic_active: bool,
     pub surround_width: f64,
     pub mono_active: bool,
@@ -156,7 +155,7 @@ impl Default for DspStateView {
     fn default() -> Self {
         Self {
             dsp_enabled: true,
-            eq_bands: [0.0; 10],
+            dsp_bands: [0.0; 10],
             eq_enabled: false,
             active_preset_index: 0,
             bass_magic_active: false,
@@ -164,7 +163,7 @@ impl Default for DspStateView {
             bass_cutoff: 180.0,
             crystal_magic_active: false,
             crystal_amount: 0.0,
-            crystal_freq: 4000.0,
+            crystal_frdsp: 4000.0,
             surround_magic_active: false,
             surround_width: 1.8,
             mono_active: false,
@@ -190,7 +189,7 @@ impl DspStateView {
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
             dsp_enabled: config.dsp_enabled,
-            eq_bands: config.eq_bands,
+            dsp_bands: config.eq_bands,
             eq_enabled: config.eq_enabled,
             active_preset_index: config.active_preset_index,
             bass_magic_active: config.bass_enabled,
@@ -198,7 +197,7 @@ impl DspStateView {
             bass_cutoff: config.bass_cutoff as f64,
             crystal_magic_active: config.crystal_enabled,
             crystal_amount: config.crystal_amount as f64,
-            crystal_freq: config.crystal_freq as f64,
+            crystal_frdsp: config.crystal_freq as f64,
             surround_magic_active: config.surround_enabled,
             surround_width: config.surround_width as f64,
             mono_active: config.mono_enabled,

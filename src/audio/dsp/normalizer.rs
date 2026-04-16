@@ -1,15 +1,15 @@
 /* --- LOONIX-TUNES src/audio/dsp/normalizer.rs | Fixed Gain + Transition Smoothing --- */
+use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, OnceLock};
 
-use super::DspProcessor;
-
 static NORMALIZER_ENABLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 static NORMALIZER_SMOOTHING: OnceLock<Arc<AtomicU32>> = OnceLock::new();
+static NORMALIZER_GAIN: OnceLock<Arc<AtomicU32>> = OnceLock::new();
 
-fn get_enabled_arc() -> Arc<AtomicBool> {
+pub fn get_enabled_arc() -> Arc<AtomicBool> {
     NORMALIZER_ENABLED
-        .get_or_init(|| Arc::new(AtomicBool::new(false)))
+        .get_or_init(|| Arc::new(AtomicBool::new(true)))
         .clone()
 }
 
@@ -17,6 +17,20 @@ fn get_smoothing_arc() -> Arc<AtomicU32> {
     NORMALIZER_SMOOTHING
         .get_or_init(|| Arc::new(AtomicU32::new(0.002_f32.to_bits())))
         .clone()
+}
+
+pub fn get_normalizer_gain_arc() -> Arc<AtomicU32> {
+    NORMALIZER_GAIN
+        .get_or_init(|| Arc::new(AtomicU32::new(1.0_f32.to_bits())))
+        .clone()
+}
+
+fn get_smoothing_value() -> f32 {
+    f32::from_bits(get_smoothing_arc().load(Ordering::Relaxed))
+}
+
+fn get_gain_value() -> f32 {
+    f32::from_bits(get_normalizer_gain_arc().load(Ordering::Relaxed))
 }
 
 /// Get the shared smoothing atomic for lock-free updates from UI.
@@ -100,32 +114,18 @@ impl DspProcessor for AudioNormalizer {
         }
 
         // Read smoothing factor from shared atomic (lock-free)
-        let smoothing = f32::from_bits(get_smoothing_arc().load(Ordering::Relaxed));
+        let smoothing = get_smoothing_value();
 
-        // If already at target and target is 1.0, bypass entirely
-        let at_target = (self.current_gain - self.fixed_gain).abs() < 0.001
-            && (self.fixed_gain - 1.0).abs() < f32::EPSILON;
-        if at_target {
-            output.copy_from_slice(input);
-            return;
-        }
+        // Read gain from shared atomic (set by UI/scanner)
+        let target_gain = get_gain_value();
 
-        // If already at target (but not 1.0), apply without smoothing overhead
-        let needs_ramp = (self.current_gain - self.fixed_gain).abs() >= 0.001;
+        // Update fixed_gain from atomic
+        self.fixed_gain = target_gain;
 
-        if !needs_ramp {
-            // At target gain - just apply gain + soft clip, no ramp
-            let g = self.current_gain;
-            for i in 0..input.len() {
-                output[i] = soft_clip(input[i] * g);
-            }
-        } else {
-            // Ramp current_gain towards fixed_gain sample by sample
-            let target = self.fixed_gain;
-            for i in 0..input.len() {
-                self.current_gain += (target - self.current_gain) * smoothing;
-                output[i] = soft_clip(input[i] * self.current_gain);
-            }
+        let target = self.fixed_gain;
+        for i in 0..input.len() {
+            self.current_gain += (target - self.current_gain) * smoothing;
+            output[i] = soft_clip(input[i] * self.current_gain);
         }
     }
 

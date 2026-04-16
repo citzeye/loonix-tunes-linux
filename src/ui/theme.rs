@@ -375,33 +375,33 @@ impl ThemeManager {
         map.insert("playlistfolder".to_string(), secondary.to_string());
         map.insert("playlistactive".to_string(), primary.to_string());
         map.insert("playlisticon".to_string(), secondary.to_string());
-        map.insert("eqbg".to_string(), surface.to_string());
-        map.insert("eqborder".to_string(), outline.to_string());
-        map.insert("eqtext".to_string(), on_surface.to_string());
-        map.insert("eqsubtext".to_string(), on_surface_variant.to_string());
-        map.insert("eqicon".to_string(), secondary.to_string());
-        map.insert("eqhover".to_string(), secondary.to_string());
-        map.insert("eqpresettext".to_string(), on_surface_variant.to_string());
-        map.insert("eqpresetactive".to_string(), primary.to_string());
-        map.insert("eq10slider".to_string(), secondary.to_string());
-        map.insert("eq10handle".to_string(), primary.to_string());
-        map.insert("eq10bg".to_string(), "#111111".to_string());
-        map.insert("eqfaderslider".to_string(), secondary.to_string());
-        map.insert("eqfaderhandle".to_string(), primary.to_string());
-        map.insert("eqfaderbg".to_string(), "#111111".to_string());
-        map.insert("eqmixslider".to_string(), secondary.to_string());
-        map.insert("eqmixhandle".to_string(), primary.to_string());
-        map.insert("eqmixbg".to_string(), "#111111".to_string());
-        map.insert("fxbg".to_string(), surface.to_string());
-        map.insert("fxborder".to_string(), outline.to_string());
-        map.insert("fxtext".to_string(), on_surface.to_string());
-        map.insert("fxsubtext".to_string(), on_surface_variant.to_string());
-        map.insert("fxicon".to_string(), secondary.to_string());
-        map.insert("fxhover".to_string(), secondary.to_string());
-        map.insert("fxactive".to_string(), primary.to_string());
-        map.insert("fxslider".to_string(), primary.to_string());
-        map.insert("fxsliderbg".to_string(), surface.to_string());
-        map.insert("fxhandle".to_string(), secondary.to_string());
+        map.insert("dspbg".to_string(), surface.to_string());
+        map.insert("dspborder".to_string(), outline.to_string());
+        map.insert("dsptext".to_string(), on_surface.to_string());
+        map.insert("dspsubtext".to_string(), on_surface_variant.to_string());
+        map.insert("dspicon".to_string(), secondary.to_string());
+        map.insert("dsphover".to_string(), secondary.to_string());
+        map.insert("dsppresettext".to_string(), on_surface_variant.to_string());
+        map.insert("dsppresetactive".to_string(), primary.to_string());
+        map.insert("dsp10slider".to_string(), secondary.to_string());
+        map.insert("dsp10handle".to_string(), primary.to_string());
+        map.insert("dsp10bg".to_string(), "#111111".to_string());
+        map.insert("dspfaderslider".to_string(), secondary.to_string());
+        map.insert("dspfaderhandle".to_string(), primary.to_string());
+        map.insert("dspfaderbg".to_string(), "#111111".to_string());
+        map.insert("dspmixslider".to_string(), secondary.to_string());
+        map.insert("dspmixhandle".to_string(), primary.to_string());
+        map.insert("dspmixbg".to_string(), "#111111".to_string());
+        map.insert("dspbg".to_string(), surface.to_string());
+        map.insert("dspborder".to_string(), outline.to_string());
+        map.insert("dsptext".to_string(), on_surface.to_string());
+        map.insert("dspsubtext".to_string(), on_surface_variant.to_string());
+        map.insert("dspicon".to_string(), secondary.to_string());
+        map.insert("dsphover".to_string(), secondary.to_string());
+        map.insert("dspactive".to_string(), primary.to_string());
+        map.insert("dspslider".to_string(), primary.to_string());
+        map.insert("dspsliderbg".to_string(), surface.to_string());
+        map.insert("dsphandle".to_string(), secondary.to_string());
 
         Ok(map)
     }
@@ -430,7 +430,7 @@ impl ThemeManager {
                         if let Ok(path) = Self::get_active_wallpaper() {
                             cfg.wallpaper_path = path;
                         }
-                        cfg.save();
+                        let _ = cfg.save();
                     }
                 }
 
@@ -446,7 +446,7 @@ impl ThemeManager {
         if let Some(ref config) = self.config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.use_wallpaper_theme = false;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
 
@@ -458,7 +458,7 @@ impl ThemeManager {
         if let Some(ref config) = self.config {
             if let Ok(mut cfg) = config.lock() {
                 cfg.wallpaper_path = path;
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -583,7 +583,7 @@ impl ThemeManager {
             if let Ok(mut cfg) = config.lock() {
                 cfg.theme = self.current_theme.to_string();
                 cfg.custom_themes = self.custom_themes.clone();
-                cfg.save();
+                let _ = cfg.save();
             }
         }
     }
@@ -664,33 +664,41 @@ impl ThemeManager {
                     "playlistfolder", "#f5a623",
                     "playlistactive", "#843ff3",
                     "playlisticon", "#00ffdd",
-                    "eqbg", "#121212",
-                    "eqborder", "#8a8a8a",
-                    "eqtext", "#00e5ff",
-                    "eqsubtext", "#6d6d6d",
-                    "eqicon", "#00ffdd",
-                    "eqhover", "#843ff3",
-                    "eqpresettext", "#6d6d6d",
-                    "eqpresetactive", "#00e5ff",
-                    "eq10slider", "#843ff3",
-                    "eq10handle", "#00ffdd",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#00ffdd",
-                    "eqmixhandle", "#843ff3",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#8a8a8a",
-                    "fxtext", "#00e5ff",
-                    "fxsubtext", "#6d6d6d",
-                    "fxicon", "#00ffdd",
-                    "fxhover", "#843ff3",
-                    "fxactive", "#00e5ff",
-                    "fxslider", "#00e5ff",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#00ffdd",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#8a8a8a",
+
+                    "dspeqbg", "#121212",
+                    "dspeqtext", "#00e5ff",
+                    "dspeqsubtext", "#6d6d6d",
+                    "dspeqicon", "#00ffdd",
+                    "dspeqhover", "#843ff3",
+                    "dspeqpresettext", "#6d6d6d",
+                    "dspeqpresetactive", "#00e5ff",
+                    "dspeq10slider", "#843ff3",
+                    "dspeq10handle", "#00ffdd",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#00ffdd",
+                    "dspeqmixhandle", "#843ff3",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#121212",
+                    "dspfxborder", "#8a8a8a",
+                    "dspfxtext", "#00e5ff",
+                    "dspfxsubtext", "#6d6d6d",
+                    "dspfxicon", "#00ffdd",
+                    "dspfxhover", "#843ff3",
+                    "dspfxactive", "#00e5ff",
+                    "dspfxslider", "#00e5ff",
+                    "dspfxsliderbg", "#1e1e1e",
+                    "dspfxhandle", "#00ffdd",
+
+                    "dspslider", "#00e5ff",
+                    "dspsliderbg", "#121212",
+                    "dsphandle", "#00ffdd",
                 });
             }
             "Green" => {
@@ -715,33 +723,41 @@ impl ThemeManager {
                     "playlistfolder", "#00ff26",
                     "playlistactive", "#ffcc00",
                     "playlisticon", "#00ff26",
-                    "eqbg", "#121c15",
-                    "eqborder", "#6d6d6d",
-                    "eqtext", "#00ff66",
-                    "eqsubtext", "#6d6d6d",
-                    "eqicon", "#00ff26",
-                    "eqhover", "#ffcc00",
-                    "eqpresettext", "#6d6d6d",
-                    "eqpresetactive", "#00ff66",
-                    "eq10slider", "#ffcc00",
-                    "eq10handle", "#00ff26",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#00ff26",
-                    "eqmixhandle", "#ffcc00",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#6d6d6d",
-                    "fxtext", "#00ff66",
-                    "fxsubtext", "#6d6d6d",
-                    "fxicon", "#00ff26",
-                    "fxhover", "#ffcc00",
-                    "fxactive", "#00ff66",
-                    "fxslider", "#00ff66",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#00ff26",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#6d6d6d",
+
+                    "dspeqbg", "#121c15",
+                    "dspeqtext", "#00ff66",
+                    "dspeqsubtext", "#6d6d6d",
+                    "dspeqicon", "#00ff26",
+                    "dspeqhover", "#ffcc00",
+                    "dspeqpresettext", "#6d6d6d",
+                    "dspeqpresetactive", "#00ff66",
+                    "dspeq10slider", "#ffcc00",
+                    "dspeq10handle", "#00ff26",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#00ff26",
+                    "dspeqmixhandle", "#ffcc00",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#121c15",
+                    "dspfxborder", "#6d6d6d",
+                    "dspfxtext", "#00ff66",
+                    "dspfxsubtext", "#6d6d6d",
+                    "dspfxicon", "#00ff26",
+                    "dspfxhover", "#ffcc00",
+                    "dspfxactive", "#00ff66",
+                    "dspfxslider", "#00ff66",
+                    "dspfxsliderbg", "#121c15",
+                    "dspfxhandle", "#00ff26",
+
+                    "dspslider", "#00ff66",
+                    "dspsliderbg", "#121c15",
+                    "dsphandle", "#00ff26",
                 });
             }
             "Monochrome" => {
@@ -766,33 +782,41 @@ impl ThemeManager {
                     "playlistfolder", "#d4d4d4",
                     "playlistactive", "#ffffff",
                     "playlisticon", "#d4d4d4",
-                    "eqbg", "#1e1e1e",
-                    "eqborder", "#ffffff",
-                    "eqtext", "#ffffff",
-                    "eqsubtext", "#8b8b8b",
-                    "eqicon", "#d4d4d4",
-                    "eqhover", "#ffffff",
-                    "eqpresettext", "#8b8b8b",
-                    "eqpresetactive", "#ffffff",
-                    "eq10slider", "#ffffff",
-                    "eq10handle", "#555555",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#555555",
-                    "eqmixhandle", "#ffffff",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#ffffff",
-                    "fxtext", "#ffffff",
-                    "fxsubtext", "#8b8b8b",
-                    "fxicon", "#d4d4d4",
-                    "fxhover", "#ffffff",
-                    "fxactive", "#ffffff",
-                    "fxslider", "#ffffff",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#d4d4d4",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#ffffff",
+
+                    "dspeqbg", "#121212",
+                    "dspeqtext", "#ffffff",
+                    "dspeqsubtext", "#8b8b8b",
+                    "dspeqicon", "#d4d4d4",
+                    "dspeqhover", "#ffffff",
+                    "dspeqpresettext", "#8b8b8b",
+                    "dspeqpresetactive", "#ffffff",
+                    "dspeq10slider", "#ffffff",
+                    "dspeq10handle", "#555555",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#555555",
+                    "dspeqmixhandle", "#ffffff",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#121212",
+                    "dspfxborder", "#ffffff",
+                    "dspfxtext", "#ffffff",
+                    "dspfxsubtext", "#8b8b8b",
+                    "dspfxicon", "#d4d4d4",
+                    "dspfxhover", "#ffffff",
+                    "dspfxactive", "#ffffff",
+                    "dspfxslider", "#ffffff",
+                    "dspfxsliderbg", "#121212",
+                    "dspfxhandle", "#d4d4d4",
+
+                    "dspslider", "#ffffff",
+                    "dspsliderbg", "#121212",
+                    "dsphandle", "#d4d4d4",
                 });
             }
             "Orange" => {
@@ -817,33 +841,41 @@ impl ThemeManager {
                     "playlistfolder", "#ffea00",
                     "playlistactive", "#ff5500",
                     "playlisticon", "#ff5500",
-                    "eqbg", "#1c1210",
-                    "eqborder", "#6d6d6d",
-                    "eqtext", "#ff5500",
-                    "eqsubtext", "#6d6d6d",
-                    "eqicon", "#ff5500",
-                    "eqhover", "#ffea00",
-                    "eqpresettext", "#6d6d6d",
-                    "eqpresetactive", "#ff5500",
-                    "eq10slider", "#ffea00",
-                    "eq10handle", "#ff5500",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#ff5500",
-                    "eqmixhandle", "#ffea00",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#6d6d6d",
-                    "fxtext", "#ff5500",
-                    "fxsubtext", "#6d6d6d",
-                    "fxicon", "#ff5500",
-                    "fxhover", "#ffea00",
-                    "fxactive", "#ff5500",
-                    "fxslider", "#ff5500",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#ff5500",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#6d6d6d",
+
+                    "dspeqbg", "#1c1210",
+                    "dspeqtext", "#ff5500",
+                    "dspeqsubtext", "#6d6d6d",
+                    "dspeqicon", "#ff5500",
+                    "dspeqhover", "#ffea00",
+                    "dspeqpresettext", "#6d6d6d",
+                    "dspeqpresetactive", "#ff5500",
+                    "dspeq10slider", "#ffea00",
+                    "dspeq10handle", "#ff5500",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#ff5500",
+                    "dspeqmixhandle", "#ffea00",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#1c1210",
+                    "dspfxborder", "#6d6d6d",
+                    "dspfxtext", "#ff5500",
+                    "dspfxsubtext", "#6d6d6d",
+                    "dspfxicon", "#ff5500",
+                    "dspfxhover", "#ffea00",
+                    "dspfxactive", "#ff5500",
+                    "dspfxslider", "#ff5500",
+                    "dspfxsliderbg", "#1c1210",
+                    "dspfxhandle", "#ff5500",
+
+                    "dspslider", "#ff5500",
+                    "dspsliderbg", "#1c1210",
+                    "dsphandle", "#ff5500",
                 });
             }
             "Pink" => {
@@ -868,33 +900,37 @@ impl ThemeManager {
                     "playlistfolder", "#d59407",
                     "playlistactive", "#65f996",
                     "playlisticon", "#f965d9",
-                    "eqbg", "#1b101f",
-                    "eqborder", "#6d6d6d",
-                    "eqtext", "#f965d9",
-                    "eqsubtext", "#6d6d6d",
-                    "eqicon", "#f965d9",
-                    "eqhover", "#00ffcc",
-                    "eqpresettext", "#6d6d6d",
-                    "eqpresetactive", "#f965d9",
-                    "eq10slider", "#00ffcc",
-                    "eq10handle", "#f965d9",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#f965d9",
-                    "eqmixhandle", "#00ffcc",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#6d6d6d",
-                    "fxtext", "#f965d9",
-                    "fxsubtext", "#6d6d6d",
-                    "fxicon", "#f965d9",
-                    "fxhover", "#00ffcc",
-                    "fxactive", "#f965d9",
-                    "fxslider", "#f965d9",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#00ffcc",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#6d6d6d",
+
+                    "dspeqbg", "#1b101f",
+                    "dspeqtext", "#f965d9",
+                    "dspeqsubtext", "#6d6d6d",
+                    "dspeqicon", "#f965d9",
+                    "dspeqhover", "#00ffcc",
+                    "dspeqpresettext", "#6d6d6d",
+                    "dspeqpresetactive", "#f965d9",
+                    "dspeq10slider", "#00ffcc",
+                    "dspeq10handle", "#f965d9",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#f965d9",
+                    "dspeqmixhandle", "#00ffcc",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#1b101f",
+                    "dspfxborder", "#6d6d6d",
+                    "dspfxtext", "#f965d9",
+                    "dspfxsubtext", "#6d6d6d",
+                    "dspfxicon", "#f965d9",
+                    "dspfxhover", "#00ffcc",
+                    "dspfxactive", "#f965d9",
+                    "dspfxslider", "#f965d9",
+                    "dspfxsliderbg", "#1b101f",
+                    "dspfxhandle", "#00ffcc",
                 });
             }
             "Red" => {
@@ -919,33 +955,41 @@ impl ThemeManager {
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ff003c",
                     "playlisticon", "#2b00ff",
-                    "eqbg", "#1c0d0d",
-                    "eqborder", "#6d6d6d",
-                    "eqtext", "#ff003c",
-                    "eqsubtext", "#bdbdbd",
-                    "eqicon", "#ff003c",
-                    "eqhover", "#2b00ff",
-                    "eqpresettext", "#bdbdbd",
-                    "eqpresetactive", "#ff003c",
-                    "eq10slider", "#2b00ff",
-                    "eq10handle", "#ff003c",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#ff003c",
-                    "eqmixhandle", "#2b00ff",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#1e1e1e",
-                    "fxborder", "#6d6d6d",
-                    "fxtext", "#ff003c",
-                    "fxsubtext", "#bdbdbd",
-                    "fxicon", "#ff003c",
-                    "fxhover", "#2b00ff",
-                    "fxactive", "#ff003c",
-                    "fxslider", "#ff003c",
-                    "fxsliderbg", "#121212",
-                    "fxhandle", "#2b00ff",
+
+                    "dspbg", "#1e1e1e",
+                    "dspborder", "#6d6d6d",
+
+                    "dspeqbg", "#1c0d0d",
+                    "dspeqtext", "#ff003c",
+                    "dspeqsubtext", "#bdbdbd",
+                    "dspeqicon", "#ff003c",
+                    "dspeqhover", "#2b00ff",
+                    "dspeqpresettext", "#bdbdbd",
+                    "dspeqpresetactive", "#ff003c",
+                    "dspeq10slider", "#2b00ff",
+                    "dspeq10handle", "#ff003c",
+                    "dspeq10bg", "#1e1e1e",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#1e1e1e",
+                    "dspeqmixslider", "#ff003c",
+                    "dspeqmixhandle", "#2b00ff",
+                    "dspeqmixbg", "#1e1e1e",
+
+                    "dspfxbg", "#1c0d0d",
+                    "dspfxborder", "#6d6d6d",
+                    "dspfxtext", "#ff003c",
+                    "dspfxsubtext", "#bdbdbd",
+                    "dspfxicon", "#ff003c",
+                    "dspfxhover", "#2b00ff",
+                    "dspfxactive", "#ff003c",
+                    "dspfxslider", "#ff003c",
+                    "dspfxsliderbg", "#1c0d0d",
+                    "dspfxhandle", "#2b00ff",
+
+                    "dspslider", "#ff003c",
+                    "dspsliderbg", "#1c0d0d",
+                    "dsphandle", "#2b00ff",
                 });
             }
             "Yellow" => {
@@ -970,33 +1014,41 @@ impl ThemeManager {
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ffea00",
                     "playlisticon", "#f965d9",
-                    "eqbg", "#15191c",
-                    "eqborder", "#6d6d6d",
-                    "eqtext", "#ffea00",
-                    "eqsubtext", "#6d6d6d",
-                    "eqicon", "#ffea00",
-                    "eqhover", "#f965d9",
-                    "eqpresettext", "#6d6d6d",
-                    "eqpresetactive", "#ffea00",
-                    "eq10slider", "#f965d9",
-                    "eq10handle", "#ffea00",
-                    "eq10bg", "#1e1e1e",
-                    "eqfaderslider", "#f5a623",
-                    "eqfaderhandle", "#8b0000",
-                    "eqfaderbg", "#1e1e1e",
-                    "eqmixslider", "#ffea00",
-                    "eqmixhandle", "#f965d9",
-                    "eqmixbg", "#1e1e1e",
-                    "fxbg", "#15191c",
-                    "fxborder", "#6d6d6d",
-                    "fxtext", "#ffea00",
-                    "fxsubtext", "#6d6d6d",
-                    "fxicon", "#ffea00",
-                    "fxhover", "#f965d9",
-                    "fxactive", "#ffea00",
-                    "fxslider", "#ffea00",
-                    "fxsliderbg", "#0d1012",
-                    "fxhandle", "#f965d9",
+
+                    "dspbg", "#15191c",
+                    "dspborder", "#6d6d6d",
+
+                    "dspeqbg", "#0d1012",
+                    "dspeqtext", "#ffea00",
+                    "dspeqsubtext", "#6d6d6d",
+                    "dspeqicon", "#ffea00",
+                    "dspeqhover", "#f965d9",
+                    "dspeqpresettext", "#6d6d6d",
+                    "dspeqpresetactive", "#ffea00",
+                    "dspeq10slider", "#f965d9",
+                    "dspeq10handle", "#ffea00",
+                    "dspeq10bg", "#15191c",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqfaderbg", "#15191c",
+                    "dspeqmixslider", "#ffea00",
+                    "dspeqmixhandle", "#f965d9",
+                    "dspeqmixbg", "#15191c",
+
+                    "dspfxbg", "#0d1012",
+                    "dspfxborder", "#6d6d6d",
+                    "dspfxtext", "#ffea00",
+                    "dspfxsubtext", "#6d6d6d",
+                    "dspfxicon", "#ffea00",
+                    "dspfxhover", "#f965d9",
+                    "dspfxactive", "#ffea00",
+                    "dspfxslider", "#ffea00",
+                    "dspfxsliderbg", "#0d1012",
+                    "dspfxhandle", "#f965d9",
+
+                    "dspslider", "#ffea00",
+                    "dspsliderbg", "#0d1012",
+                    "dsphandle", "#f965d9",
                 });
             }
             _ => {

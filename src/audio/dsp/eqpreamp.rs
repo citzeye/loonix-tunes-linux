@@ -19,21 +19,21 @@ fn bits_to_f32(bits: u32) -> f32 {
     f32::from_bits(bits)
 }
 
-pub struct StdEqPreamp {}
+pub struct EqPreamp {}
 
-impl StdEqPreamp {
+impl EqPreamp {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Default for StdEqPreamp {
+impl Default for EqPreamp {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl DspProcessor for StdEqPreamp {
+impl DspProcessor for EqPreamp {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         let is_on = get_preamp_enabled_arc().load(Ordering::Relaxed);
         let gain = bits_to_f32(get_preamp_gain_arc().load(Ordering::Relaxed));

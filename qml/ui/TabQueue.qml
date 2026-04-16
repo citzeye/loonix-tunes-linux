@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Qt.labs.platform
 
+// QUEUE tab | 
 Rectangle {
   id: queueTab
   width: 30
@@ -21,7 +22,7 @@ Rectangle {
 
   Text {
     anchors.centerIn: parent
-    text: '󰬘'
+    text: ''
     font.family: symbols.name
     font.pixelSize: 12
     font.bold: parent.isActive

@@ -28,22 +28,14 @@ extern "C" {
     pub fn rubberband_process(
         state: RubberBandState,
         input: *const *const f32,
-        frames: c_int,
-        avail: bool,
-    ) -> c_int;
-    pub fn rubberband_available_frames(state: RubberBandState) -> c_int;
+        samples: c_uint,
+        final_step: c_int,
+    );
     pub fn rubberband_available(state: RubberBandState) -> c_int;
     pub fn rubberband_retrieve(
         state: RubberBandState,
-        output: *const *mut f32,
-        frames: c_int,
-    ) -> c_int;
-    pub fn rubberband_get_latency(state: RubberBandState) -> c_int;
-    pub fn rubberband_set_max_process_size(state: RubberBandState, size: c_int) -> c_int;
-    pub fn rubberband_set_expected_input_duration(state: RubberBandState, duration: c_int)
-        -> c_int;
-    pub fn rubberband_set_transient_mode(state: RubberBandState, mode: c_int);
-    pub fn rubberband_set_phase_mode(state: RubberBandState, mode: c_int);
-    pub fn rubberband_set_formant_mode(state: RubberBandState, mode: c_int);
-    pub fn rubberband_set_formant_peak_path(shape: c_uint);
+        output: *mut *mut f32,
+        samples: c_uint,
+    ) -> c_uint;
+    pub fn rubberband_get_latency(state: RubberBandState) -> c_uint;
 }

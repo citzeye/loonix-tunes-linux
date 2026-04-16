@@ -4,6 +4,29 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+#[derive(Debug)]
+pub enum ConfigError {
+    NotFound,
+    ParseError(String),
+    IoError(String),
+}
+
+impl From<std::io::Error> for ConfigError {
+    fn from(e: std::io::Error) -> Self {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            ConfigError::NotFound
+        } else {
+            ConfigError::IoError(e.to_string())
+        }
+    }
+}
+
+impl From<serde_json::Error> for ConfigError {
+    fn from(e: serde_json::Error) -> Self {
+        ConfigError::ParseError(e.to_string())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CustomTheme {
     pub name: String,
@@ -56,8 +79,6 @@ pub struct AppConfig {
     pub crossfeed_enabled: bool,
     pub crossfeed_amount: f32,
     pub eq_enabled: bool,
-    pub highres_enabled: bool,
-    pub dac_exclusive_mode: bool,
     pub normalizer_enabled: bool,
     #[serde(default = "default_norm_target_lufs")]
     pub normalizer_target_lufs: f32,
@@ -97,91 +118,6 @@ fn default_norm_smoothing() -> f32 {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        // Load defaults from fxpreset.json
-        let fx = Self::load_fx_config();
-
-        let bass_gain = fx
-            .as_ref()
-            .map(|f| f.instant_fx.bass_booster.gain)
-            .unwrap_or(6.0);
-        let bass_cutoff = fx
-            .as_ref()
-            .map(|f| f.instant_fx.bass_booster.cutoff)
-            .unwrap_or(180.0);
-        let bass_enabled = fx
-            .as_ref()
-            .map(|f| f.instant_fx.bass_booster.enabled)
-            .unwrap_or(false);
-        let crystal_amount = fx
-            .as_ref()
-            .map(|f| f.instant_fx.crystalizer.amount)
-            .unwrap_or(0.2);
-        let crystal_enabled = fx
-            .as_ref()
-            .map(|f| f.instant_fx.crystalizer.enabled)
-            .unwrap_or(false);
-        let surround_width = fx
-            .as_ref()
-            .map(|f| f.instant_fx.surround.width)
-            .unwrap_or(1.8);
-        let surround_enabled = fx
-            .as_ref()
-            .map(|f| f.instant_fx.surround.enabled)
-            .unwrap_or(false);
-
-        let _reverb_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.reverb.enabled)
-            .unwrap_or(false);
-        let compressor_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.compressor.enabled)
-            .unwrap_or(false);
-        let compressor_threshold = fx
-            .as_ref()
-            .map(|f| f.master_fx.compressor.threshold)
-            .unwrap_or(-18.0);
-        let pitch_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.pitch_shifter.enabled)
-            .unwrap_or(false);
-        let pitch_semitones = fx
-            .as_ref()
-            .map(|f| f.master_fx.pitch_shifter.semitones)
-            .unwrap_or(0.0);
-        let middle_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.middle_clarity.enabled)
-            .unwrap_or(false);
-        let middle_amount = fx
-            .as_ref()
-            .map(|f| f.master_fx.middle_clarity.amount)
-            .unwrap_or(0.0);
-        let mono_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.stereo_width.enabled)
-            .unwrap_or(false);
-        let mono_width = fx
-            .as_ref()
-            .map(|f| f.master_fx.stereo_width.amount)
-            .unwrap_or(1.0);
-        let stereo_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.stereo_enhance.enabled)
-            .unwrap_or(false);
-        let stereo_amount = fx
-            .as_ref()
-            .map(|f| f.master_fx.stereo_enhance.amount)
-            .unwrap_or(0.0);
-        let crossfeed_enabled = fx
-            .as_ref()
-            .map(|f| f.master_fx.headphone_crossfeed.enabled)
-            .unwrap_or(false);
-        let crossfeed_amount = fx
-            .as_ref()
-            .map(|f| f.master_fx.headphone_crossfeed.amount)
-            .unwrap_or(0.0);
-
         Self {
             eq_bands: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
             volume: 0.2,
@@ -198,34 +134,32 @@ impl Default for AppConfig {
             window_width: 350,
             window_height: 700,
             dsp_enabled: true,
-            bass_enabled,
-            bass_gain,
-            bass_cutoff,
+            bass_enabled: false,
+            bass_gain: 6.0,
+            bass_cutoff: 180.0,
             bass_q: 0.7,
-            crystal_enabled,
-            crystal_amount,
+            crystal_enabled: false,
+            crystal_amount: 0.2,
             crystal_freq: 4000.0,
-            surround_enabled,
-            surround_width,
+            surround_enabled: false,
+            surround_width: 1.8,
             surround_room_size: 15.0,
             surround_bass_safe: true,
-            mono_enabled,
-            mono_width,
-            pitch_enabled,
-            pitch_semitones,
-            middle_enabled,
-            middle_amount,
+            mono_enabled: false,
+            mono_width: 1.0,
+            pitch_enabled: false,
+            pitch_semitones: 0.0,
+            middle_enabled: false,
+            middle_amount: 0.0,
             reverb_preset: 0,
-            compressor_enabled,
-            compressor_threshold,
-            stereo_enabled,
-            stereo_amount,
+            compressor_enabled: false,
+            compressor_threshold: -18.0,
+            stereo_enabled: false,
+            stereo_amount: 0.0,
             preamp_db: 0.0,
-            crossfeed_enabled,
-            crossfeed_amount,
+            crossfeed_enabled: false,
+            crossfeed_amount: 0.0,
             eq_enabled: true,
-            highres_enabled: false,
-            dac_exclusive_mode: false,
             normalizer_enabled: true,
             normalizer_target_lufs: -14.0,
             normalizer_true_peak_dbtp: -1.5,
@@ -242,7 +176,6 @@ impl Default for AppConfig {
             ],
             user_preset_gains: [[0.0; 10]; 6],
             user_preset_macro: [0.0; 6],
-            // Theme settings
             theme: "Default".to_string(),
             custom_themes: vec![
                 CustomTheme {
@@ -288,72 +221,79 @@ impl AppConfig {
         map.insert("playlistfolder".to_string(), "#ff881a".to_string());
         map.insert("playlistactive".to_string(), "#00ffa2".to_string());
         map.insert("playlisticon".to_string(), "#ff881a".to_string());
-        map.insert("eqbg".to_string(), "#201f2b".to_string());
-        map.insert("eqborder".to_string(), "#00ffa2".to_string());
-        map.insert("eqtext".to_string(), "#00ffa2".to_string());
-        map.insert("eqsubtext".to_string(), "#57caab".to_string());
-        map.insert("eqicon".to_string(), "#ff881a".to_string());
-        map.insert("eqhover".to_string(), "#ff1ae0".to_string());
-        map.insert("eqpresettext".to_string(), "#57caab".to_string());
-        map.insert("eqpresetactive".to_string(), "#00ffa2".to_string());
-        // 10 band EQ slider colors
-        map.insert("eq10slider".to_string(), "#ff1ae0".to_string());
-        map.insert("eq10handle".to_string(), "#9442ff".to_string());
-        map.insert("eq10bg".to_string(), "#111111".to_string());
-        // Fader slider colors
-        map.insert("eqfaderslider".to_string(), "#ff1ae0".to_string());
-        map.insert("eqfaderhandle".to_string(), "#9442ff".to_string());
-        map.insert("eqfaderbg".to_string(), "#111111".to_string());
-        // Mix slider colors
-        map.insert("eqmixslider".to_string(), "#ff1ae0".to_string());
-        map.insert("eqmixhandle".to_string(), "#9442ff".to_string());
-        map.insert("eqmixbg".to_string(), "#111111".to_string());
-        map.insert("fxbg".to_string(), "#201f2b".to_string());
-        map.insert("fxborder".to_string(), "#00ffa2".to_string());
-        map.insert("fxtext".to_string(), "#00ffa2".to_string());
-        map.insert("fxsubtext".to_string(), "#57caab".to_string());
-        map.insert("fxicon".to_string(), "#9442ff".to_string());
-        map.insert("fxhover".to_string(), "#ff1ae0".to_string());
-        map.insert("fxactive".to_string(), "#9442ff".to_string());
-        map.insert("fxslider".to_string(), "#9442ff".to_string());
-        map.insert("fxsliderbg".to_string(), "#15141b".to_string());
-        map.insert("fxhandle".to_string(), "#ff1ae0".to_string());
+        map.insert("dspbg".to_string(), "#201f2b".to_string());
+        map.insert("dspborder".to_string(), "#00ffa2".to_string());
+        // EQ Panel
+        map.insert("dspeqbg".to_string(), "#15141b".to_string());
+        map.insert("dspeqtext".to_string(), "#00ffa2".to_string());
+        map.insert("dspeqsubtext".to_string(), "#57caab".to_string());
+        map.insert("dspeqicon".to_string(), "#ff881a".to_string());
+        map.insert("dspeqhover".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeqpresettext".to_string(), "#57caab".to_string());
+        map.insert("dspeqpresetactive".to_string(), "#00ffa2".to_string());
+        map.insert("dspeq10slider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeq10handle".to_string(), "#9442ff".to_string());
+        map.insert("dspeq10bg".to_string(), "#111111".to_string());
+        map.insert("dspeqfaderslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeqfaderhandle".to_string(), "#9442ff".to_string());
+        map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
+        map.insert("dspeqmixslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeqmixhandle".to_string(), "#9442ff".to_string());
+        map.insert("dspeqmixbg".to_string(), "#111111".to_string());
+        // FX Panel
+        map.insert("dspfxbg".to_string(), "#15141b".to_string());
+        map.insert("dspfxborder".to_string(), "#00ffa2".to_string());
+        map.insert("dspfxtext".to_string(), "#00ffa2".to_string());
+        map.insert("dspfxsubtext".to_string(), "#57caab".to_string());
+        map.insert("dspfxicon".to_string(), "#ff881a".to_string());
+        map.insert("dspfxhover".to_string(), "#ff1ae0".to_string());
+        map.insert("dspfxactive".to_string(), "#9442ff".to_string());
+        map.insert("dspfxslider".to_string(), "#9442ff".to_string());
+        map.insert("dspfxsliderbg".to_string(), "#15141b".to_string());
+        map.insert("dspfxhandle".to_string(), "#ff1ae0".to_string());
+        map.insert("dspslider".to_string(), "#9442ff".to_string());
+        map.insert("dspsliderbg".to_string(), "#15141b".to_string());
+        map.insert("dsphandle".to_string(), "#ff1ae0".to_string());
         map
     }
 }
 
 impl AppConfig {
     pub fn load() -> Self {
-        let config_path = Self::get_config_path();
-
-        if let Some(path) = config_path {
-            if path.exists() {
-                if let Ok(content) = fs::read_to_string(&path) {
-                    if let Ok(config) = serde_json::from_str(&content) {
-                        return config;
-                    }
-                }
-            }
-        }
-
-        Self::default()
-    }
-
-    pub fn save(&self) {
-        let config_path = Self::get_config_path();
-
-        if let Some(path) = config_path {
-            if let Some(parent) = path.parent() {
-                let _ = fs::create_dir_all(parent);
-            }
-
-            if let Ok(content) = serde_json::to_string_pretty(self) {
-                let _ = fs::write(&path, content);
+        match Self::load_user_config() {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                eprintln!("[Config] Using defaults: {:?}", e);
+                Self::default()
             }
         }
     }
 
-    fn get_config_path() -> Option<PathBuf> {
+    fn load_user_config() -> Result<Self, ConfigError> {
+        let path = Self::config_path().ok_or(ConfigError::NotFound)?;
+
+        let content = fs::read_to_string(&path)?;
+        let config: AppConfig = serde_json::from_str(&content)?;
+
+        Ok(config)
+    }
+
+    pub fn save(&self) -> Result<(), ConfigError> {
+        let path = Self::config_path().ok_or(ConfigError::IoError("Invalid path".into()))?;
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let temp_path = path.with_extension("tmp");
+        let json = serde_json::to_string_pretty(self)?;
+        fs::write(&temp_path, json)?;
+        fs::rename(&temp_path, &path)?; // Atomic on POSIX
+
+        Ok(())
+    }
+
+    fn config_path() -> Option<PathBuf> {
         dirs::config_dir().map(|p| p.join("loonix-tunes").join("config.json"))
     }
 }
@@ -362,11 +302,6 @@ impl AppConfig {
 pub struct EqPreset {
     pub name: String,
     pub gains: [f32; 10],
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct EqPresetFile {
-    pub presets: Vec<EqPreset>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -421,207 +356,225 @@ impl Default for FxPreset {
     }
 }
 
-// === fxpreset.json structs ===
+// ============================================================
+// EQ PRESETS (const - not user data)
+// ============================================================
+pub const EQ_PRESET_DATA: [(&str, [f32; 10]); 6] = [
+    (
+        "LOONIX",
+        [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
+    ),
+    ("BASS", [7.0, 6.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0]),
+    ("ROCK", [5.0, 4.0, 3.0, 1.0, -1.0, -1.0, 1.0, 3.0, 4.0, 5.0]),
+    (
+        "POP",
+        [-2.0, -1.0, 0.0, 2.0, 4.0, 0.0, 2.0, 0.0, -1.0, -2.0],
+    ),
+    (
+        "METAL",
+        [6.0, 5.0, 4.0, 0.0, -4.0, -4.0, -2.0, 2.0, 5.0, 6.0],
+    ),
+    ("JAZZ", [3.0, 2.0, 1.0, 2.0, -1.0, -1.0, 0.0, 1.0, 2.0, 3.0]),
+];
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct BassBoosterConfig {
-    pub enabled: bool,
-    pub gain: f32,
-    pub cutoff: f32,
+// ============================================================
+// FX PRESETS (const - not user data)
+// ============================================================
+#[derive(Clone)]
+struct FxPresetData {
+    name: &'static str,
+    bass_enabled: bool,
+    bass_gain: f32,
+    bass_cutoff: f32,
+    crystal_enabled: bool,
+    crystal_amount: f32,
+    surround_enabled: bool,
+    surround_width: f32,
+    mono_enabled: bool,
+    mono_width: f32,
+    pitch_enabled: bool,
+    pitch_semitones: f32,
+    middle_enabled: bool,
+    middle_amount: f32,
+    stereo_enabled: bool,
+    stereo_amount: f32,
+    crossfeed_enabled: bool,
+    crossfeed_amount: f32,
+    compressor_enabled: bool,
+    compressor_threshold: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct SurroundConfig {
-    pub enabled: bool,
-    pub width: f32,
-}
+const FX_PRESET_DATA: [FxPresetData; 6] = [
+    FxPresetData {
+        name: "OFF",
+        bass_enabled: false,
+        bass_gain: 6.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: false,
+        crystal_amount: 0.2,
+        surround_enabled: false,
+        surround_width: 1.8,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: false,
+        stereo_amount: 0.0,
+        crossfeed_enabled: false,
+        crossfeed_amount: 0.0,
+        compressor_enabled: false,
+        compressor_threshold: -18.0,
+    },
+    FxPresetData {
+        name: "BASS BOOST",
+        bass_enabled: true,
+        bass_gain: 12.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: false,
+        crystal_amount: 0.2,
+        surround_enabled: false,
+        surround_width: 1.8,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: false,
+        stereo_amount: 0.0,
+        crossfeed_enabled: false,
+        crossfeed_amount: 0.0,
+        compressor_enabled: false,
+        compressor_threshold: -18.0,
+    },
+    FxPresetData {
+        name: "CLARITY",
+        bass_enabled: false,
+        bass_gain: 6.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: true,
+        crystal_amount: 0.40,
+        surround_enabled: false,
+        surround_width: 1.8,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: false,
+        stereo_amount: 0.0,
+        crossfeed_enabled: false,
+        crossfeed_amount: 0.0,
+        compressor_enabled: false,
+        compressor_threshold: -18.0,
+    },
+    FxPresetData {
+        name: "WIDE",
+        bass_enabled: false,
+        bass_gain: 6.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: false,
+        crystal_amount: 0.2,
+        surround_enabled: true,
+        surround_width: 2.0,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: true,
+        stereo_amount: 0.5,
+        crossfeed_enabled: false,
+        crossfeed_amount: 0.0,
+        compressor_enabled: false,
+        compressor_threshold: -18.0,
+    },
+    FxPresetData {
+        name: "HEADPHONE",
+        bass_enabled: false,
+        bass_gain: 6.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: false,
+        crystal_amount: 0.2,
+        surround_enabled: true,
+        surround_width: 1.5,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: false,
+        stereo_amount: 0.0,
+        crossfeed_enabled: true,
+        crossfeed_amount: 0.3,
+        compressor_enabled: false,
+        compressor_threshold: -18.0,
+    },
+    FxPresetData {
+        name: "FULL",
+        bass_enabled: true,
+        bass_gain: 10.0,
+        bass_cutoff: 180.0,
+        crystal_enabled: true,
+        crystal_amount: 0.30,
+        surround_enabled: false,
+        surround_width: 1.8,
+        mono_enabled: false,
+        mono_width: 1.0,
+        pitch_enabled: false,
+        pitch_semitones: 0.0,
+        middle_enabled: false,
+        middle_amount: 0.0,
+        stereo_enabled: true,
+        stereo_amount: 0.2,
+        crossfeed_enabled: false,
+        crossfeed_amount: 0.0,
+        compressor_enabled: true,
+        compressor_threshold: -18.0,
+    },
+];
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct CrystalizerConfig {
-    pub enabled: bool,
-    pub amount: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct InstantFx {
-    pub bass_booster: BassBoosterConfig,
-    pub surround: SurroundConfig,
-    pub crystalizer: CrystalizerConfig,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ReverbConfig {
-    pub enabled: bool,
-    pub mode: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct CompressorConfig {
-    pub enabled: bool,
-    pub threshold: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct PitchShifterConfig {
-    pub enabled: bool,
-    pub semitones: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct MiddleClarityConfig {
-    pub enabled: bool,
-    pub amount: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct StereoWidthConfig {
-    pub enabled: bool,
-    pub amount: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct StereoEnhanceConfig {
-    pub enabled: bool,
-    pub amount: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct HeadphoneCrossfeedConfig {
-    pub enabled: bool,
-    pub amount: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct MasterFx {
-    pub reverb: ReverbConfig,
-    pub compressor: CompressorConfig,
-    pub pitch_shifter: PitchShifterConfig,
-    pub middle_clarity: MiddleClarityConfig,
-    pub stereo_width: StereoWidthConfig,
-    pub stereo_enhance: StereoEnhanceConfig,
-    pub headphone_crossfeed: HeadphoneCrossfeedConfig,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct FxPresetFile {
-    pub instant_fx: InstantFx,
-    pub master_fx: MasterFx,
-}
-
-// Factory presets hardcoded (anti-corrupt fallback)
 impl AppConfig {
-    pub fn factory_eq_presets() -> Vec<EqPreset> {
-        vec![
-            EqPreset {
-                name: "LOONIX".into(),
-                gains: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
-            },
-            EqPreset {
-                name: "Bass".into(),
-                gains: [7.0, 6.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
-            },
-            EqPreset {
-                name: "Rock".into(),
-                gains: [5.0, 4.0, 3.0, 1.0, -1.0, -1.0, 1.0, 3.0, 4.0, 5.0],
-            },
-            EqPreset {
-                name: "Pop".into(),
-                gains: [2.0, 3.0, 2.0, 0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 1.0],
-            },
-            EqPreset {
-                name: "Metal".into(),
-                gains: [6.0, 5.0, 4.0, 0.0, -4.0, -4.0, -2.0, 2.0, 5.0, 6.0],
-            },
-            EqPreset {
-                name: "Jazz".into(),
-                gains: [3.0, 2.0, 1.0, 2.0, -1.0, -1.0, 0.0, 1.0, 2.0, 3.0],
-            },
-        ]
+    pub fn get_eq_presets() -> Vec<EqPreset> {
+        EQ_PRESET_DATA
+            .iter()
+            .map(|(name, gains)| EqPreset {
+                name: name.to_string(),
+                gains: *gains,
+            })
+            .collect()
     }
 
-    pub fn factory_fx_presets() -> Vec<FxPreset> {
-        vec![
-            FxPreset {
-                name: "OFF".into(),
-                ..Default::default()
-            },
-            FxPreset {
-                name: "BASS BOOST".into(),
-                bass_enabled: true,
-                bass_gain: 12.0,
-                ..Default::default()
-            },
-            FxPreset {
-                name: "CLARITY".into(),
-                crystal_enabled: true,
-                crystal_amount: 0.40,
-                ..Default::default()
-            },
-            FxPreset {
-                name: "WIDE".into(),
-                surround_enabled: true,
-                surround_width: 2.0,
-                stereo_enabled: true,
-                stereo_amount: 0.5,
-                ..Default::default()
-            },
-            FxPreset {
-                name: "HEADPHONE".into(),
-                surround_enabled: true,
-                surround_width: 1.5,
-                crossfeed_enabled: true,
-                crossfeed_amount: 0.3,
-                ..Default::default()
-            },
-            FxPreset {
-                name: "FULL".into(),
-                bass_enabled: true,
-                bass_gain: 10.0,
-                crystal_enabled: true,
-                crystal_amount: 0.30,
-                stereo_enabled: true,
-                stereo_amount: 0.2,
-                compressor_enabled: true,
-                ..Default::default()
-            },
-        ]
-    }
-
-    pub fn load_eq_presets() -> Vec<EqPreset> {
-        let path = Self::get_assets_path().join("eqpreset.json");
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(file) = serde_json::from_str::<EqPresetFile>(&content) {
-                return file.presets;
-            }
-        }
-        // Safe fallback: use hardcoded factory presets
-        Self::factory_eq_presets()
-    }
-
-    pub fn load_fx_presets() -> Vec<FxPreset> {
-        Self::factory_fx_presets()
-    }
-
-    pub fn load_fx_config() -> Option<FxPresetFile> {
-        let path = Self::get_assets_path().join("fxpreset.json");
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(file) = serde_json::from_str::<FxPresetFile>(&content) {
-                return Some(file);
-            }
-        }
-        None
-    }
-
-    fn get_assets_path() -> PathBuf {
-        // Try to find assets relative to executable, then fallback to project dir
-        if let Ok(exe) = std::env::current_exe() {
-            if let Some(parent) = exe.parent() {
-                let assets = parent.join("assets");
-                if assets.exists() {
-                    return assets;
-                }
-            }
-        }
-        PathBuf::from("assets")
+    pub fn get_fx_presets() -> Vec<FxPreset> {
+        FX_PRESET_DATA
+            .iter()
+            .map(|p| FxPreset {
+                name: p.name.to_string(),
+                bass_enabled: p.bass_enabled,
+                bass_gain: p.bass_gain,
+                bass_cutoff: p.bass_cutoff,
+                crystal_enabled: p.crystal_enabled,
+                crystal_amount: p.crystal_amount,
+                surround_enabled: p.surround_enabled,
+                surround_width: p.surround_width,
+                mono_enabled: p.mono_enabled,
+                mono_width: p.mono_width,
+                pitch_enabled: p.pitch_enabled,
+                pitch_semitones: p.pitch_semitones,
+                middle_enabled: p.middle_enabled,
+                middle_amount: p.middle_amount,
+                stereo_enabled: p.stereo_enabled,
+                stereo_amount: p.stereo_amount,
+                crossfeed_enabled: p.crossfeed_enabled,
+                crossfeed_amount: p.crossfeed_amount,
+                compressor_enabled: p.compressor_enabled,
+                compressor_threshold: p.compressor_threshold,
+            })
+            .collect()
     }
 }

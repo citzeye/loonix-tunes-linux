@@ -962,86 +962,44 @@ Window {
                             }
                         }
 
-                        // EQUALIZER toggle E
+                        // DSP popup | 󰯴
                         Item {
-                            id: eqContainer
-                            width: eqIconSlider.width
+                            id: dspContainer
+                            width: dspIcon.width
                             height: 40
                             Layout.alignment: Qt.AlignVCenter
 
                             Text {
-                                id: eqTooltip
+                                id: dspTooltip
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottom: eqIconSlider.top
+                                anchors.bottom: dspIcon.top
                                 anchors.bottomMargin: 4
-                                text: "Equalizer"
+                                text: "DSP"
                                 font.pixelSize: 14
                                 font.family: kodeMono.name
                                 color: theme.colormap.playerhover
-                                visible: eqMASlider.containsMouse
+                                visible: dspMA.containsMouse
                             }
 
                             Text {
-                                id: eqIconSlider
+                                id: dspIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: '󰯷'
+                                text: '󰺢'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: eqMASlider.containsMouse || eq.visible ? theme.colormap.playerhover : theme.colormap.playersubtext
-
-                                MouseArea {
-                                    id: eqMASlider
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        if (eq.visible) {
-                                            eq.close();
-                                        } else {
-                                            eq.open();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // FX toggle F
-                        Item {
-                            id: fxContainer
-                            width: fxIconSlider.width
-                            height: 40
-                            Layout.alignment: Qt.AlignVCenter
-
-                            Text {
-                                id: fxTooltip
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottom: fxIconSlider.top
-                                anchors.bottomMargin: 4
-                                text: "FX"
-                                font.pixelSize: 14
-                                font.family: kodeMono.name
-                                color: theme.colormap.playerhover
-                                visible: presetMASlider.containsMouse
+                                font.bold: true
+                                color: dsp.visible || dspMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
-                            Text {
-                                id: fxIconSlider
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: '󰯺'
-                                font.family: symbols.name
-                                font.pixelSize: 18
-
-                                color: presetMASlider.containsMouse || fx.visible ? theme.colormap.playerhover : theme.colormap.playersubtext
-
-                                MouseArea {
-                                    id: presetMASlider
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        if (fx.visible) {
-                                            fx.close();
-                                        } else {
-                                            fx.open();
-                                        }
+                            MouseArea {
+                                id: dspMA
+                                anchors.fill: dspIcon
+                                hoverEnabled: true
+                                onClicked: {
+                                    if (dsp.visible) {
+                                        dsp.close();
+                                    } else {
+                                        dsp.open();
                                     }
                                 }
                             }
@@ -1257,15 +1215,8 @@ Window {
     // ==========================================
     // SECTION: POPUPS (Panggilan Eksternal)
     // ==========================================
-    Eq {
-        id: eq
-        x: (parent.width - width) / 2
-        y: 171
-        width: 500
-    }
-
-    Fx {
-        id: fx
+    Dsp {
+        id: dsp
         x: (parent.width - width) / 2
         y: 171
         width: 500

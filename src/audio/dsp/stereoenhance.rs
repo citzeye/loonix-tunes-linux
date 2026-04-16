@@ -1,40 +1,39 @@
-/* --- LOONIX-TUNES src/audio/dsp/stereoenhance.rs --- */
+/* --- LOONIX-TUNES src/audio/dsp/std/stdstereoenhance.rs --- */
 
 use crate::audio::dsp::DspProcessor;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::OnceLock;
 
-static STEREO_ENHANCE_AMOUNT_ARC: OnceLock<Mutex<Option<Arc<AtomicU32>>>> = OnceLock::new();
+static STEREO_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
+static STEREO_AMOUNT: OnceLock<AtomicU32> = OnceLock::new();
 
-pub fn get_stereo_enhance_arc() -> Option<Arc<AtomicU32>> {
-    let guard = STEREO_ENHANCE_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    guard.lock().ok()?.clone()
+pub fn get_stereo_enabled_arc() -> &'static AtomicBool {
+    STEREO_ENABLED.get_or_init(|| AtomicBool::new(false))
 }
 
-pub fn set_stereo_enhance_arc(arc: Arc<AtomicU32>) {
-    let guard = STEREO_ENHANCE_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    if let Ok(mut g) = guard.lock() {
-        *g = Some(arc);
-    }
+pub fn get_stereo_amount_arc() -> &'static AtomicU32 {
+    STEREO_AMOUNT.get_or_init(|| AtomicU32::new(0.0_f32.to_bits()))
 }
 
-pub struct StereoEnhance {
-    amount_bits: Arc<AtomicU32>,
+fn bits_to_f32(bits: u32) -> f32 {
+    f32::from_bits(bits)
 }
+
+pub struct StereoEnhance {}
 
 impl StereoEnhance {
-    pub fn new(amount: f32) -> Self {
-        let arc = Arc::new(AtomicU32::new(amount.to_bits()));
-        set_stereo_enhance_arc(arc.clone());
-        Self { amount_bits: arc }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
 impl DspProcessor for StereoEnhance {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        let amount = f32::from_bits(self.amount_bits.load(Ordering::Relaxed));
+        let is_on = get_stereo_enabled_arc().load(Ordering::Relaxed);
+        let amount = bits_to_f32(get_stereo_amount_arc().load(Ordering::Relaxed));
 
-        if amount <= 0.001 {
+        // Auto-Bypass
+        if !is_on || amount < 0.01 {
             output.copy_from_slice(input);
             return;
         }
@@ -67,6 +66,7 @@ impl DspProcessor for StereoEnhance {
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
+
     fn as_any_ref(&self) -> &dyn std::any::Any {
         self
     }

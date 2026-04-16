@@ -1,40 +1,43 @@
-/* --- LOONIX-TUNES src/audio/dsp/stereowidth.rs --- */
+/* --- LOONIX-TUNES src/audio/dsp/std/stdstereowidth.rs --- */
 
 use crate::audio::dsp::DspProcessor;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::OnceLock;
 
-/// Constant-power Mid/Side stereo width control.
-/// width = 0.0 -> summed mono (Mid only)
-/// width = 1.0 -> full stereo (original)
-pub struct StereoWidth {
-    width_bits: Arc<AtomicU32>,
+static MONO_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
+static MONO_WIDTH: OnceLock<AtomicU32> = OnceLock::new();
+
+pub fn get_mono_enabled_arc() -> &'static AtomicBool {
+    MONO_ENABLED.get_or_init(|| AtomicBool::new(false))
 }
 
+pub fn get_mono_width_arc() -> &'static AtomicU32 {
+    MONO_WIDTH.get_or_init(|| AtomicU32::new(1.0_f32.to_bits()))
+}
+
+fn bits_to_f32(bits: u32) -> f32 {
+    f32::from_bits(bits)
+}
+
+pub struct StereoWidth {}
+
 impl StereoWidth {
-    pub fn new(width: f32) -> Self {
-        Self {
-            width_bits: Arc::new(AtomicU32::new(width.to_bits())),
-        }
-    }
-
-    pub fn with_arc(arc: Arc<AtomicU32>) -> Self {
-        Self { width_bits: arc }
-    }
-
-    #[inline(always)]
-    fn get_width(&self) -> f32 {
-        f32::from_bits(self.width_bits.load(Ordering::Relaxed))
-    }
-
-    pub fn set_width(&self, width: f32) {
-        self.width_bits.store(width.to_bits(), Ordering::Relaxed);
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
 impl DspProcessor for StereoWidth {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        let width = self.get_width();
+        let is_on = get_mono_enabled_arc().load(Ordering::Relaxed);
+        let width = bits_to_f32(get_mono_width_arc().load(Ordering::Relaxed));
+
+        // Auto-Bypass - if disabled or width = 1.0 (normal stereo)
+        if !is_on || (width - 1.0).abs() < 0.01 {
+            output.copy_from_slice(input);
+            return;
+        }
+
         let len = input.len();
 
         for i in (0..len).step_by(2) {

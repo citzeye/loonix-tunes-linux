@@ -3,17 +3,16 @@
 #![allow(non_snake_case)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
 use cstr::cstr;
 use qmetaobject::*;
 
 pub mod audio;
 pub mod core;
 pub mod ui;
-
-#[cfg(target_os = "linux")]
-pub mod dbusservice;
 
 use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
@@ -34,11 +33,11 @@ impl App {
     fn new() -> Self {
         let music_model = QObjectBox::new(MusicModel::new());
         let theme = QObjectBox::new(ThemeManager::new());
-        
+
         if let Some(shared_config) = music_model.pinned().borrow().get_shared_config() {
             theme.pinned().borrow_mut().set_config(shared_config);
         }
-        
+
         Self {
             music_model,
             theme,
@@ -83,15 +82,8 @@ fn main() {
         eprintln!("Panic: {:?}", panic_info);
         eprintln!("Backtrace:\n{:?}", std::backtrace::Backtrace::capture());
     }));
-    
-    setup_env();
 
-    #[cfg(target_os = "linux")]
-    {
-        if let Err(e) = dbusservice::init_dbus() {
-            eprintln!("[DBUS] Failed to setup: {}", e);
-        }
-    }
+    setup_env();
 
     init_resources_v4();
 
@@ -131,7 +123,10 @@ fn main() {
         let files: Vec<String> = args[1..].to_vec();
         crate::ui::core::set_command_line_files(files);
         if cfg!(debug_assertions) {
-            println!("Stored {} file(s) from command line for processing", args.len() - 1);
+            println!(
+                "Stored {} file(s) from command line for processing",
+                args.len() - 1
+            );
         }
     }
 
@@ -144,7 +139,7 @@ fn main() {
     // ==========================================
     // 5. EXPLICIT SHUTDOWN - CRITICAL FOR CLEAN EXIT
     // ==========================================
-    
+
     // Stop system check threads first
     #[cfg(target_os = "linux")]
     {
@@ -166,8 +161,7 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/TabFavorites.qml",
         "qml/ui/TabQueue.qml",
         "qml/ui/TabCustom.qml",
-        "qml/ui/Eq.qml",
-        "qml/ui/Fx.qml",
+        "qml/ui/Dsp.qml",
         "qml/ui/TrackInfo.qml",
         "qml/ui/contextmenu/TabContextMenu.qml",
         "qml/ui/contextmenu/PlaylistContextMenu.qml",
@@ -190,8 +184,6 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/qmldir",
         "assets/qtquickcontrols2.conf",
         "assets/LoonixTunes.png",
-        "assets/eqpreset.json",
-        "assets/fxpreset.json",
         "assets/fonts/KodeMono-VariableFont_wght.ttf",
         "assets/fonts/SymbolsNerdFont-Regular.ttf",
         "assets/fonts/twemoji.ttf",

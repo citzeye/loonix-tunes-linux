@@ -155,13 +155,13 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn start_audiooutput(&mut self, path: String) {
-        // 1. Setup Ring Buffer - 2000ms (2 detik) buffer untuk Bluetooth stability
+        // 1. Setup Ring Buffer - 120ms for low latency
         let sample_rate = 48000; // frames per second
         let channels = 2; // Output always forced to STEREO by resampler (see decoder.rs)
         self.channels = channels;
-        let buffer_ms = 2000;
+        let buffer_ms = 120;
         // Calculate buffer size in SAMPLES (f32 values), not frames
-        // 2000ms @ 48kHz stereo = 192000 samples (~1.9 MB)
+        // 120ms @ 48kHz stereo = 11520 samples (~46 KB)
         let buffer_size = (sample_rate * channels * buffer_ms / 1000) as usize;
 
         let rb = HeapRb::<f32>::new(buffer_size);
@@ -454,18 +454,15 @@ impl Engine {
 
     pub fn get_normalizer_arc(
         &self,
-    ) -> Option<
-        std::sync::Arc<
-            std::sync::Mutex<crate::audio::dsp::dspstd::stdnormalizer::StdAudioNormalizer>,
-        >,
-    > {
+    ) -> Option<std::sync::Arc<std::sync::Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>>
+    {
         self.audiooutput.as_ref().map(|ao| ao.get_normalizer_arc())
     }
 
     pub fn set_normalizer_smoothing(&mut self, smoothing: f32) {
         // Smoothing is stored in a static atomic in normalizer.rs
         // No need to route through AudioOutput
-        let arc = crate::audio::dsp::dspstd::stdnormalizer::get_normalizer_smoothing_arc();
+        let arc = crate::audio::dsp::normalizer::get_normalizer_smoothing_arc();
         arc.store(smoothing.to_bits(), std::sync::atomic::Ordering::Relaxed);
     }
 
@@ -767,8 +764,7 @@ impl FfmpegEngine {
                     let gain = scanner::calculate_track_gain(&path_owned, &params);
 
                     // Update gain via atomic (lock-free, audio thread reads directly)
-                    let gain_arc =
-                        crate::audio::dsp::dspstd::stdnormalizer::get_normalizer_gain_arc();
+                    let gain_arc = crate::audio::dsp::normalizer::get_normalizer_gain_arc();
                     gain_arc.store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
                 });
         }

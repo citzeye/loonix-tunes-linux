@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/limiter.rs --- */
+/* --- LOONIX-TUNES src/audio/dsp/std/stdlimiter.rs --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,7 +9,7 @@ static LIMITER_ENABLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 
 pub fn get_limiter_enabled_arc() -> Arc<AtomicBool> {
     LIMITER_ENABLED
-        .get_or_init(|| Arc::new(AtomicBool::new(true)))
+        .get_or_init(|| Arc::new(AtomicBool::new(false)))
         .clone()
 }
 
@@ -35,15 +35,10 @@ impl Limiter {
     }
 }
 
-impl Default for Limiter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl DspProcessor for Limiter {
     #[inline(always)]
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
+        // Check enabled state from atomic (set by UI toggle)
         let enabled = get_limiter_enabled_arc().load(Ordering::Relaxed);
         if !enabled {
             output.copy_from_slice(input);
@@ -56,24 +51,31 @@ impl DspProcessor for Limiter {
             let l = input[i];
             let r = input[i + 1];
 
+            // 1. STEREO LINKING: Cari peak paling kenceng antara Kiri & Kanan
             let peak = l.abs().max(r.abs());
 
+            // 2. ENVELOPE FOLLOWER (Mencegah Bass Pecah)
             if peak > self.envelope {
+                // Attack: Envelope naik mengejar peak
                 self.envelope = peak + self.attack_coeff * (self.envelope - peak);
             } else {
+                // Release: Envelope turun pelan-pelan
                 self.envelope = peak + self.release_coeff * (self.envelope - peak);
             }
 
+            // 3. CALCULATE GAIN REDUCTION
             let mut gain = 1.0;
             if self.envelope > self.threshold_lin {
                 gain = self.threshold_lin / self.envelope;
             }
 
-            let soft_clip_gain = 1.0;
-            let l_limited = (l * gain * soft_clip_gain).tanh();
-            let r_limited = (r * gain * soft_clip_gain).tanh();
-            output[i] = l_limited;
-            output[i + 1] = r_limited;
+            // 4. APPLY GAIN with SOFT CLIPPING
+            let l_limited = l * gain;
+            let r_limited = r * gain;
+
+            // Soft limiter sederhana (Hard limit di 1.0, tapi kasih margin di 0.95)
+            output[i] = l_limited.clamp(-1.0, 1.0);
+            output[i + 1] = r_limited.clamp(-1.0, 1.0);
         }
     }
 

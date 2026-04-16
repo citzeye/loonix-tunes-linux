@@ -50,33 +50,33 @@ Item {
             "playlistfolder": inPlaylistFolder.inputText,
             "playlistactive": inPlaylistActive.inputText,
             "playlisticon": inPlaylistIcon.inputText,
-            "eqbg": inEqBg.inputText,
-            "eqborder": inEqBorder.inputText,
-            "eqtext": inEqText.inputText,
-            "eqsubtext": inEqSubtext.inputText,
-            "eqicon": inEqIcon.inputText,
-            "eqhover": inEqHover.inputText,
-            "eqpresettext": inEqPresetText.inputText,
-            "eqpresetactive": inEqPresetActive.inputText,
-            "eq10slider": inEq10Slider.inputText,
-            "eq10handle": inEq10Handle.inputText,
-            "eq10bg": inEq10Bg.inputText,
-            "eqfaderslider": inEqFaderSlider.inputText,
-            "eqfaderhandle": inEqFaderHandle.inputText,
-            "eqfaderbg": inEqFaderBg.inputText,
-            "eqmixslider": inEqMixSlider.inputText,
-            "eqmixhandle": inEqMixHandle.inputText,
-            "eqmixbg": inEqMixBg.inputText,
-            "fxbg": inFxBg.inputText,
-            "fxborder": inFxBorder.inputText,
-            "fxtext": inFxText.inputText,
-            "fxsubtext": inFxSubtext.inputText,
-            "fxicon": inFxIcon.inputText,
-            "fxhover": inFxHover.inputText,
-            "fxactive": inFxActive.inputText,
-            "fxslider": inFxSlider.inputText,
-            "fxsliderbg": inFxSliderBg.inputText,
-            "fxhandle": inFxHandle.inputText
+            "dspbg": inEqBg.inputText,
+            "dspborder": inEqBorder.inputText,
+            "dspeqtext": inEqText.inputText,
+            "dspeqsubtext": inEqSubtext.inputText,
+            "dspeqicon": inEqIcon.inputText,
+            "dspeqhover": inEqHover.inputText,
+            "dspeqpresettext": inEqPresetText.inputText,
+            "dspeqpresetactive": inEqPresetActive.inputText,
+            "dspeq10slider": inEq10Slider.inputText,
+            "dspeq10handle": inEq10Handle.inputText,
+            "dspeq10bg": inEq10Bg.inputText,
+            "dspeqfaderslider": inEqFaderSlider.inputText,
+            "dspeqfaderhandle": inEqFaderHandle.inputText,
+            "dspeqfaderbg": inEqFaderBg.inputText,
+            "dspeqmixslider": inEqMixSlider.inputText,
+            "dspeqmixhandle": inEqMixHandle.inputText,
+            "dspeqmixbg": inEqMixBg.inputText,
+            "dspfxbg": inFxBg.inputText,
+            "dspfxborder": inFxBorder.inputText,
+            "dspfxtext": inFxText.inputText,
+            "dspfxsubtext": inFxSubtext.inputText,
+            "dspfxicon": inFxIcon.inputText,
+            "dspfxhover": inFxHover.inputText,
+            "dspfxactive": inFxActive.inputText,
+            "dspfxslider": inFxSlider.inputText,
+            "dspfxsliderbg": inFxSliderBg.inputText,
+            "dspfxhandle": inFxHandle.inputText,
         };
     }
 
@@ -106,33 +106,33 @@ Item {
                 inPlaylistFolder.inputText = savedColors.playlistfolder;
                 inPlaylistActive.inputText = savedColors.playlistactive;
                 inPlaylistIcon.inputText = savedColors.playlisticon;
-                inEqBg.inputText = savedColors.eqbg;
-                inEqBorder.inputText = savedColors.eqborder;
-                inEqText.inputText = savedColors.eqtext;
-                inEqSubtext.inputText = savedColors.eqsubtext;
-                inEqIcon.inputText = savedColors.eqicon;
-                inEqHover.inputText = savedColors.eqhover;
-                inEqPresetText.inputText = savedColors.eqpresettext;
-                inEqPresetActive.inputText = savedColors.eqpresetactive;
-                inEq10Slider.inputText = savedColors.eq10slider;
-                inEq10Handle.inputText = savedColors.eq10handle;
-                inEq10Bg.inputText = savedColors.eq10bg;
-                inEqFaderSlider.inputText = savedColors.eqfaderslider;
-                inEqFaderHandle.inputText = savedColors.eqfaderhandle;
-                inEqFaderBg.inputText = savedColors.eqfaderbg;
-                inEqMixSlider.inputText = savedColors.eqmixslider;
-                inEqMixHandle.inputText = savedColors.eqmixhandle;
-                inEqMixBg.inputText = savedColors.eqmixbg;
-                inFxBg.inputText = savedColors.fxbg;
-                inFxBorder.inputText = savedColors.fxborder;
-                inFxText.inputText = savedColors.fxtext;
-                inFxSubtext.inputText = savedColors.fxsubtext;
-                inFxIcon.inputText = savedColors.fxicon;
-                inFxHover.inputText = savedColors.fxhover;
-                inFxActive.inputText = savedColors.fxactive;
-                inFxSlider.inputText = savedColors.fxslider;
-                inFxSliderBg.inputText = savedColors.fxsliderbg;
-                inFxHandle.inputText = savedColors.fxhandle;
+                inEqBg.inputText = savedColors.dspbg;
+                inEqBorder.inputText = savedColors.dspborder;
+                inEqText.inputText = savedColors.dspeqtext;
+                inEqSubtext.inputText = savedColors.dspeqsubtext;
+                inEqIcon.inputText = savedColors.dspeqicon;
+                inEqHover.inputText = savedColors.dspeqhover;
+                inEqPresetText.inputText = savedColors.dspeqpresettext;
+                inEqPresetActive.inputText = savedColors.dspeqpresetactive;
+                inEq10Slider.inputText = savedColors.dspeq10slider;
+                inEq10Handle.inputText = savedColors.dspeq10handle;
+                inEq10Bg.inputText = savedColors.dspeq10bg;
+                inEqFaderSlider.inputText = savedColors.dspeqfaderslider;
+                inEqFaderHandle.inputText = savedColors.dspeqfaderhandle;
+                inEqFaderBg.inputText = savedColors.dspeqfaderbg;
+                inEqMixSlider.inputText = savedColors.dspeqmixslider;
+                inEqMixHandle.inputText = savedColors.dspeqmixhandle;
+                inEqMixBg.inputText = savedColors.dspeqmixbg;
+                inFxBg.inputText = savedColors.dspfxbg;
+                inFxBorder.inputText = savedColors.dspfxborder;
+                inFxText.inputText = savedColors.dspfxtext;
+                inFxSubtext.inputText = savedColors.dspfxsubtext;
+                inFxIcon.inputText = savedColors.dspfxicon;
+                inFxHover.inputText = savedColors.dspfxhover;
+                inFxActive.inputText = savedColors.dspfxactive;
+                inFxSlider.inputText = savedColors.dspfxslider;
+                inFxSliderBg.inputText = savedColors.dspfxsliderbg;
+                inFxHandle.inputText = savedColors.dsphandle;
             } else {
                 inBgMain.inputText = theme.colormap.bgmain;
                 inBgOverlay.inputText = theme.colormap.bgoverlay;
@@ -154,33 +154,33 @@ Item {
                 inPlaylistFolder.inputText = theme.colormap.playlistfolder;
                 inPlaylistActive.inputText = theme.colormap.playlistactive;
                 inPlaylistIcon.inputText = theme.colormap.playlisticon;
-                inEqBg.inputText = theme.colormap.eqbg;
-                inEqBorder.inputText = theme.colormap.eqborder;
-                inEqText.inputText = theme.colormap.eqtext;
-                inEqSubtext.inputText = theme.colormap.eqsubtext;
-                inEqIcon.inputText = theme.colormap.eqicon;
-                inEqHover.inputText = theme.colormap.eqhover;
-                inEqPresetText.inputText = theme.colormap.eqpresettext;
-                inEqPresetActive.inputText = theme.colormap.eqpresetactive;
-                inEq10Slider.inputText = theme.colormap.eq10slider;
-                inEq10Handle.inputText = theme.colormap.eq10handle;
-                inEq10Bg.inputText = theme.colormap.eq10bg;
-                inEqFaderSlider.inputText = theme.colormap.eqfaderslider;
-                inEqFaderHandle.inputText = theme.colormap.eqfaderhandle;
-                inEqFaderBg.inputText = theme.colormap.eqfaderbg;
-                inEqMixSlider.inputText = theme.colormap.eqmixslider;
-                inEqMixHandle.inputText = theme.colormap.eqmixhandle;
-                inEqMixBg.inputText = theme.colormap.eqmixbg;
-                inFxBg.inputText = theme.colormap.fxbg;
-                inFxBorder.inputText = theme.colormap.fxborder;
-                inFxText.inputText = theme.colormap.fxtext;
-                inFxSubtext.inputText = theme.colormap.fxsubtext;
-                inFxIcon.inputText = theme.colormap.fxicon;
-                inFxHover.inputText = theme.colormap.fxhover;
-                inFxActive.inputText = theme.colormap.fxactive;
-                inFxSlider.inputText = theme.colormap.fxslider;
-                inFxSliderBg.inputText = theme.colormap.fxsliderbg;
-                inFxHandle.inputText = theme.colormap.fxhandle;
+                inEqBg.inputText = theme.colormap.dspeqbg;
+                inEqBorder.inputText = theme.colormap.dspfxborder;
+                inEqText.inputText = theme.colormap.dspeqtext;
+                inEqSubtext.inputText = theme.colormap.dspeqsubtext;
+                inEqIcon.inputText = theme.colormap.dspeqicon;
+                inEqHover.inputText = theme.colormap.dspeqhover;
+                inEqPresetText.inputText = theme.colormap.dspeqpresettext;
+                inEqPresetActive.inputText = theme.colormap.dspeqpresetactive;
+                inEq10Slider.inputText = theme.colormap.dspeq10slider;
+                inEq10Handle.inputText = theme.colormap.dspeq10handle;
+                inEq10Bg.inputText = theme.colormap.dspeq10bg;
+                inEqFaderSlider.inputText = theme.colormap.dspeqfaderslider;
+                inEqFaderHandle.inputText = theme.colormap.dspeqfaderhandle;
+                inEqFaderBg.inputText = theme.colormap.dspeqfaderbg;
+                inEqMixSlider.inputText = theme.colormap.dspeqmixslider;
+                inEqMixHandle.inputText = theme.colormap.dspeqmixhandle;
+                inEqMixBg.inputText = theme.colormap.dspeqmixbg;
+                inFxBg.inputText = theme.colormap.dspfxbg;
+                inFxBorder.inputText = theme.colormap.dspfxborder;
+                inFxText.inputText = theme.colormap.dspfxtext;
+                inFxSubtext.inputText = theme.colormap.dspfxsubtext;
+                inFxIcon.inputText = theme.colormap.dspfxicon;
+                inFxHover.inputText = theme.colormap.dspfxhover;
+                inFxActive.inputText = theme.colormap.dspfxactive;
+                inFxSlider.inputText = theme.colormap.dspfxslider;
+                inFxSliderBg.inputText = theme.colormap.dspfxsliderbg;
+                inFxHandle.inputText = theme.colormap.dspfxhandle;
             }
         } else {
             root.prefThemeEditorProfileTarget = -1;
@@ -454,88 +454,88 @@ Item {
                     }
                     ColorInputRow {
                         id: inEqBg
-                        labelText: "eqbg"
-                        hexValue: theme.colormap.eqbg
+                        labelText: "dspeqbg"
+                        hexValue: theme.colormap.dspeqbg
                     }
                     ColorInputRow {
                         id: inEqBorder
-                        labelText: "eqborder"
-                        hexValue: theme.colormap.eqborder
+                        labelText: "dspfxborder"
+                        hexValue: theme.colormap.dspfxborder
                     }
                     ColorInputRow {
                         id: inEqText
-                        labelText: "eqtext"
-                        hexValue: theme.colormap.eqtext
+                        labelText: "dspeqtext"
+                        hexValue: theme.colormap.dspeqtext
                     }
                     ColorInputRow {
                         id: inEqSubtext
-                        labelText: "eqsubtext"
-                        hexValue: theme.colormap.eqsubtext
+                        labelText: "dspeqsubtext"
+                        hexValue: theme.colormap.dspeqsubtext
                     }
                     ColorInputRow {
                         id: inEqIcon
-                        labelText: "eqicon"
-                        hexValue: theme.colormap.eqicon
+                        labelText: "dspeqicon"
+                        hexValue: theme.colormap.dspeqicon
                     }
                     ColorInputRow {
                         id: inEqHover
-                        labelText: "eqhover"
-                        hexValue: theme.colormap.eqhover
+                        labelText: "dspeqhover"
+                        hexValue: theme.colormap.dspeqhover
                     }
                     ColorInputRow {
                         id: inEqPresetText
-                        labelText: "eqpresettext"
-                        hexValue: theme.colormap.eqpresettext
+                        labelText: "dspeqpresettext"
+                        hexValue: theme.colormap.dspeqpresettext
                     }
                     ColorInputRow {
                         id: inEqPresetActive
-                        labelText: "eqpresetactive"
-                        hexValue: theme.colormap.eqpresetactive
+                        labelText: "dspeqpresetactive"
+                        hexValue: theme.colormap.dspeqpresetactive
                     }
                     ColorInputRow {
                         id: inEq10Slider
-                        labelText: "eq10slider"
-                        hexValue: theme.colormap.eq10slider
+                        labelText: "dspeq10slider"
+                        hexValue: theme.colormap.dspeq10slider
                     }
                     ColorInputRow {
                         id: inEq10Handle
-                        labelText: "eq10handle"
-                        hexValue: theme.colormap.eq10handle
+                        labelText: "dspeq10handle"
+                        hexValue: theme.colormap.dspeq10handle
                     }
                     ColorInputRow {
                         id: inEq10Bg
-                        labelText: "eq10bg"
-                        hexValue: theme.colormap.eq10bg
+                        labelText: "dspeq10bg"
+                        hexValue: theme.colormap.dspeq10bg
                     }
                     ColorInputRow {
                         id: inEqFaderSlider
-                        labelText: "eqfaderslider"
-                        hexValue: theme.colormap.eqfaderslider
+                        labelText: "dspeqfaderslider"
+                        hexValue: theme.colormap.dspeqfaderslider
                     }
                     ColorInputRow {
                         id: inEqFaderHandle
-                        labelText: "eqfaderhandle"
-                        hexValue: theme.colormap.eqfaderhandle
+                        labelText: "dspeqfaderhandle"
+                        hexValue: theme.colormap.dspeqfaderhandle
                     }
                     ColorInputRow {
                         id: inEqFaderBg
-                        labelText: "eqfaderbg"
-                        hexValue: theme.colormap.eqfaderbg
+                        labelText: "dspeqfaderbg"
+                        hexValue: theme.colormap.dspeqfaderbg
                     }
                     ColorInputRow {
                         id: inEqMixSlider
-                        labelText: "eqmixslider"
-                        hexValue: theme.colormap.eqmixslider
+                        labelText: "dspeqmixslider"
+                        hexValue: theme.colormap.dspeqmixslider
                     }
                     ColorInputRow {
                         id: inEqMixHandle
-                        labelText: "eqmixhandle"
-                        hexValue: theme.colormap.eqmixhandle
+                        labelText: "dspeqmixhandle"
+                        hexValue: theme.colormap.dspeqmixhandle
                     }
                     ColorInputRow {
                         id: inEqMixBg
-                        labelText: "eqmixbg"
-                        hexValue: theme.colormap.eqmixbg
+                        labelText: "dspeqmixbg"
+                        hexValue: theme.colormap.dspeqmixbg
                     }
 
                     SectionHeader {
@@ -543,53 +543,53 @@ Item {
                     }
                     ColorInputRow {
                         id: inFxBg
-                        labelText: "fxbg"
-                        hexValue: theme.colormap.fxbg
+                        labelText: "dspfxbg"
+                        hexValue: theme.colormap.dspfxbg
                     }
                     ColorInputRow {
                         id: inFxBorder
-                        labelText: "fxborder"
-                        hexValue: theme.colormap.fxborder
+                        labelText: "dspfxborder"
+                        hexValue: theme.colormap.dspfxborder
                     }
                     ColorInputRow {
                         id: inFxText
-                        labelText: "fxtext"
-                        hexValue: theme.colormap.fxtext
+                        labelText: "dspfxtext"
+                        hexValue: theme.colormap.dspfxtext
                     }
                     ColorInputRow {
                         id: inFxSubtext
-                        labelText: "fxsubtext"
-                        hexValue: theme.colormap.fxsubtext
+                        labelText: "dspfxsubtext"
+                        hexValue: theme.colormap.dspfxsubtext
                     }
                     ColorInputRow {
                         id: inFxIcon
-                        labelText: "fxicon"
-                        hexValue: theme.colormap.fxicon
+                        labelText: "dspfxicon"
+                        hexValue: theme.colormap.dspfxicon
                     }
                     ColorInputRow {
                         id: inFxHover
-                        labelText: "fxhover"
-                        hexValue: theme.colormap.fxhover
+                        labelText: "dspfxhover"
+                        hexValue: theme.colormap.dspfxhover
                     }
                     ColorInputRow {
                         id: inFxActive
-                        labelText: "fxactive"
-                        hexValue: theme.colormap.fxactive
+                        labelText: "dspfxactive"
+                        hexValue: theme.colormap.dspfxactive
                     }
                     ColorInputRow {
                         id: inFxSlider
-                        labelText: "fxslider"
-                        hexValue: theme.colormap.fxslider
+                        labelText: "dspfxslider"
+                        hexValue: theme.colormap.dspfxslider
                     }
                     ColorInputRow {
                         id: inFxSliderBg
-                        labelText: "fxsliderbg"
-                        hexValue: theme.colormap.fxsliderbg
+                        labelText: "dspfxsliderbg"
+                        hexValue: theme.colormap.dspfxsliderbg
                     }
                     ColorInputRow {
                         id: inFxHandle
-                        labelText: "fxhandle"
-                        hexValue: theme.colormap.fxhandle
+                        labelText: "dspfxhandle"
+                        hexValue: theme.colormap.dspfxhandle
                     }
                 }
             }

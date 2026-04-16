@@ -3,7 +3,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
-// LICENSE GATEKEEPER
 static PRO_UNLOCKED: OnceLock<AtomicBool> = OnceLock::new();
 
 pub fn get_pro_unlocked_arc() -> &'static AtomicBool {
@@ -14,26 +13,57 @@ pub fn is_pro_active() -> bool {
     get_pro_unlocked_arc().load(Ordering::Relaxed)
 }
 
-// Submodules
-pub mod chain;
-pub mod dspstd;
-pub mod rack;
-
-// Shared modules
+pub mod abrepeat;
+pub mod bassbooster;
 pub mod biquad;
+pub mod chain;
+pub mod compressor;
+pub mod crossfeed;
+pub mod crystalizer;
+pub mod eq;
+pub mod eqpreamp;
 pub mod limiter;
+pub mod middleclarity;
+pub mod normalizer;
+pub mod pitchshifter;
 pub mod preamp;
+pub mod rack;
+pub mod reverb;
 pub mod rubberbandffi;
+pub mod stereoenhance;
+pub mod stereowidth;
+pub mod surround;
 
 pub use self::chain::DspChain;
 pub use self::rack::DspRack;
 
-// Core Trait
+// Re-exports with  prefix only
+pub use self::bassbooster::{
+    get_bass_enabled_arc, get_bass_freq_arc, get_bass_gain_arc, get_bass_q_arc, BassBooster,
+};
+pub use self::compressor::{get_compressor_enabled_arc, get_compressor_threshold_arc, Compressor};
+pub use self::crossfeed::{get_crossfeed_amount_arc, get_crossfeed_enabled_arc, Crossfeed};
+pub use self::crystalizer::{
+    get_crystal_amount_arc, get_crystal_enabled_arc, get_crystal_freq_arc, Crystalizer,
+};
+pub use self::eq::{get_eq_band_arc, get_eq_bands_arc, get_eq_enabled_arc, EqProcessor};
+pub use self::eqpreamp::{get_preamp_enabled_arc, get_preamp_gain_arc, EqPreamp};
+pub use self::limiter::{get_limiter_enabled_arc, Limiter};
+pub use self::middleclarity::{get_middle_amount_arc, get_middle_enabled_arc, MiddleClarity};
+pub use self::normalizer::{
+    get_normalizer_gain_arc, get_normalizer_smoothing_arc, AudioNormalizer,
+};
+pub use self::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc, PitchShifter};
+pub use self::reverb::{get_reverb_preset_arc, Reverb};
+pub use self::stereoenhance::{get_stereo_amount_arc, get_stereo_enabled_arc, StereoEnhance};
+pub use self::stereowidth::{get_mono_enabled_arc, get_mono_width_arc, StereoWidth};
+pub use self::surround::{get_surround_enabled_arc, get_surround_width_arc, SurroundProcessor};
+
 pub trait DspProcessor: Send + Sync {
     fn process(&mut self, input: &[f32], output: &mut [f32]);
     fn reset(&mut self);
-    fn as_any(&mut self) -> &mut dyn::std::any::Any;
-    fn as_any_ref(&self) -> &dyn::std::any::Any;
+    fn as_any(&mut self) -> &mut dyn std::any::Any;
+    fn as_any_ref(&self) -> &dyn std::any::Any;
 }
 
 #[derive(Clone)]

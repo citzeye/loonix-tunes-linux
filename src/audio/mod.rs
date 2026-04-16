@@ -22,7 +22,6 @@ pub mod metadata;
 pub mod wireless;
 
 // UI components
-pub mod playlist;
 pub mod popup;
 
 // System Media Controls (MPRIS on Linux)

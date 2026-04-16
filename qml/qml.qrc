@@ -15,22 +15,15 @@
         <file alias="fonts/Oswald-Regular.ttf">../assets/fonts/Oswald-Regular.ttf</file>
         <file alias="assets/images/saweriaqrcode.png">../assets/images/saweriaqrcode.png</file>
         <file alias="assets/images/kofiqrcode.png">../assets/images/kofiqrcode.png</file>
-        <file>ui/pref/PrefButton.qml</file>
         <file>ui/pref/PrefAbout.qml</file>
         <file>ui/pref/PrefAppearance.qml</file>
-        <file>ui/pref/PrefAudio.qml</file>
-        <file>ui/pref/PrefCollapsibleSection.qml</file>
         <file>ui/pref/PrefDonate.qml</file>
-        <file>ui/pref/PrefDropdown.qml</file>
-        <file>ui/pref/PrefHardware.qml</file>
-        <file>ui/pref/PrefSlider.qml</file>
         <file>ui/pref/PrefSwitch.qml</file>
         <file>ui/pref/PrefTab.qml</file>
-        <file>ui/pref/ReportBug.qml</file>
+        <file>ui/pref/PrefReportBug.qml</file>
+        <file>ui/pref/PrefThemeEditor.qml</file>
         <file>ui/contextmenu/TabContextMenu.qml</file>
         <file>ui/contextmenu/PlaylistContextMenu.qml</file>
         <file>ui/contextmenu/AppearanceContextMenu.qml</file>
-        <file>ui/RenameDialog.qml</file>
-        <file>ui/pref/ThemeEditor.qml</file>
     </qresource>
 </RCC>

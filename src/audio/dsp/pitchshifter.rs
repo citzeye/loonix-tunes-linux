@@ -1,15 +1,26 @@
-/* --- LOONIX-TUNES src/audio/dsp/pitchshifter.rs --- */
-use crate::audio::dsp::rubberband_ffi::*;
+/* --- LOONIX-TUNES src/audio/dsp/fx/fxpitchshifter.rs --- */
+use crate::audio::dsp::rubberbandffi::{
+    rubberband_available, rubberband_delete, rubberband_new, rubberband_process, rubberband_reset,
+    rubberband_retrieve, rubberband_set_pitch_scale, RubberBandState, RB_OPTION_FORMANT_PRESERVED,
+    RB_OPTION_PITCH_HIGH_QUALITY, RB_OPTION_PROCESS_REALTIME,
+};
 use crate::audio::dsp::DspProcessor;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::OnceLock;
 
-static PITCH_RATIO: OnceLock<Arc<AtomicU32>> = OnceLock::new();
+static PITCH_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
+static PITCH_RATIO: OnceLock<AtomicU32> = OnceLock::new();
 
-pub fn get_pitch_ratio_arc() -> Arc<AtomicU32> {
-    PITCH_RATIO
-        .get_or_init(|| Arc::new(AtomicU32::new(1.0_f32.to_bits())))
-        .clone()
+pub fn get_pitch_enabled_arc() -> &'static AtomicBool {
+    PITCH_ENABLED.get_or_init(|| AtomicBool::new(false))
+}
+
+pub fn get_pitch_ratio_arc() -> &'static AtomicU32 {
+    PITCH_RATIO.get_or_init(|| AtomicU32::new(1.0_f32.to_bits()))
+}
+
+fn bits_to_f32(bits: u32) -> f32 {
+    f32::from_bits(bits)
 }
 
 pub struct PitchShifter {
@@ -27,13 +38,10 @@ unsafe impl Send for PitchShifter {}
 unsafe impl Sync for PitchShifter {}
 
 impl PitchShifter {
-    pub fn new(semitones: f32) -> Self {
-        let ratio = 2.0_f32.powf(semitones / 12.0);
-        get_pitch_ratio_arc().store(ratio.to_bits(), Ordering::Relaxed);
-
+    pub fn new() -> Self {
         let options =
             RB_OPTION_PROCESS_REALTIME | RB_OPTION_PITCH_HIGH_QUALITY | RB_OPTION_FORMANT_PRESERVED;
-        let handle = unsafe { rubberband_new(48000, 2, options, 1.0, ratio as f64) };
+        let handle = unsafe { rubberband_new(48000, 2, options, 1.0, 1.0) };
 
         Self {
             handle,
@@ -56,13 +64,15 @@ impl Drop for PitchShifter {
 
 impl DspProcessor for PitchShifter {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        let ratio = f32::from_bits(get_pitch_ratio_arc().load(Ordering::Relaxed));
+        let is_on = get_pitch_enabled_arc().load(Ordering::Relaxed);
+        let ratio = bits_to_f32(get_pitch_ratio_arc().load(Ordering::Relaxed));
 
         unsafe {
             rubberband_set_pitch_scale(self.handle, ratio as f64);
         }
 
-        if (ratio - 1.0).abs() < 0.005 {
+        // Auto-Bypass
+        if !is_on || (ratio - 1.0).abs() < 0.005 {
             output.copy_from_slice(input);
             self.out_fifo.clear();
             return;
