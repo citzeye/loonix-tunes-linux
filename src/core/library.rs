@@ -19,14 +19,12 @@ pub struct LibraryManager {
     pub custom_folders: Vec<(String, String)>,
     pub favorites: Vec<(String, String)>,
     pub external_files: Vec<MusicItem>,
-    pub user_queue: Vec<MusicItem>,
 
     pub current_folder: String,
     pub current_folder_path: String,
     pub custom_folder_count: i32,
     pub favorites_count: i32,
     pub external_files_count: i32,
-    pub queue_count: i32,
 }
 
 impl Default for LibraryManager {
@@ -39,13 +37,11 @@ impl Default for LibraryManager {
             custom_folders: Vec::new(),
             favorites: Vec::new(),
             external_files: Vec::new(),
-            user_queue: Vec::new(),
             current_folder: String::new(),
             current_folder_path: String::new(),
             custom_folder_count: 0,
             favorites_count: 0,
             external_files_count: 0,
-            queue_count: 0,
         }
     }
 }
@@ -198,37 +194,6 @@ impl LibraryManager {
         }
     }
 
-    pub fn add_to_queue(&mut self, path: String, name: String) {
-        self.user_queue.push(MusicItem {
-            name,
-            path,
-            is_folder: false,
-            parent_folder: None,
-        });
-        self.queue_count = self.user_queue.len() as i32;
-    }
-
-    pub fn remove_from_queue(&mut self, index: i32) {
-        if index >= 0 && (index as usize) < self.user_queue.len() {
-            self.user_queue.remove(index as usize);
-            self.queue_count = self.user_queue.len() as i32;
-        }
-    }
-
-    pub fn clear_queue(&mut self) {
-        self.user_queue.clear();
-        self.queue_count = 0;
-    }
-
-    pub fn get_queue_item_at(&self, index: i32) -> Option<(String, String)> {
-        if index >= 0 && (index as usize) < self.user_queue.len() {
-            let item = &self.user_queue[index as usize];
-            Some((item.path.clone(), item.name.clone()))
-        } else {
-            None
-        }
-    }
-
     pub fn add_external_file(&mut self, path: String) {
         let name = Path::new(&path)
             .file_name()
@@ -308,14 +273,6 @@ impl LibraryManager {
 
         self.all_items.clear();
         self.display_list = self.get_favorites_list();
-    }
-
-    pub fn switch_to_queue(&mut self) {
-        self.current_folder = "QUEUE".to_string();
-        self.current_folder_path = String::new();
-
-        self.all_items.clear();
-        self.display_list = self.user_queue.clone();
     }
 
     pub fn switch_to_external(&mut self) {
