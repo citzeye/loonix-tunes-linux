@@ -453,9 +453,6 @@ impl MusicModel {
             .set_normalizer_enabled(saved_config.normalizer_enabled);
         model.output.mode = saved_config.mode;
 
-        model
-            .dsp
-            .load_preset(saved_config.active_preset_index.clamp(0, 5));
         model.dsp.emit_all_signals();
 
         // Initialize DSP wrapper properties

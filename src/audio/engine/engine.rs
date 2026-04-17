@@ -256,13 +256,16 @@ impl Engine {
             // clear_old=true: fresh track start, don't crossfade from old track's buffer
             audiooutput.start(cons, true, buffer_size);
         } else {
-            // First track - create new AudioOutput
+            // First track - create new AudioOutput (LAZY INIT TERJADI DI SINI)
             let mut audiooutput = AudioOutput::new();
             audiooutput.mode = self.output_mode;
             audiooutput.update_mode_internal();
             audiooutput.set_volume(self.volume);
             audiooutput.set_balance(self.balance);
-            // Build initial DSP chain for first track
+
+            // 🔥 INJEKSI STATUS BOOT KE AUDIO OUTPUT BARU
+            audiooutput.set_dsp_enabled(self.dsp_enabled);
+
             audiooutput.update_dsp(&self.dsp_settings);
             audiooutput.reset_dsp();
             audiooutput.reset_samples_played(0);

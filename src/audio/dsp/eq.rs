@@ -1,5 +1,3 @@
-/* --- LOONIX-TUNES src/audio/dsp/stdeq.rs --- */
-
 /* --- LOONIX-TUNES src/audio/dsp/eq.rs --- */
 
 use crate::audio::dsp::DspProcessor;

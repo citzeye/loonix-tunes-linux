@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/ui/dspcontroller.rs | DSP Controller --- */
+/* --- LOONIX-TUNES src/ui/dsp.rs | DSP Controller --- */
 
 #![allow(non_snake_case)]
 
@@ -144,82 +144,35 @@ impl DspController {
     }
 
     pub fn init_from_config(&mut self, config: &AppConfig) {
-        self.bass_magic_active = config.bass_enabled;
-        self.bass_gain = config.bass_gain as f64;
-        self.bass_cutoff = config.bass_cutoff as f64;
-        self.surround_magic_active = config.surround_enabled;
-        self.crystal_magic_active = config.crystal_enabled;
-        self.crystal_amount = config.crystal_amount as f64;
-        self.crystal_freq = config.crystal_freq as f64;
-        self.surround_width = config.surround_width as f64;
-        self.mono_active = config.mono_enabled;
-        self.mono_width = config.mono_width as f64;
-        self.pitch_active = config.pitch_enabled;
-        self.pitch_semitones = config.pitch_semitones as f64;
-        self.middle_active = config.middle_enabled;
-        self.middle_amount = config.middle_amount as f64;
-        self.stereo_active = config.stereo_enabled;
-        self.stereo_amount = config.stereo_amount as f64;
-        self.crossfeed_active = config.crossfeed_enabled;
-        self.crossfeed_amount = config.crossfeed_amount as f64;
-        self.reverb_mode = config.reverb_mode;
-        self.reverb_amount = config.reverb_amount;
-        self.compressor_active = config.compressor_enabled;
-        self.eq_enabled = config.eq_enabled;
-        self.eq_bands = config.eq_bands;
-        self.active_preset_index = config.active_preset_index;
-        self.user_eq_names = config.user_preset_names.clone();
-        self.user_eq_gains = config.user_preset_gains;
-        self.user_eq_macro = config.user_preset_macro;
+        // 1. Load Engine / Non-Preset Settings
         self.dsp_enabled = config.dsp_enabled;
         self.normalizer_enabled = config.normalizer_enabled;
         self.normalizer_target_lufs = config.normalizer_target_lufs as f64;
         self.normalizer_true_peak_dbtp = config.normalizer_true_peak_dbtp as f64;
         self.normalizer_max_gain_db = config.normalizer_max_gain_db as f64;
         self.normalizer_smoothing = config.normalizer_smoothing as f64;
-        self.eq_presets = AppConfig::get_eq_presets();
-        self.fx_presets = AppConfig::get_fx_presets();
-
-        let comp_db = config.compressor_threshold.clamp(-60.0, 0.0);
-        self.compressor_threshold = ((comp_db + 60.0) / 60.0) as f64;
-
-        crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
-            config.compressor_enabled,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        crate::audio::dsp::compressor::get_compressor_threshold_arc()
-            .store(comp_db.to_bits(), std::sync::atomic::Ordering::Relaxed);
-
-        let pitch_ratio = 2.0_f32.powf(config.pitch_semitones / 12.0);
-        get_pitch_ratio_arc().store(pitch_ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        get_pitch_enabled_arc().store(config.pitch_enabled, std::sync::atomic::Ordering::Relaxed);
-
-        crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-            config.reverb_mode as u32,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-            (config.reverb_amount as f32).to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
-
-        crate::audio::dsp::eq::get_eq_enabled_arc().store(
-            if config.eq_enabled { 1 } else { 0 },
-            std::sync::atomic::Ordering::Relaxed,
-        );
-
-        let eq_arc = crate::audio::dsp::eq::get_eq_bands_arc();
-        for i in 0..10 {
-            eq_arc[i].store(
-                config.eq_bands[i].to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-        }
 
         crate::audio::dsp::normalizer::get_normalizer_smoothing_arc().store(
             config.normalizer_smoothing.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
+
+        let eq_enabled_val: u32 = if config.eq_enabled { 1 } else { 0 };
+        self.eq_enabled = config.eq_enabled;
+        crate::audio::dsp::eq::get_eq_enabled_arc()
+            .store(eq_enabled_val, std::sync::atomic::Ordering::Relaxed);
+
+        // 2. Load Preset Definitions into Memory
+        self.eq_presets = AppConfig::get_eq_presets();
+        self.fx_presets = AppConfig::get_fx_presets();
+        self.user_eq_names = config.user_preset_names.clone();
+        self.user_eq_gains = config.user_preset_gains;
+        self.user_eq_macro = config.user_preset_macro;
+
+        // 3. THE MASTER BOOT ACTION (0 to 11)
+        // Ini memastikan jika user "hanya geser tanpa save", saat restart akan kembali ke preset awal
+        let preset_index = config.active_preset_index.clamp(0, 11);
+        self.load_preset(preset_index);
     }
 
     fn applyBassMode(&mut self, mode: i32) {
@@ -834,6 +787,8 @@ impl DspController {
         let band = index as usize;
         if band < 10 {
             self.eq_bands[band] = gain as f32;
+            self.active_preset_index = -1;
+            self.active_preset_index_changed();
 
             let arc = crate::audio::dsp::eq::get_eq_bands_arc();
             arc[band].store(
@@ -862,9 +817,9 @@ impl DspController {
     }
 
     pub fn set_active_preset_index(&mut self, index: i32) {
-        self.active_preset_index = index;
-        self.active_preset_index_changed();
-        self.save_config();
+        if index >= 0 && index < 6 {
+            self.load_preset(index);
+        }
     }
 
     pub fn get_preamp_gain(&self) -> f64 {
@@ -1000,25 +955,52 @@ impl DspController {
     }
 
     pub fn load_preset(&mut self, index: i32) {
-        if index < 0 || (index as usize) >= self.eq_presets.len() {
+        if index < 0 || index > 11 {
             return;
         }
 
-        self.fader_offset = 0.0;
+        if index < 6 {
+            // --- LOAD DEFAULT PRESET (0-5) ---
+            self.fader_offset = 0.0;
+
+            if (index as usize) < self.eq_presets.len() {
+                let eq_preset = &self.eq_presets[index as usize];
+                for (i, &gain) in eq_preset.gains.iter().enumerate() {
+                    self.eq_bands[i] = gain;
+                    let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+                    arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+                }
+
+                if (index as usize) < self.fx_presets.len() {
+                    self.load_fx_preset(index);
+                }
+            }
+        } else {
+            // --- LOAD USER PRESET (6-11) ---
+            let user_idx = (index - 6) as usize;
+
+            // Cek apakah slot user preset ini benar-benar ada isinya
+            if !self.user_eq_names[user_idx].trim().is_empty() {
+                self.fader_offset = self.user_eq_macro[user_idx] as f64;
+
+                for i in 0..10 {
+                    let gain = self.user_eq_gains[user_idx][i];
+                    self.eq_bands[i] = gain;
+
+                    let effective = (gain as f64 + self.fader_offset).clamp(-20.0, 20.0) as f32;
+                    let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+                    arc[i].store(effective.to_bits(), std::sync::atomic::Ordering::Relaxed);
+                }
+                // Catatan: User preset saat ini belum mem-backup state FX bawaan (surround, bass, dll)
+                // Jadi kita tidak memanggil load_fx_preset() di sini untuk menghindari override FX yang aktif.
+            } else {
+                return; // Batalkan jika user mengeklik slot kosong
+            }
+        }
+
+        // Sinkronisasi Signal ke QML UI
         self.faderOffsetChanged();
-
-        let eq_preset = &self.eq_presets[index as usize];
-        for (i, &gain) in eq_preset.gains.iter().enumerate() {
-            self.eq_bands[i] = gain;
-            let arc = crate::audio::dsp::eq::get_eq_bands_arc();
-            arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        }
-
         self.eqBandsChanged();
-
-        if (index as usize) < self.fx_presets.len() {
-            self.load_fx_preset(index);
-        }
 
         self.active_preset_index = index;
         self.active_preset_index_changed();
