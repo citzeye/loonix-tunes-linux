@@ -37,6 +37,8 @@ pub enum AudioCommand {
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
         device_name: Option<String>,
+        output_state: Arc<AtomicU32>,
+        decoder_eof: Arc<AtomicBool>,
     },
     Stop,
     Flush,
@@ -64,6 +66,23 @@ fn bits_to_f32(bits: u32) -> f32 {
 }
 
 const BUFFER_EMPTY_THRESHOLD: u32 = 100;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputState {
+    Priming,
+    Running,
+    Stopping,
+}
+
+impl Default for OutputState {
+    fn default() -> Self {
+        OutputState::Priming
+    }
+}
+
+const OUTPUT_STATE_PRIMING: u32 = 0;
+const OUTPUT_STATE_RUNNING: u32 = 1;
+const OUTPUT_STATE_STOPPING: u32 = 2;
 
 // Latency target: 60ms for tlength
 const TARGET_LATENCY_MS: u32 = 60;
@@ -105,6 +124,8 @@ pub struct AudioOutput {
     reconnecting: Arc<AtomicBool>,
     current_device_name: Arc<Mutex<Option<String>>>,
     available_devices: Arc<Mutex<Vec<AudioDevice>>>,
+    output_state: Arc<AtomicU32>,
+    decoder_eof: Arc<AtomicBool>,
 }
 
 impl Default for AudioOutput {
@@ -162,6 +183,8 @@ impl AudioOutput {
             reconnecting: Arc::new(AtomicBool::new(false)),
             current_device_name: Arc::new(Mutex::new(None)),
             available_devices: Arc::new(Mutex::new(Vec::new())),
+            output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
+            decoder_eof: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -351,6 +374,28 @@ impl AudioOutput {
         self.current_device_name.lock().ok()?.clone()
     }
 
+    pub fn set_output_state(&self, state: OutputState) {
+        let state_val = match state {
+            OutputState::Priming => OUTPUT_STATE_PRIMING,
+            OutputState::Running => OUTPUT_STATE_RUNNING,
+            OutputState::Stopping => OUTPUT_STATE_STOPPING,
+        };
+        self.output_state.store(state_val, Ordering::SeqCst);
+    }
+
+    pub fn get_output_state(&self) -> OutputState {
+        match self.output_state.load(Ordering::SeqCst) {
+            OUTPUT_STATE_PRIMING => OutputState::Priming,
+            OUTPUT_STATE_RUNNING => OutputState::Running,
+            OUTPUT_STATE_STOPPING => OutputState::Stopping,
+            _ => OutputState::Priming,
+        }
+    }
+
+    pub fn set_decoder_eof(&self, eof: bool) {
+        self.decoder_eof.store(eof, Ordering::SeqCst);
+    }
+
     fn create_pa_simple_with_latency(
         device_name: Option<&str>,
         sample_rate: u32,
@@ -404,6 +449,10 @@ impl AudioOutput {
             Ok(handle) => {
                 self.should_stop.store(false, Ordering::SeqCst);
                 self.is_running.store(true, Ordering::SeqCst);
+                self.output_state
+                    .store(OUTPUT_STATE_PRIMING, Ordering::SeqCst);
+                self.decoder_eof.store(false, Ordering::SeqCst);
+                self.empty_callback_count.store(0, Ordering::Relaxed);
 
                 if let Ok(mut current) = self.current_device_name.lock() {
                     *current = device_name.map(|s| s.to_string());
@@ -427,6 +476,8 @@ impl AudioOutput {
                     samples_played: self.samples_played.clone(),
                     empty_callback_count: self.empty_callback_count.clone(),
                     device_name: device_name.map(|s| s.to_string()),
+                    output_state: self.output_state.clone(),
+                    decoder_eof: self.decoder_eof.clone(),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
@@ -435,6 +486,8 @@ impl AudioOutput {
                 eprintln!("[AudioOutput] Failed to create PulseAudio stream: {}", e);
             }
         }
+        // Explicitly ensure paused is false on start
+        self.paused.store(false, Ordering::SeqCst);
     }
 
     pub fn stop(&self) {
@@ -443,6 +496,9 @@ impl AudioOutput {
         self.seek_mode.store(false, Ordering::SeqCst);
         self.seek_fade_remaining.store(0, Ordering::SeqCst);
         self.resume_frame_counter.store(0, Ordering::SeqCst);
+        self.paused.store(false, Ordering::SeqCst); // Reset paused on stop
+        self.output_state
+            .store(OUTPUT_STATE_STOPPING, Ordering::SeqCst);
         self.reset_dsp();
     }
 
@@ -483,6 +539,11 @@ impl AudioOutput {
     }
 
     pub fn resume(&mut self) {
+        println!(
+            "[DEBUG] resume() called | is_running={} | samples_played={}",
+            self.is_running.load(Ordering::SeqCst),
+            self.samples_played.load(Ordering::SeqCst)
+        );
         self.paused.store(false, Ordering::SeqCst);
         self.is_running.store(true, Ordering::SeqCst);
     }
@@ -547,6 +608,8 @@ impl AudioOutput {
                     samples_played,
                     empty_callback_count,
                     device_name: _device_name,
+                    output_state,
+                    decoder_eof,
                 }) => {
                     current_handle = Some(handle);
                     current_flush = Some(flush_req);
@@ -571,6 +634,8 @@ impl AudioOutput {
                             normalizer,
                             samples_played,
                             empty_callback_count,
+                            output_state,
+                            decoder_eof,
                         );
                     }
 
@@ -616,6 +681,8 @@ impl AudioOutput {
         normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
+        output_state: Arc<AtomicU32>,
+        decoder_eof: Arc<AtomicBool>,
     ) {
         let channels = 2;
         let frames_per_write = 1024usize;
@@ -626,7 +693,6 @@ impl AudioOutput {
         let mut norm_input = vec![0.0f32; samples_per_write];
         let mut norm_output = vec![0.0f32; samples_per_write];
 
-        let mut empty_count = 0u32;
         let mut reconnect_attempts = 0u32;
         const MAX_RECONNECT_ATTEMPTS: u32 = 2;
 
@@ -644,7 +710,6 @@ impl AudioOutput {
                         break;
                     }
                 }
-                empty_count = 0;
                 empty_callback_count.store(0, Ordering::Relaxed);
                 flush_flag.store(false, Ordering::SeqCst);
 
@@ -653,6 +718,8 @@ impl AudioOutput {
 
             let is_seeking = seek_mode.load(Ordering::SeqCst);
             let is_paused = paused.load(Ordering::SeqCst);
+            let state = output_state.load(Ordering::SeqCst);
+            let is_eof = decoder_eof.load(Ordering::SeqCst);
 
             if is_seeking {
                 read_buffer.fill(0.0);
@@ -700,12 +767,14 @@ impl AudioOutput {
 
             if samples_read == 0 {
                 empty_callback_count.fetch_add(1, Ordering::Relaxed);
-                empty_count += 1;
 
-                if empty_count > BUFFER_EMPTY_THRESHOLD {
+                // Clean exit condition: EOF AND buffer empty AND in RUNNING state
+                if is_eof && state == OUTPUT_STATE_RUNNING {
                     break;
                 }
 
+                // During PRIMING state: keep writing silence, don't exit
+                // Buffer starvation during startup is NORMAL, not an error
                 read_buffer.fill(0.0);
                 let silence = unsafe {
                     std::slice::from_raw_parts(
@@ -725,9 +794,13 @@ impl AudioOutput {
                 continue;
             }
 
+            // Transition from PRIMING to RUNNING once we have data
+            if state == OUTPUT_STATE_PRIMING {
+                output_state.store(OUTPUT_STATE_RUNNING, Ordering::SeqCst);
+            }
+
             empty_callback_count.store(0, Ordering::Relaxed);
             reconnect_attempts = 0;
-            empty_count = 0;
 
             samples_played.fetch_add(samples_read as u64, Ordering::SeqCst);
 

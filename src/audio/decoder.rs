@@ -22,6 +22,7 @@ pub const SEEK_STATE_READY: u8 = 2;
 pub enum DecoderEvent {
     SeekComplete,
     BufferReady,
+    InitialBufferReady,
     EndOfTrack { total_samples: u64 },
 }
 
@@ -248,6 +249,65 @@ fn decoder_loop(
         let mut total_decoded_samples: u64 = 0;
         let mut eof_reached = false;
         let mut last_reported_samples: u64 = 0;
+
+        // PRE-BUFFER: Fill ring buffer before signaling play
+        // This ensures audio thread has data ready when is_playing = true
+        {
+            let min_buffer = control.min_buffer_samples.load(Ordering::SeqCst);
+            let mut buffered: u64 = 0;
+
+            while buffered < min_buffer {
+                if control.should_stop.load(Ordering::SeqCst) {
+                    return;
+                }
+
+                if control.is_seeking.load(Ordering::Acquire) {
+                    break;
+                }
+
+                if let Some((stream, packet)) = ictx.packets().next() {
+                    if stream.index() != stream_idx {
+                        continue;
+                    }
+
+                    if let Err(_) = decoder.send_packet(&packet) {
+                        continue;
+                    }
+
+                    while decoder.receive_frame(&mut frame).is_ok() {
+                        if control.should_stop.load(Ordering::SeqCst) {
+                            return;
+                        }
+                        if control.is_seeking.load(Ordering::Acquire) {
+                            break;
+                        }
+                        if format_converter.run(&frame, &mut interleaved_frame).is_ok() {
+                            let data = interleaved_frame.data(0);
+                            if !data.is_empty() {
+                                resample::process_frame(
+                                    data,
+                                    &mut resampler,
+                                    &mut producer,
+                                    &mut total_decoded_samples,
+                                );
+                                buffered = total_decoded_samples;
+                            }
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if !control.is_seeking.load(Ordering::Acquire)
+                && !control.should_stop.load(Ordering::SeqCst)
+            {
+                control
+                    .output_samples
+                    .store(total_decoded_samples, Ordering::SeqCst);
+                control.send_event(DecoderEvent::InitialBufferReady);
+            }
+        }
 
         loop {
             if control.should_stop.load(Ordering::SeqCst) {

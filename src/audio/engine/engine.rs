@@ -71,6 +71,43 @@ impl Default for DurationMode {
 }
 
 /* ------------------------------------------------ */
+/* PLAYBACK STATE                                   */
+/* ------------------------------------------------ */
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlaybackState {
+    Stopped,
+    Loading,
+    Priming,
+    Playing,
+    Paused,
+}
+
+impl Default for PlaybackState {
+    fn default() -> Self {
+        PlaybackState::Stopped
+    }
+}
+
+impl PlaybackState {
+    pub fn can_play(&self) -> bool {
+        matches!(self, PlaybackState::Stopped | PlaybackState::Paused)
+    }
+
+    pub fn can_pause(&self) -> bool {
+        matches!(self, PlaybackState::Playing)
+    }
+
+    pub fn can_resume(&self) -> bool {
+        matches!(self, PlaybackState::Paused)
+    }
+
+    pub fn can_stop(&self) -> bool {
+        !matches!(self, PlaybackState::Stopped)
+    }
+}
+
+/* ------------------------------------------------ */
 /* ENGINE STRUCT                                    */
 /* ------------------------------------------------ */
 
@@ -91,7 +128,7 @@ pub struct Engine {
     pub dsp_settings: DspSettings,
     pub dsp_enabled: bool,
 
-    pub is_playing: bool,
+    pub playback_state: PlaybackState,
 
     // MASTER CLOCK - timer-based position (reliable)
     pub samples_played: u64,
@@ -132,7 +169,7 @@ impl Engine {
             is_mono: false,
             dsp_settings: DspSettings::default(),
             dsp_enabled: true,
-            is_playing: false,
+            playback_state: PlaybackState::Stopped,
 
             samples_played: 0,
             sample_rate: 48000,
@@ -155,6 +192,9 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn start_audiooutput(&mut self, path: String) {
+        // State transition: Stopped -> Loading
+        self.playback_state = PlaybackState::Loading;
+
         // 1. Setup Ring Buffer - 120ms for low latency
         let sample_rate = 48000; // frames per second
         let channels = 2; // Output always forced to STEREO by resampler (see decoder.rs)
@@ -230,7 +270,9 @@ impl Engine {
             self.audiooutput = Some(audiooutput);
         }
 
-        self.is_playing = true;
+        // State transition: Loading -> Priming
+        // Decoder is now buffering, wait for InitialBufferReady to transition to Playing
+        self.playback_state = PlaybackState::Priming;
     }
 
     /* ------------------------------------------------ */
@@ -247,17 +289,45 @@ impl Engine {
                     DecoderEvent::BufferReady => {
                         self.on_buffer_ready();
                     }
+                    DecoderEvent::InitialBufferReady => {
+                        let current = self.playback_state;
+
+                        match current {
+                            PlaybackState::Priming => {
+                                self.playback_state = PlaybackState::Playing;
+                                self.samples_played = 0;
+                                if let Some(ref mut audiooutput) = self.audiooutput {
+                                    audiooutput.reset_samples_played(0);
+                                    audiooutput.set_output_state(
+                                        crate::audio::audiooutput::OutputState::Running,
+                                    );
+                                }
+                            }
+                            PlaybackState::Paused => {
+                                // Ignored - stay in Paused
+                            }
+                            _ => {
+                                // Ignored - invalid state
+                            }
+                        }
+                    }
                     DecoderEvent::EndOfTrack { total_samples } => {
                         self.decoder_eof = true;
                         self.decoder_total_samples = total_samples;
-                        // Duration finalize happens at AUDIO EOF, not decoder EOF
+                        // Signal audio output that decoder is done
+                        if let Some(ref audiooutput) = self.audiooutput {
+                            audiooutput.set_decoder_eof(true);
+                        }
                     }
                 }
             }
             self.event_rx = Some(rx);
         }
 
-        if !self.is_playing {
+        // Only update timer if we're in Playing or Paused state
+        if self.playback_state == PlaybackState::Stopped
+            || self.playback_state == PlaybackState::Loading
+        {
             return;
         }
 
@@ -302,7 +372,7 @@ impl Engine {
             }
         }
 
-        if self.decoder_eof && self.is_playing {
+        if self.decoder_eof && self.playback_state == PlaybackState::Playing {
             let starvation_ok = self
                 .audiooutput
                 .as_ref()
@@ -367,7 +437,12 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn stop(&mut self) {
-        self.is_playing = false;
+        // Only stop if not already stopped
+        if !self.playback_state.can_stop() {
+            return;
+        }
+
+        self.playback_state = PlaybackState::Stopped;
         self.end_of_track = false;
         self.decoder_eof = false;
 
@@ -379,6 +454,7 @@ impl Engine {
         // The cpal stream stays open (persistent device)
         // Only on explicit FfmpegEngine::stop() is AudioOutput dropped
         if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.set_decoder_eof(false);
             audiooutput.stop();
         }
 
@@ -390,10 +466,25 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn pause(&mut self) {
+        println!(
+            "[ENGINE] pause() called, current state={:?}",
+            self.playback_state
+        );
+
+        // GUARD: Only pause if currently playing
+        if !self.playback_state.can_pause() {
+            println!(
+                "[ENGINE] pause() IGNORED - not in Playing state (state={:?})",
+                self.playback_state
+            );
+            return;
+        }
+
         if let Some(ref mut audiooutput) = self.audiooutput {
             self.paused_samples_played = audiooutput.get_samples_played();
         }
-        self.is_playing = false;
+
+        self.playback_state = PlaybackState::Paused;
 
         if let Some(ref mut audiooutput) = self.audiooutput {
             audiooutput.pause();
@@ -401,13 +492,21 @@ impl Engine {
     }
 
     pub fn resume(&mut self) {
+        // GUARD: Only resume if currently paused
+        if !self.playback_state.can_resume() {
+            return;
+        }
+
         if let Some(ref mut audiooutput) = self.audiooutput {
             audiooutput.set_samples_played(self.paused_samples_played);
             audiooutput.resume();
         }
-        self.is_playing = true;
+
+        self.playback_state = PlaybackState::Playing;
     }
 
+    /* ------------------------------------------------ */
+    /* SETTERS                                          */
     /* ------------------------------------------------ */
 
     pub fn set_volume(&mut self, volume: f32) {
@@ -539,7 +638,9 @@ impl Engine {
 
     // Single source of truth: callback-based position from audio clock
     pub fn get_position_ms(&mut self) -> u64 {
-        if self.is_playing {
+        if self.playback_state == PlaybackState::Playing
+            || self.playback_state == PlaybackState::Paused
+        {
             if let Some(ref mut audiooutput) = self.audiooutput {
                 let samples = audiooutput.get_samples_played();
                 if self.sample_rate > 0 {
@@ -579,9 +680,11 @@ impl Engine {
         let target_ms = (seconds * 1000.0) as u64;
         let _target_samples = (seconds * self.sample_rate as f64 * self.channels as f64) as u64;
 
-        // STEP 1: Set state = Seeking
+        // STEP 1: Set state = Seeking (only if currently playing)
         // Engine state machine - single authority
-        self.is_playing = false;
+        if self.playback_state == PlaybackState::Playing {
+            self.playback_state = PlaybackState::Priming; // Go back to priming during seek
+        }
 
         // STEP 2: Audio: set seek mode - audio thread mulai kirim silence
         if let Some(ref mut audiooutput) = self.audiooutput {
@@ -646,7 +749,7 @@ impl Engine {
         }
 
         // STEP 6: Set state = Playing - seek complete
-        self.is_playing = true;
+        self.playback_state = PlaybackState::Playing;
     }
 
     /// Called from update_tick - no longer needed with frame counter approach
@@ -661,7 +764,15 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn is_playing(&self) -> bool {
-        self.is_playing
+        self.playback_state == PlaybackState::Playing
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.playback_state == PlaybackState::Paused
+    }
+
+    pub fn get_playback_state(&self) -> PlaybackState {
+        self.playback_state
     }
 }
 
@@ -734,39 +845,50 @@ impl FfmpegEngine {
         scanner::clear_cache();
     }
 
-    pub fn play(&mut self, path: &str) {
+    pub fn load(&mut self, path: &str) {
         self.ensure_engine();
         self.is_finished = false;
 
         if let Some(engine) = &mut self.engine {
-            // Stop any current playback first
             engine.stop();
 
-            // Reset samples_played and flags for new track
             engine.samples_played = 0;
             engine.end_of_track = false;
             engine.decoder_eof = false;
 
-            // Start playback INSTANTLY with gain 1.0 (no blocking!)
             engine.set_normalizer_gain(1.0);
 
-            // Start new playback
             engine.start_audiooutput(path.to_string());
+
+            engine.playback_state = PlaybackState::Paused;
+
+            if let Some(ref mut audiooutput) = engine.audiooutput {
+                audiooutput.pause();
+            }
+
             self.current_path = Some(path.to_string());
 
             let path_owned = path.to_string();
             let params = self.scan_params.clone();
 
-            // Spawn loudness scan in background thread (non-blocking)
             let _ = std::thread::Builder::new()
                 .name("loudness-scanner".to_string())
                 .spawn(move || {
                     let gain = scanner::calculate_track_gain(&path_owned, &params);
-
-                    // Update gain via atomic (lock-free, audio thread reads directly)
                     let gain_arc = crate::audio::dsp::normalizer::get_normalizer_gain_arc();
                     gain_arc.store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
                 });
+        }
+    }
+
+    pub fn play(&mut self) {
+        if let Some(engine) = &mut self.engine {
+            if engine.playback_state == PlaybackState::Paused {
+                engine.playback_state = PlaybackState::Playing;
+                if let Some(ref mut audiooutput) = engine.audiooutput {
+                    audiooutput.resume();
+                }
+            }
         }
     }
 
@@ -894,15 +1016,39 @@ impl FfmpegEngine {
             false
         }
     }
+
+    pub fn is_playing(&self) -> bool {
+        self.engine
+            .as_ref()
+            .map(|e| e.is_playing())
+            .unwrap_or(false)
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.engine.as_ref().map(|e| e.is_paused()).unwrap_or(false)
+    }
+
+    pub fn get_current_path(&self) -> Option<String> {
+        self.current_path.clone()
+    }
+
+    pub fn get_playback_state(&self) -> PlaybackState {
+        self.engine
+            .as_ref()
+            .map(|e| e.get_playback_state())
+            .unwrap_or(PlaybackState::Stopped)
+    }
 }
 
 pub struct AudioState {
-    pub is_playing: bool,
+    pub playback_state: PlaybackState,
 }
 
 impl Default for AudioState {
     fn default() -> Self {
-        Self { is_playing: false }
+        Self {
+            playback_state: PlaybackState::Stopped,
+        }
     }
 }
 

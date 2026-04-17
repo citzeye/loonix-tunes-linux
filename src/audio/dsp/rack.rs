@@ -57,36 +57,46 @@ impl DspRack {
         get_compressor_threshold_arc().store(default_threshold, Ordering::Relaxed);
         processors.push(Box::new(Compressor::new()) as B);
 
-        get_crystal_amount_arc().store(settings.crystal_amount.to_bits(), Ordering::Relaxed);
-        get_crystal_freq_arc().store(4000.0_f32.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(Crystalizer::new(48000.0)) as B);
-
-        get_surround_width_arc().store(settings.surround_width.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(SurroundProcessor::new()) as B);
-
-        get_mono_width_arc().store(settings.mono_width.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StereoWidth::new()) as B);
-
-        let ratio = 2.0_f32.powf(settings.pitch_semitones / 12.0);
-        get_pitch_ratio_arc().store(ratio.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(PitchShifter::new()) as B);
-
-        get_middle_amount_arc().store(settings.middle_amount.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(MiddleClarity::new()) as B);
-
-        get_stereo_amount_arc().store(settings.stereo_amount.to_bits(), Ordering::Relaxed);
-        processors.push(Box::new(StereoEnhance::new()) as B);
-
+        // Bass Booster
         get_bass_gain_arc().store(settings.bass_gain.to_bits(), Ordering::Relaxed);
         get_bass_freq_arc().store(settings.bass_cutoff.to_bits(), Ordering::Relaxed);
         get_bass_q_arc().store(settings.bass_q.to_bits(), Ordering::Relaxed);
         processors.push(Box::new(BassBooster::new()) as B);
 
+        // Reverb
+        processors.push(Box::new(Reverb::new()) as B);
+
+        // Stereo Enhancer
+        get_stereo_amount_arc().store(settings.stereo_amount.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(StereoEnhance::new()) as B);
+
+        // Crystalizer
+        get_crystal_amount_arc().store(settings.crystal_amount.to_bits(), Ordering::Relaxed);
+        get_crystal_freq_arc().store(settings.crystal_freq.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(Crystalizer::new(48000.0)) as B);
+
+        // Surround Processor
+        get_surround_width_arc().store(settings.surround_width.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(SurroundProcessor::new()) as B);
+
+        // Stereo Width
+        get_mono_width_arc().store(settings.mono_width.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(StereoWidth::new()) as B);
+
+        // Pitch Shifter
+        let ratio = 2.0_f32.powf(settings.pitch_semitones / 12.0);
+        get_pitch_ratio_arc().store(ratio.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(PitchShifter::new()) as B);
+
+        // Middle Clarity
+        get_middle_amount_arc().store(settings.middle_amount.to_bits(), Ordering::Relaxed);
+        processors.push(Box::new(MiddleClarity::new()) as B);
+
+        // Crossfeed
         get_crossfeed_amount_arc().store(settings.crossfeed_amount.to_bits(), Ordering::Relaxed);
         processors.push(Box::new(Crossfeed::new()) as B);
 
-        processors.push(Box::new(Reverb::new()) as B);
-
+        // Limiter
         get_limiter_enabled_arc().store(true, Ordering::Relaxed);
         processors.push(Box::new(Limiter::new()) as B);
 

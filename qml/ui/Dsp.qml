@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Popup {
     id: dspRoot
     width: 500
-    height: 400
+    height: 500
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
@@ -66,7 +66,9 @@ Popup {
             Layout.fillWidth: true
             Layout.preferredHeight: 100
 
-            Item { Layout.fillWidth: true } // spacer left
+            Item {
+                Layout.fillWidth: true
+            } // spacer left
 
             GridLayout {
                 Layout.preferredHeight: 100
@@ -76,97 +78,159 @@ Popup {
                 columnSpacing: 3
 
                 // Row 1: Numbers (atas) - connected to sliders
-                EqNumberBox { id: numPreamp; displayText: eqPreamp.currentValue > 0 ? "+" + Math.round(eqPreamp.currentValue) : "" + Math.round(eqPreamp.currentValue) }
-                EqNumberBox { id: num31; displayText: Math.round(eq31.currentValue) }
-                EqNumberBox { id: num62; displayText: Math.round(eq62.currentValue) }
-                EqNumberBox { id: num125; displayText: Math.round(eq125.currentValue) }
-                EqNumberBox { id: num250; displayText: Math.round(eq250.currentValue) }
-                EqNumberBox { id: num500; displayText: Math.round(eq500.currentValue) }
-                EqNumberBox { id: num1k; displayText: Math.round(eq1k.currentValue) }
-                EqNumberBox { id: num2k; displayText: Math.round(eq2k.currentValue) }
-                EqNumberBox { id: num4k; displayText: Math.round(eq4k.currentValue) }
-                EqNumberBox { id: num8k; displayText: Math.round(eq8k.currentValue) }
-                EqNumberBox { id: num16k; displayText: Math.round(eq16k.currentValue) }
-                EqNumberBox { id: numFader; displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%" }
+                EqNumberBox {
+                    id: numPreamp
+                    displayText: eqPreamp.currentValue > 0 ? "+" + Math.round(eqPreamp.currentValue) : "" + Math.round(eqPreamp.currentValue)
+                }
+                EqNumberBox {
+                    id: num31
+                    displayText: Math.round(eq31.currentValue)
+                }
+                EqNumberBox {
+                    id: num62
+                    displayText: Math.round(eq62.currentValue)
+                }
+                EqNumberBox {
+                    id: num125
+                    displayText: Math.round(eq125.currentValue)
+                }
+                EqNumberBox {
+                    id: num250
+                    displayText: Math.round(eq250.currentValue)
+                }
+                EqNumberBox {
+                    id: num500
+                    displayText: Math.round(eq500.currentValue)
+                }
+                EqNumberBox {
+                    id: num1k
+                    displayText: Math.round(eq1k.currentValue)
+                }
+                EqNumberBox {
+                    id: num2k
+                    displayText: Math.round(eq2k.currentValue)
+                }
+                EqNumberBox {
+                    id: num4k
+                    displayText: Math.round(eq4k.currentValue)
+                }
+                EqNumberBox {
+                    id: num8k
+                    displayText: Math.round(eq8k.currentValue)
+                }
+                EqNumberBox {
+                    id: num16k
+                    displayText: Math.round(eq16k.currentValue)
+                }
+                EqNumberBox {
+                    id: numFader
+                    displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%"
+                }
 
                 // Row 2: Sliders (tengah) - bound to musicModel.eqBands via reactive property
                 EqSliderBox {
                     id: eqPreamp
                     controlValue: musicModel.get_preamp_gain()
-                    onSliderChanged: (val) => musicModel.set_preamp_gain(val)
+                    onSliderChanged: val => musicModel.set_preamp_gain(val)
                 }
                 EqSliderBox {
                     id: eq31
                     controlValue: musicModel.eqBands[0]
-                    onSliderChanged: (val) => musicModel.set_eq_band(0, val)
+                    onSliderChanged: val => musicModel.set_eq_band(0, val)
                 }
                 EqSliderBox {
                     id: eq62
                     controlValue: musicModel.eqBands[1]
-                    onSliderChanged: (val) => musicModel.set_eq_band(1, val)
+                    onSliderChanged: val => musicModel.set_eq_band(1, val)
                 }
                 EqSliderBox {
                     id: eq125
                     controlValue: musicModel.eqBands[2]
-                    onSliderChanged: (val) => musicModel.set_eq_band(2, val)
+                    onSliderChanged: val => musicModel.set_eq_band(2, val)
                 }
                 EqSliderBox {
                     id: eq250
                     controlValue: musicModel.eqBands[3]
-                    onSliderChanged: (val) => musicModel.set_eq_band(3, val)
+                    onSliderChanged: val => musicModel.set_eq_band(3, val)
                 }
                 EqSliderBox {
                     id: eq500
                     controlValue: musicModel.eqBands[4]
-                    onSliderChanged: (val) => musicModel.set_eq_band(4, val)
+                    onSliderChanged: val => musicModel.set_eq_band(4, val)
                 }
                 EqSliderBox {
                     id: eq1k
                     controlValue: musicModel.eqBands[5]
-                    onSliderChanged: (val) => musicModel.set_eq_band(5, val)
+                    onSliderChanged: val => musicModel.set_eq_band(5, val)
                 }
                 EqSliderBox {
                     id: eq2k
                     controlValue: musicModel.eqBands[6]
-                    onSliderChanged: (val) => musicModel.set_eq_band(6, val)
+                    onSliderChanged: val => musicModel.set_eq_band(6, val)
                 }
                 EqSliderBox {
                     id: eq4k
                     controlValue: musicModel.eqBands[7]
-                    onSliderChanged: (val) => musicModel.set_eq_band(7, val)
+                    onSliderChanged: val => musicModel.set_eq_band(7, val)
                 }
                 EqSliderBox {
                     id: eq8k
                     controlValue: musicModel.eqBands[8]
-                    onSliderChanged: (val) => musicModel.set_eq_band(8, val)
+                    onSliderChanged: val => musicModel.set_eq_band(8, val)
                 }
                 EqSliderBox {
                     id: eq16k
                     controlValue: musicModel.eqBands[9]
-                    onSliderChanged: (val) => musicModel.set_eq_band(9, val)
+                    onSliderChanged: val => musicModel.set_eq_band(9, val)
                 }
                 EqSliderBox {
                     id: eqFader
                     controlValue: musicModel.fader_offset
-                    onSliderChanged: (val) => musicModel.set_fader(val)
+                    onSliderChanged: val => musicModel.set_fader(val)
                 }
 
                 // Row 3: Names (bawah)
-                EqNameBox { nameLabel: "A" }
-                EqNameBox { nameLabel: "31" }
-                EqNameBox { nameLabel: "62" }
-                EqNameBox { nameLabel: "125" }
-                EqNameBox { nameLabel: "250" }
-                EqNameBox { nameLabel: "500" }
-                EqNameBox { nameLabel: "1k" }
-                EqNameBox { nameLabel: "2k" }
-                EqNameBox { nameLabel: "4k" }
-                EqNameBox { nameLabel: "8k" }
-                EqNameBox { nameLabel: "16k" }
-                EqNameBox { nameLabel: "F" }
+                EqNameBox {
+                    nameLabel: "A"
+                }
+                EqNameBox {
+                    nameLabel: "31"
+                }
+                EqNameBox {
+                    nameLabel: "62"
+                }
+                EqNameBox {
+                    nameLabel: "125"
+                }
+                EqNameBox {
+                    nameLabel: "250"
+                }
+                EqNameBox {
+                    nameLabel: "500"
+                }
+                EqNameBox {
+                    nameLabel: "1k"
+                }
+                EqNameBox {
+                    nameLabel: "2k"
+                }
+                EqNameBox {
+                    nameLabel: "4k"
+                }
+                EqNameBox {
+                    nameLabel: "8k"
+                }
+                EqNameBox {
+                    nameLabel: "16k"
+                }
+                EqNameBox {
+                    nameLabel: "F"
+                }
             }
 
-            Item { Layout.fillWidth: true } // spacer right
+            Item {
+                Layout.fillWidth: true
+            } // spacer right
         }
 
         // FX Section
@@ -222,8 +286,8 @@ Popup {
                     id: surrSlider
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
                     controlValue: musicModel.surround_width / 2.0
-                    onSliderChanged: (val) => {
-                        musicModel.setStdSurroundWidth(val * 2.0)
+                    onSliderChanged: val => {
+                        musicModel.setStdSurroundWidth(val * 2.0);
                     }
                 }
                 FxValueBox {
@@ -444,6 +508,48 @@ Popup {
                     onReset: val => musicModel.setStdPitchSemitones(val)
                 }
             }
+
+            // REVERB
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 3
+
+                FxToggleBox {
+                    id: reverbToggle
+                    title: "REVERB"
+                    isOn: musicModel.reverb_active
+                    onToggled: musicModel.toggleStdReverb()
+                }
+
+                ReverbModeSelector {
+                    id: reverbModeSelector
+                    boxEnabled: reverbToggle.isOn && musicModel.dsp_enabled
+                    Layout.fillWidth: true
+                }
+
+                FxSliderBox {
+                    id: reverbAmountSlider
+                    enabled: reverbToggle.isOn && musicModel.dsp_enabled
+                    controlValue: musicModel.reverb_amount / 100.0
+                    onSliderChanged: val => {
+                        musicModel.set_reverb_amount(Math.round(val * 100));
+                    }
+                }
+
+                FxValueBox {
+                    enabled: reverbToggle.isOn && musicModel.dsp_enabled
+                    sliderValue: reverbAmountSlider.currentValue
+                }
+
+                FxResetButton {
+                    enabled: reverbToggle.isOn && musicModel.dsp_enabled
+                    useNoArgReset: true
+                    onResetNoArg: {
+                        musicModel.set_reverb_mode(1);
+                        musicModel.set_reverb_amount(50);
+                    }
+                }
+            }
         }
     }
 
@@ -464,9 +570,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: defBtn.hovered
-                        ? theme.colormap.dspeqpresetactive
-                        : theme.colormap.dspeqpresettext
+                    color: defBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqpresettext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -474,9 +578,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspeqbg
                     border.width: 1
-                    border.color: defBtn.isActive
-                        ? theme.colormap.dspeqpresetactive
-                        : theme.colormap.dspborder
+                    border.color: defBtn.isActive ? theme.colormap.dspeqpresetactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index);
@@ -502,9 +604,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: pBtn.hovered
-                        ? theme.colormap.dspeqpresetactive
-                        : theme.colormap.dspeqpresettext
+                    color: pBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqpresettext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -512,9 +612,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspeqbg
                     border.width: 1
-                    border.color: pBtn.isActive
-                        ? theme.colormap.dspeqpresetactive
-                        : theme.colormap.dspborder
+                    border.color: pBtn.isActive ? theme.colormap.dspeqpresetactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index + 6);
@@ -625,7 +723,9 @@ Popup {
                 font.pixelSize: 12
                 color: theme.colormap.dspfxtext
                 verticalAlignment: Text.AlignVCenter
-                validator: RegularExpressionValidator { regularExpression: /[a-zA-Z0-9 ]*/ }
+                validator: RegularExpressionValidator {
+                    regularExpression: /[a-zA-Z0-9 ]*/
+                }
 
                 Rectangle {
                     anchors.fill: parent
@@ -1028,7 +1128,10 @@ Popup {
     // Reverb mode selector with state
     component ReverbModeSelector: Item {
         id: reverbModeRoot
-        property int selectedMode: musicModel.reverb_preset
+        property int selectedMode: 
+        musicModel && musicModel.reverb_mode !== undefined
+        ? musicModel.reverb_mode
+        : 0
         property bool boxEnabled: true
 
         Layout.fillWidth: true
@@ -1383,7 +1486,8 @@ Popup {
             stepSize: 1
             value: rootItem.controlValue
             onValueChanged: {
-                if (!pressed) rootItem.currentValue = eqSld.value
+                if (!pressed)
+                    rootItem.currentValue = eqSld.value;
             }
             onMoved: rootItem.sliderChanged(eqSld.value)
 
@@ -1415,12 +1519,12 @@ Popup {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
-                onWheel: function(wheel) {
-                    var step = 1
-                    var delta = wheel.angleDelta.y > 0 ? step : -step
-                    var newVal = Math.max(-20, Math.min(20, eqSld.value + delta))
-                    eqSld.value = newVal
-                    rootItem.sliderChanged(newVal)
+                onWheel: function (wheel) {
+                    var step = 1;
+                    var delta = wheel.angleDelta.y > 0 ? step : -step;
+                    var newVal = Math.max(-20, Math.min(20, eqSld.value + delta));
+                    eqSld.value = newVal;
+                    rootItem.sliderChanged(newVal);
                 }
             }
         }

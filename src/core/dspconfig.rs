@@ -98,7 +98,8 @@ impl DspConfigManager {
                 cfg.pitch_semitones = state.pitch_semitones as f32;
                 cfg.middle_enabled = state.middle_active;
                 cfg.middle_amount = state.middle_amount as f32;
-                cfg.reverb_preset = state.reverb_preset;
+                cfg.reverb_mode = state.reverb_mode as i32;
+                cfg.reverb_amount = state.reverb_amount as i32;
                 cfg.compressor_enabled = state.compressor_active;
                 let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
                     .load(std::sync::atomic::Ordering::Relaxed);
@@ -140,7 +141,8 @@ pub struct DspStateView {
     pub pitch_semitones: f64,
     pub middle_active: bool,
     pub middle_amount: f64,
-    pub reverb_preset: u32,
+    pub reverb_mode: u32,
+    pub reverb_amount: u32,
     pub compressor_active: bool,
     pub stereo_active: bool,
     pub stereo_amount: f64,
@@ -172,7 +174,8 @@ impl Default for DspStateView {
             pitch_semitones: 0.0,
             middle_active: false,
             middle_amount: 0.0,
-            reverb_preset: 0,
+            reverb_mode: 0,
+            reverb_amount: 50,
             compressor_active: false,
             stereo_active: false,
             stereo_amount: 0.0,
@@ -206,7 +209,8 @@ impl DspStateView {
             pitch_semitones: config.pitch_semitones as f64,
             middle_active: config.middle_enabled,
             middle_amount: config.middle_amount as f64,
-            reverb_preset: config.reverb_preset,
+            reverb_mode: config.reverb_mode as u32,
+            reverb_amount: config.reverb_amount as u32,
             compressor_active: config.compressor_enabled,
             stereo_active: config.stereo_enabled,
             stereo_amount: config.stereo_amount as f64,

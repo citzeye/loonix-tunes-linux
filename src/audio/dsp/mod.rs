@@ -54,7 +54,10 @@ pub use self::normalizer::{
     get_normalizer_gain_arc, get_normalizer_smoothing_arc, AudioNormalizer,
 };
 pub use self::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc, PitchShifter};
-pub use self::reverb::{get_reverb_preset_arc, Reverb};
+pub use self::reverb::{
+    get_reverb_amount_arc, get_reverb_damp_arc, get_reverb_enabled_arc, get_reverb_mode_arc,
+    get_reverb_room_size_arc, Reverb,
+};
 pub use self::stereoenhance::{get_stereo_amount_arc, get_stereo_enabled_arc, StereoEnhance};
 pub use self::stereowidth::{get_mono_enabled_arc, get_mono_width_arc, StereoWidth};
 pub use self::surround::{get_surround_enabled_arc, get_surround_width_arc, SurroundProcessor};

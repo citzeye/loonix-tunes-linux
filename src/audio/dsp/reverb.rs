@@ -1,205 +1,368 @@
 /* --- LOONIX-TUNES src/audio/dsp/reverb.rs --- */
 
 use crate::audio::dsp::DspProcessor;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::OnceLock;
 
-// Global ARC buat nyimpen Preset ID: 0=Off, 1=Stage, 2=Hall, 3=Stadium
-static REVERB_PRESET_ARC: OnceLock<Arc<AtomicU32>> = OnceLock::new();
+static REVERB_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
+static REVERB_MODE: OnceLock<AtomicU32> = OnceLock::new();
+static REVERB_AMOUNT: OnceLock<AtomicU32> = OnceLock::new();
+static REVERB_ROOM_SIZE: OnceLock<AtomicU32> = OnceLock::new();
+static REVERB_DAMP: OnceLock<AtomicU32> = OnceLock::new();
 
-pub fn get_reverb_preset_arc() -> Arc<AtomicU32> {
-    REVERB_PRESET_ARC
-        .get_or_init(|| Arc::new(AtomicU32::new(0)))
-        .clone()
+pub fn get_reverb_enabled_arc() -> &'static AtomicBool {
+    REVERB_ENABLED.get_or_init(|| AtomicBool::new(true))
 }
 
-static REVERB_ROOM_SIZE_ARC: OnceLock<Arc<AtomicU32>> = OnceLock::new();
-
-pub fn get_reverb_room_size_arc() -> Arc<AtomicU32> {
-    REVERB_ROOM_SIZE_ARC
-        .get_or_init(|| Arc::new(AtomicU32::new(0.5_f32.to_bits())))
-        .clone()
+pub fn get_reverb_mode_arc() -> &'static AtomicU32 {
+    REVERB_MODE.get_or_init(|| AtomicU32::new(1))
 }
 
-static REVERB_DAMP_ARC: OnceLock<Arc<AtomicU32>> = OnceLock::new();
-
-pub fn get_reverb_damp_arc() -> Arc<AtomicU32> {
-    REVERB_DAMP_ARC
-        .get_or_init(|| Arc::new(AtomicU32::new(0.3_f32.to_bits())))
-        .clone()
+pub fn get_reverb_amount_arc() -> &'static AtomicU32 {
+    REVERB_AMOUNT.get_or_init(|| AtomicU32::new(50))
 }
 
-/// Ghost Reverb: transparent, subtle, "I Miss It" effect
+pub fn get_reverb_room_size_arc() -> &'static AtomicU32 {
+    REVERB_ROOM_SIZE.get_or_init(|| AtomicU32::new((0.5_f32).to_bits()))
+}
+
+pub fn get_reverb_damp_arc() -> &'static AtomicU32 {
+    REVERB_DAMP.get_or_init(|| AtomicU32::new((0.5_f32).to_bits()))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReverbMode {
+    Off = 0,
+    Studio = 1,
+    Stage = 2,
+    Stadium = 3,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ReverbParams {
+    pub room_size: f32,
+    pub decay_time: f32,
+    pub damping: f32,
+    pub width: f32,
+    pub wet: f32,
+    pub dry: f32,
+    pub predelay_ms: f32,
+}
+
+const BASE_PARAMS: [ReverbParams; 3] = [
+    ReverbParams {
+        room_size: 0.25,
+        decay_time: 0.8,
+        damping: 0.65,
+        width: 1.1,
+        wet: 0.18,
+        dry: 1.0,
+        predelay_ms: 8.0,
+    },
+    ReverbParams {
+        room_size: 0.55,
+        decay_time: 1.8,
+        damping: 0.55,
+        width: 1.3,
+        wet: 0.28,
+        dry: 1.0,
+        predelay_ms: 18.0,
+    },
+    ReverbParams {
+        room_size: 0.85,
+        decay_time: 3.5,
+        damping: 0.40,
+        width: 1.5,
+        wet: 0.38,
+        dry: 1.0,
+        predelay_ms: 35.0,
+    },
+];
+
+const COMB_DELAYS: [usize; 4] = [1557, 1617, 1491, 1422];
+const ALLPASS_DELAYS: [usize; 2] = [225, 556];
+const FIXED_GAIN: f32 = 0.015;
+const SCALE_WET: f32 = 3.0;
+const SCALE_DAMP: f32 = 0.4;
+const SCALE_ROOM: f32 = 0.28;
+const OFFSET_ROOM: f32 = 0.7;
+const INITIAL_REVERB: f32 = 0.5;
+
+struct CombFilter {
+    buffer: Vec<f32>,
+    idx: usize,
+    feedback: f32,
+    damp1: f32,
+    damp2: f32,
+    filterstore: f32,
+}
+
+impl CombFilter {
+    fn new(size: usize) -> Self {
+        Self {
+            buffer: vec![0.0; size],
+            idx: 0,
+            feedback: 0.0,
+            damp1: 0.0,
+            damp2: 0.0,
+            filterstore: 0.0,
+        }
+    }
+
+    #[inline(always)]
+    fn process(&mut self, input: f32) -> f32 {
+        let output = self.buffer[self.idx];
+        self.filterstore = output * self.damp2 + self.filterstore * self.damp1;
+        self.filterstore = self.filterstore.abs().min(1.0) * self.filterstore.signum();
+        self.buffer[self.idx] = input + self.filterstore * self.feedback;
+        self.idx = (self.idx + 1) % self.buffer.len();
+        output
+    }
+
+    fn set_feedback_and_damp(&mut self, room_size: f32, damp: f32) {
+        self.feedback = room_size;
+        self.damp1 = damp * 0.4;
+        self.damp2 = 1.0 - damp * 0.4;
+    }
+
+    fn reset(&mut self) {
+        self.buffer.fill(0.0);
+        self.filterstore = 0.0;
+    }
+}
+
+struct AllpassFilter {
+    buffer: Vec<f32>,
+    idx: usize,
+    feedback: f32,
+}
+
+impl AllpassFilter {
+    fn new(size: usize) -> Self {
+        Self {
+            buffer: vec![0.0; size],
+            idx: 0,
+            feedback: 0.5,
+        }
+    }
+
+    #[inline(always)]
+    fn process(&mut self, input: f32) -> f32 {
+        let bufout = self.buffer[self.idx];
+        let output = -input + bufout;
+        self.buffer[self.idx] = input + bufout * self.feedback;
+        self.idx = (self.idx + 1) % self.buffer.len();
+        output
+    }
+
+    fn reset(&mut self) {
+        self.buffer.fill(0.0);
+    }
+}
+
 pub struct Reverb {
-    room_size: f32,
-    damp: f32,
-    wet: f32,
-    dry: f32,
-    makeup: f32,
-    #[allow(dead_code)]
     sample_rate: f32,
-
-    // Input filter state (low-cut / high-pass)
-    last_low_cut: f32,
-
-    // Comb filters (prime sizes scaled for 48kHz)
-    comb1: Vec<f32>,
-    comb2: Vec<f32>,
-    comb3: Vec<f32>,
-    comb4: Vec<f32>,
-    comb_idx1: usize,
-    comb_idx2: usize,
-    comb_idx3: usize,
-    comb_idx4: usize,
-
-    // Allpass filters (prime sizes for density)
-    allpass1: Vec<f32>,
-    allpass2: Vec<f32>,
-    allpass_idx1: usize,
-    _allpass_idx2: usize,
+    comb_l: [CombFilter; 4],
+    comb_r: [CombFilter; 4],
+    allpass_l: [AllpassFilter; 2],
+    allpass_r: [AllpassFilter; 2],
+    predelay_l: Vec<f32>,
+    predelay_r: Vec<f32>,
+    predelay_idx: usize,
+    predelay_size: usize,
+    stereo_spread: f32,
 }
 
 impl Reverb {
     pub fn new() -> Self {
+        let comb_l: [CombFilter; 4] = [
+            CombFilter::new(COMB_DELAYS[0]),
+            CombFilter::new(COMB_DELAYS[1]),
+            CombFilter::new(COMB_DELAYS[2]),
+            CombFilter::new(COMB_DELAYS[3]),
+        ];
+        let comb_r: [CombFilter; 4] = [
+            CombFilter::new(COMB_DELAYS[0] + COMB_DELAYS[0] / 2),
+            CombFilter::new(COMB_DELAYS[1] + COMB_DELAYS[1] / 2),
+            CombFilter::new(COMB_DELAYS[2] + COMB_DELAYS[2] / 2),
+            CombFilter::new(COMB_DELAYS[3] + COMB_DELAYS[3] / 2),
+        ];
+        let allpass_l: [AllpassFilter; 2] = [
+            AllpassFilter::new(ALLPASS_DELAYS[0]),
+            AllpassFilter::new(ALLPASS_DELAYS[1]),
+        ];
+        let allpass_r: [AllpassFilter; 2] = [
+            AllpassFilter::new(ALLPASS_DELAYS[0] + ALLPASS_DELAYS[0] / 2),
+            AllpassFilter::new(ALLPASS_DELAYS[1] + ALLPASS_DELAYS[1] / 2),
+        ];
+
         Self {
-            room_size: 0.5,
-            damp: 0.3,
-            wet: 0.0,
-            dry: 1.0,
-            makeup: 1.0,
             sample_rate: 48000.0,
-            last_low_cut: 0.0,
-            // Buffer Prime tetap dipakai biar gema-nya jernih (gak metallic)
-            comb1: vec![0.0; 3607],
-            comb2: vec![0.0; 3701],
-            comb3: vec![0.0; 4001],
-            comb4: vec![0.0; 4217],
-            comb_idx1: 0,
-            comb_idx2: 0,
-            comb_idx3: 0,
-            comb_idx4: 0,
-            allpass1: vec![0.0; 1051],
-            allpass2: vec![0.0; 941],
-            allpass_idx1: 0,
-            _allpass_idx2: 0,
+            comb_l,
+            comb_r,
+            allpass_l,
+            allpass_r,
+            predelay_l: vec![0.0; 4096],
+            predelay_r: vec![0.0; 4096],
+            predelay_idx: 0,
+            predelay_size: 512,
+            stereo_spread: 23.0,
         }
     }
 
-    pub fn set_room_size(&mut self, size: f32) {
-        self.room_size = size.clamp(0.0, 1.0);
-    }
+    fn update_params(&mut self, mode: ReverbMode, amount: f32) {
+        let mode_idx = match mode {
+            ReverbMode::Studio => 0,
+            ReverbMode::Stage => 1,
+            ReverbMode::Stadium => 2,
+            ReverbMode::Off => return,
+        };
 
-    pub fn set_damp(&mut self, damp: f32) {
-        self.damp = damp.clamp(0.0, 1.0);
-    }
+        let base = BASE_PARAMS[mode_idx];
+        let room = base.room_size * SCALE_ROOM + OFFSET_ROOM;
+        let damp = base.damping * SCALE_DAMP;
+        let _wet = base.wet * SCALE_WET * (amount / 100.0);
 
-    pub fn set_wet(&mut self, wet: f32) {
-        self.wet = wet.clamp(0.0, 1.0);
-    }
-
-    fn apply_preset(&mut self, preset_id: u32) {
-        match preset_id {
-            1 => {
-                // STAGE
-                self.dry = 0.8;
-                self.wet = 0.2;
-                self.room_size = 0.55;
-                self.damp = 0.5;
-                self.makeup = 1.15; // Kompensasi drop 20%
-            }
-            2 => {
-                // HALL
-                self.dry = 0.65;
-                self.wet = 0.35;
-                self.room_size = 0.78;
-                self.damp = 0.35;
-                self.makeup = 1.35; // Kompensasi drop 35%
-            }
-            3 => {
-                // STADIUM
-                self.dry = 0.5;
-                self.wet = 0.5;
-                self.room_size = 0.92;
-                self.damp = 0.4;
-                self.makeup = 1.6; // Kompensasi drop 50%
-            }
-            _ => {
-                self.wet = 0.0;
-                self.dry = 1.0;
-                self.makeup = 1.0;
-            }
+        for i in 0..4 {
+            self.comb_l[i].set_feedback_and_damp(room, damp);
+            self.comb_r[i].set_feedback_and_damp(room - self.stereo_spread / 100.0 * 0.28, damp);
         }
+
+        self.predelay_size = (base.predelay_ms * self.sample_rate / 1000.0) as usize;
+        self.predelay_size = self.predelay_size.min(4096);
+
+        self.allpass_l[0].feedback = INITIAL_REVERB;
+        self.allpass_r[0].feedback = INITIAL_REVERB - self.stereo_spread / 200.0;
+        self.allpass_l[1].feedback = INITIAL_REVERB;
+        self.allpass_r[1].feedback = INITIAL_REVERB - self.stereo_spread / 200.0;
+    }
+
+    #[inline(always)]
+    fn process_stereo(&mut self, input_l: f32, input_r: f32, wet: f32, width: f32) -> (f32, f32) {
+        let mono = (input_l + input_r) * FIXED_GAIN;
+
+        self.predelay_l[self.predelay_idx] = mono;
+        let delayed_mono = self.predelay_l[(self.predelay_idx + self.predelay_size) % 4096];
+        self.predelay_idx = (self.predelay_idx + 1) % 4096;
+
+        let mut out_l = 0.0f32;
+        let mut out_r = 0.0f32;
+
+        for i in 0..4 {
+            out_l += self.comb_l[i].process(delayed_mono);
+            out_r += self.comb_r[i].process(delayed_mono);
+        }
+
+        out_l = self.allpass_l[0].process(out_l);
+        out_r = self.allpass_r[0].process(out_r);
+        out_l = self.allpass_l[1].process(out_l);
+        out_r = self.allpass_r[1].process(out_r);
+
+        let wet1 = wet * 0.5;
+        let wet2 = wet * 0.5 * width;
+
+        let left = out_l * wet1 + out_r * wet2 + input_l;
+        let right = out_r * wet1 + out_l * wet2 + input_r;
+
+        (left, right)
     }
 }
 
 impl DspProcessor for Reverb {
-    #[inline(always)]
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        let preset_id = get_reverb_preset_arc().load(Ordering::Relaxed);
-
-        if preset_id == 0 {
+        let enabled = get_reverb_enabled_arc().load(Ordering::Relaxed);
+        if !enabled {
             output.copy_from_slice(input);
             return;
         }
 
-        self.apply_preset(preset_id);
+        let mode = match get_reverb_mode_arc().load(Ordering::Relaxed) {
+            1 => ReverbMode::Studio,
+            2 => ReverbMode::Stage,
+            3 => ReverbMode::Stadium,
+            _ => {
+                output.copy_from_slice(input);
+                return;
+            }
+        };
 
-        // Override room_size and damp from atomics (UI adjustable)
-        let room_size_arc = get_reverb_room_size_arc();
-        let damp_arc = get_reverb_damp_arc();
-        self.room_size = f32::from_bits(room_size_arc.load(Ordering::Relaxed)).clamp(0.0, 1.0);
-        self.damp = f32::from_bits(damp_arc.load(Ordering::Relaxed)).clamp(0.0, 1.0);
+        let amount = f32::from_bits(get_reverb_amount_arc().load(Ordering::Relaxed));
 
-        let feedback = self.room_size;
-        let damp_val = self.damp * 0.2; // Damp halus
-        let filter_alpha = 0.15; // Low-cut tipis biar gak gemuruh
+        if amount < 0.5 {
+            output.copy_from_slice(input);
+            return;
+        }
 
-        for (i, &sample) in input.iter().enumerate() {
-            // 1. GENTLE LOW CUT (High Pass)
-            let lp = sample * filter_alpha + self.last_low_cut * (1.0 - filter_alpha);
-            self.last_low_cut = lp;
-            let reverb_input = sample - lp;
+        let mode_idx = match mode {
+            ReverbMode::Studio => 0,
+            ReverbMode::Stage => 1,
+            ReverbMode::Stadium => 2,
+            ReverbMode::Off => return,
+        };
+        let wet = BASE_PARAMS[mode_idx].wet * (amount / 100.0);
+        let width = BASE_PARAMS[mode_idx].width;
 
-            // 2. COMB FILTERS (Parallel)
-            let out1 = self.comb1[self.comb_idx1];
-            self.comb1[self.comb_idx1] = reverb_input + (out1 * (feedback - damp_val));
-            self.comb_idx1 = (self.comb_idx1 + 1) % self.comb1.len();
+        let room = BASE_PARAMS[mode_idx].room_size * SCALE_ROOM + OFFSET_ROOM;
+        let damp = BASE_PARAMS[mode_idx].damping * SCALE_DAMP;
 
-            let out2 = self.comb2[self.comb_idx2];
-            self.comb2[self.comb_idx2] = reverb_input + (out2 * (feedback - damp_val));
-            self.comb_idx2 = (self.comb_idx2 + 1) % self.comb2.len();
+        for i in 0..4 {
+            self.comb_l[i].set_feedback_and_damp(room, damp);
+            self.comb_r[i].set_feedback_and_damp(room - self.stereo_spread / 100.0 * 0.28, damp);
+        }
 
-            let out3 = self.comb3[self.comb_idx3];
-            self.comb3[self.comb_idx3] = reverb_input + (out3 * (feedback - damp_val));
-            self.comb_idx3 = (self.comb_idx3 + 1) % self.comb3.len();
+        let len = input.len();
 
-            let out4 = self.comb4[self.comb_idx4];
-            self.comb4[self.comb_idx4] = reverb_input + (out4 * (feedback - damp_val));
-            self.comb_idx4 = (self.comb_idx4 + 1) % self.comb4.len();
+        for i in (0..len).step_by(2) {
+            if i + 1 >= len {
+                output[i] = input[i];
+                break;
+            }
 
-            let mut reverb_out = (out1 + out2 + out3 + out4) * 0.25;
+            let in_l = input[i];
+            let in_r = input[i + 1];
 
-            // 3. ALLPASS (Density)
-            let ap1 = self.allpass1[self.allpass_idx1];
-            let ap_out1 = -reverb_out + ap1;
-            self.allpass1[self.allpass_idx1] = reverb_out + (ap1 * 0.5);
-            reverb_out = ap_out1;
-            self.allpass_idx1 = (self.allpass_idx1 + 1) % self.allpass1.len();
+            self.predelay_l[self.predelay_idx] = (in_l + in_r) * FIXED_GAIN;
+            let delayed_mono = self.predelay_l[(self.predelay_idx + self.predelay_size) % 4096];
 
-            // 4. FINAL MIX DENGAN MAKEUP GAIN
-            let mixed = (sample * self.dry) + (reverb_out * self.wet);
-            output[i] = mixed * self.makeup;
+            let mut out_l = 0.0f32;
+            let mut out_r = 0.0f32;
+
+            for c in 0..4 {
+                out_l += self.comb_l[c].process(delayed_mono);
+                out_r += self.comb_r[c].process(delayed_mono);
+            }
+
+            out_l = self.allpass_l[0].process(out_l);
+            out_r = self.allpass_r[0].process(out_r);
+            out_l = self.allpass_l[1].process(out_l);
+            out_r = self.allpass_r[1].process(out_r);
+
+            let wet1 = wet * 0.5;
+            let wet2 = wet * 0.5 * width;
+
+            let left = out_l * wet1 + out_r * wet2 + in_l;
+            let right = out_r * wet1 + out_l * wet2 + in_r;
+
+            let left = left.abs().min(1.0) * left.signum();
+            let right = right.abs().min(1.0) * right.signum();
+
+            output[i] = left;
+            output[i + 1] = right;
         }
     }
 
     fn reset(&mut self) {
-        self.comb1.fill(0.0);
-        self.comb2.fill(0.0);
-        self.comb3.fill(0.0);
-        self.comb4.fill(0.0);
-        self.allpass1.fill(0.0);
-        self.allpass2.fill(0.0);
-        self.last_low_cut = 0.0;
+        for c in 0..4 {
+            self.comb_l[c].reset();
+            self.comb_r[c].reset();
+        }
+        for a in 0..2 {
+            self.allpass_l[a].reset();
+            self.allpass_r[a].reset();
+        }
+        self.predelay_l.fill(0.0);
+        self.predelay_r.fill(0.0);
+        self.predelay_idx = 0;
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
@@ -208,5 +371,11 @@ impl DspProcessor for Reverb {
 
     fn as_any_ref(&self) -> &dyn std::any::Any {
         self
+    }
+}
+
+impl Default for Reverb {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use crate::audio::audiooutput::AudioOutput;
-use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem};
+use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem, PlaybackState};
 
 use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
@@ -143,10 +143,15 @@ pub struct MusicModel {
     pub reverb_changed: qt_signal!(),
     pub reverb_active: qt_property!(bool; NOTIFY reverb_active_changed),
     pub reverb_active_changed: qt_signal!(),
+    pub reverb_mode: qt_property!(i32; NOTIFY reverb_mode_changed),
+    pub reverb_mode_changed: qt_signal!(),
+    pub reverb_amount: qt_property!(i32; NOTIFY reverb_amount_changed),
+    pub reverb_amount_changed: qt_signal!(),
     pub reverb_room_size: qt_property!(f64; NOTIFY reverb_params_changed),
     pub reverb_damp: qt_property!(f64; NOTIFY reverb_params_changed),
     pub reverb_params_changed: qt_signal!(),
     pub set_reverb_mode: qt_method!(fn(&mut self, mode: i32)),
+    pub set_reverb_amount: qt_method!(fn(&mut self, amount: i32)),
     pub setStdReverbRoomSize: qt_method!(fn(&mut self, val: f64)),
     pub setStdReverbDamp: qt_method!(fn(&mut self, val: f64)),
 
@@ -489,8 +494,9 @@ impl MusicModel {
             stereo_amount: saved_config.stereo_amount as f64,
             crossfeed_active: saved_config.crossfeed_enabled,
             crossfeed_amount: saved_config.crossfeed_amount as f64,
-            reverb_preset: saved_config.reverb_preset,
-            reverb_room_size: 0.55,
+            reverb_mode: saved_config.reverb_mode,
+            reverb_amount: saved_config.reverb_amount,
+            reverb_room_size: 0.5,
             reverb_damp: 0.5,
             eq_enabled: saved_config.eq_enabled,
             active_preset_index: saved_config.active_preset_index,
@@ -522,21 +528,29 @@ impl MusicModel {
         crate::audio::dsp::pitchshifter::get_pitch_ratio_arc()
             .store(pitch_ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
 
-        // Initialize reverb preset ARC from saved config
-        let reverb_arc = crate::audio::dsp::reverb::get_reverb_preset_arc();
-        reverb_arc.store(
-            saved_config.reverb_preset,
+        // Initialize reverb mode ARC from saved config
+        let reverb_mode_arc = crate::audio::dsp::reverb::get_reverb_mode_arc();
+        reverb_mode_arc.store(
+            saved_config.reverb_mode as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
 
-        // Set current_reverb property based on preset
-        model.current_reverb = QString::from(match saved_config.reverb_preset {
-            1 => "stage",
-            2 => "hall",
+        // Initialize reverb amount ARC
+        let reverb_amount_arc = crate::audio::dsp::reverb::get_reverb_amount_arc();
+        reverb_amount_arc.store(
+            (saved_config.reverb_amount as f32).to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+
+        // Set current_reverb property based on mode (0=Off, 1=Studio, 2=Stage, 3=Stadium)
+        model.current_reverb = QString::from(match saved_config.reverb_mode {
+            0 => "off",
+            1 => "studio",
+            2 => "stage",
             3 => "stadium",
             _ => "off",
         });
-        model.reverb_active = saved_config.reverb_preset > 0;
+        model.reverb_active = saved_config.reverb_mode > 0;
         model.reverb_changed();
         model.reverb_active_changed();
         model.dsp_enabled = saved_config.dsp_enabled;
@@ -1642,7 +1656,7 @@ impl MusicModel {
             _ => 0,
         };
 
-        crate::audio::dsp::reverb::get_reverb_preset_arc()
+        crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_preset = preset_id;
@@ -1666,7 +1680,7 @@ impl MusicModel {
             0
         };
 
-        crate::audio::dsp::reverb::get_reverb_preset_arc()
+        crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_preset = preset_id;
@@ -1686,7 +1700,7 @@ impl MusicModel {
         self.reverb_preset = mode;
         self.reverb_active = mode > 0;
 
-        crate::audio::dsp::reverb::get_reverb_preset_arc()
+        crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(mode, std::sync::atomic::Ordering::Relaxed);
 
         self.current_reverb = QString::from(match mode {
@@ -1698,6 +1712,17 @@ impl MusicModel {
 
         self.reverb_active_changed();
         self.reverb_changed();
+        self.save_dsp_config();
+    }
+
+    pub fn set_reverb_amount(&mut self, amount: i32) {
+        let amount = amount.clamp(0, 100) as u32;
+        self.reverb_amount = amount as i32;
+        crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+            (amount as f32).to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.reverb_amount_changed();
         self.save_dsp_config();
     }
 
@@ -2742,7 +2767,8 @@ impl MusicModel {
             pitch_semitones: self.pitch_semitones,
             middle_active: self.middle_active,
             middle_amount: self.middle_amount,
-            reverb_preset: self.reverb_preset,
+            reverb_mode: self.reverb_mode as u32,
+            reverb_amount: self.reverb_amount as u32,
             compressor_active: self.compressor_active,
             stereo_active: self.stereo_active,
             stereo_amount: self.stereo_amount,
@@ -2814,18 +2840,23 @@ impl MusicModel {
     }
 
     pub fn toggle_play(&mut self) {
-        if self.is_playing {
-            if let Ok(mut ff) = self.ffmpeg.lock() {
-                ff.pause();
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            let state = ff.get_playback_state();
+
+            match state {
+                PlaybackState::Playing => {
+                    ff.pause();
+                }
+                PlaybackState::Paused => {
+                    ff.resume();
+                }
+                PlaybackState::Stopped | PlaybackState::Loading | PlaybackState::Priming => {
+                    if let Some(ref path) = ff.get_current_path() {
+                        ff.load(path);
+                        ff.play();
+                    }
+                }
             }
-            self.is_playing = false;
-            self.playing_changed();
-        } else {
-            if let Ok(mut ff) = self.ffmpeg.lock() {
-                ff.resume();
-            }
-            self.is_playing = true;
-            self.playing_changed();
         }
     }
 
@@ -2973,13 +3004,10 @@ impl MusicModel {
                     self.position_changed();
 
                     if let Ok(mut ff) = self.ffmpeg.lock() {
-                        // Load track tapi langsung pause - agar siap play saat user klik
-                        ff.play(&item.path);
+                        ff.load(&item.path);
                         if last_pos > 0 {
                             ff.seek(last_pos as f64 / 1000.0);
                         }
-                        // Langsung pause agar tidak auto-play
-                        ff.pause();
                     }
 
                     self.duration_changed();
@@ -3012,7 +3040,8 @@ impl MusicModel {
                 cfg.pitch_semitones = self.pitch_semitones as f32;
                 cfg.middle_enabled = self.middle_active;
                 cfg.middle_amount = self.middle_amount as f32;
-                cfg.reverb_preset = self.reverb_preset;
+                cfg.reverb_mode = self.reverb_mode;
+                cfg.reverb_amount = self.reverb_amount;
                 cfg.compressor_enabled = self.compressor_active;
                 let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
                     .load(std::sync::atomic::Ordering::Relaxed);

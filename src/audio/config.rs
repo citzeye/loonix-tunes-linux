@@ -72,7 +72,9 @@ pub struct AppConfig {
     pub pitch_semitones: f32,
     pub middle_enabled: bool,
     pub middle_amount: f32,
-    pub reverb_preset: u32,
+    pub reverb_enabled: bool,
+    pub reverb_mode: i32,   // 0=Off, 1=Studio, 2=Stage, 3=Stadium
+    pub reverb_amount: i32, // 0-100 percentage
     pub compressor_enabled: bool,
     pub compressor_threshold: f32,
     pub stereo_enabled: bool,
@@ -121,7 +123,7 @@ fn default_norm_smoothing() -> f32 {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            eq_bands: [4.0, 8.0, 0.0, 0.0, -5.0, -5.0, 0.0, 0.0, 8.0, 0.0],
+            eq_bands: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
             volume: 0.2,
             balance: 0.0,
             shuffle: false,
@@ -154,7 +156,9 @@ impl Default for AppConfig {
             pitch_semitones: 0.0,
             middle_enabled: false,
             middle_amount: 0.0,
-            reverb_preset: 0,
+            reverb_enabled: true,
+            reverb_mode: 1,    // Studio mode by default
+            reverb_amount: 50, // 50% intensity by default
             compressor_enabled: true,
             compressor_threshold: -10.0,
             stereo_enabled: true,
@@ -225,10 +229,10 @@ impl AppConfig {
         map.insert("playlistactive".to_string(), "#00ffa2".to_string());
         map.insert("playlisticon".to_string(), "#ff881a".to_string());
         map.insert("dspbg".to_string(), "#201f2b".to_string());
-        map.insert("dspborder".to_string(), "#00ffa2".to_string());
+        map.insert("dspborder".to_string(), "#6d6d6d".to_string());
         // EQ Panel
         map.insert("dspeqbg".to_string(), "#15141b".to_string());
-        map.insert("dspeqtext".to_string(), "#00ffa2".to_string());
+        map.insert("dspeqtext".to_string(), "#c6c6c6".to_string());
         map.insert("dspeqsubtext".to_string(), "#57caab".to_string());
         map.insert("dspeqicon".to_string(), "#ff881a".to_string());
         map.insert("dspeqhover".to_string(), "#ff1ae0".to_string());
@@ -246,7 +250,7 @@ impl AppConfig {
         // FX Panel
         map.insert("dspfxbg".to_string(), "#15141b".to_string());
         map.insert("dspfxborder".to_string(), "#00ffa2".to_string());
-        map.insert("dspfxtext".to_string(), "#00ffa2".to_string());
+        map.insert("dspfxtext".to_string(), "#c6c6c6".to_string());
         map.insert("dspfxsubtext".to_string(), "#57caab".to_string());
         map.insert("dspfxicon".to_string(), "#ff881a".to_string());
         map.insert("dspfxhover".to_string(), "#ff1ae0".to_string());
@@ -378,19 +382,19 @@ struct EqPresetData {
 pub const EQ_PRESET_DATA: [EqPresetData; 6] = [
     EqPresetData {
         name: "LOONIX",
-        gains: [4.0, 8.0, 0.0, 0.0, -5.0, -5.0, 0.0, 0.0, 8.0, 0.0],
+        gains: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
         preamp: 0.0,
         macro_val: 0.0,
     },
     EqPresetData {
         name: "BASS",
-        gains: [7.0, 6.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+        gains: [6.0, 9.0, 0.0, -5.0, -5.0, -5.0, -5.0, -5.0, 2.0, -5.0],
         preamp: 0.0,
         macro_val: 0.0,
     },
     EqPresetData {
         name: "ROCK",
-        gains: [5.0, 4.0, 3.0, 1.0, -1.0, -1.0, 1.0, 3.0, 4.0, 5.0],
+        gains: [6.0, 9.0, 1.0, -2.0, -4.0, -2.0, 1.0, 3.0, 6.0, 6.0],
         preamp: 0.0,
         macro_val: 0.0,
     },
@@ -402,13 +406,13 @@ pub const EQ_PRESET_DATA: [EqPresetData; 6] = [
     },
     EqPresetData {
         name: "METAL",
-        gains: [6.0, 5.0, 4.0, 0.0, -4.0, -4.0, -2.0, 2.0, 5.0, 6.0],
+        gains: [6.0, 10.0, 0.0, -4.0, -6.0, -4.0, 0.0, 3.0, 5.0, 6.0],
         preamp: 0.0,
         macro_val: 0.0,
     },
     EqPresetData {
         name: "JAZZ",
-        gains: [3.0, 2.0, 1.0, 2.0, -1.0, -1.0, 0.0, 1.0, 2.0, 3.0],
+        gains: [3.0, 2.0, 1.0, -2.0, -2.0, -2.0, -2.0, 1.0, 2.0, 3.0],
         preamp: 0.0,
         macro_val: 0.0,
     },

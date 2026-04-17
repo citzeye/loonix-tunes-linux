@@ -82,7 +82,8 @@ impl PlaybackController {
         self.duration = 0;
 
         if let Ok(mut ff) = self.ffmpeg.lock() {
-            ff.play(&item.path);
+            ff.load(&item.path);
+            ff.play();
             let dur = (ff.get_duration() * 1000.0) as i32;
             if dur > 0 {
                 self.duration = dur;
