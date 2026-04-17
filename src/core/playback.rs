@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use crate::audio::dsp::abrepeat::ABRepeat;
-use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
+use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};
 use qmetaobject::prelude::*;
 use qmetaobject::QString;
 use rand::seq::SliceRandom;
@@ -91,6 +91,53 @@ impl PlaybackController {
         if let Ok(mut ff) = self.ffmpeg.lock() {
             ff.stop();
         }
+    }
+
+    pub fn pause(&mut self) {
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            if matches!(ff.get_playback_state(), PlaybackState::Playing) {
+                ff.pause();
+            }
+        }
+    }
+
+    pub fn resume(&mut self) {
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            if matches!(ff.get_playback_state(), PlaybackState::Paused) {
+                ff.resume();
+            }
+        }
+    }
+
+    pub fn toggle(&mut self) {
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            match ff.get_playback_state() {
+                PlaybackState::Playing => {
+                    ff.pause();
+                }
+                PlaybackState::Paused => {
+                    ff.resume();
+                }
+                PlaybackState::Stopped | PlaybackState::Loading | PlaybackState::Priming => {
+                    if let Some(ref path) = ff.get_current_path() {
+                        ff.load(path);
+                        ff.play();
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_playback_state(&self) -> PlaybackState {
+        if let Ok(ff) = self.ffmpeg.lock() {
+            ff.get_playback_state()
+        } else {
+            PlaybackState::Stopped
+        }
+    }
+
+    pub fn is_playing(&self) -> bool {
+        matches!(self.get_playback_state(), PlaybackState::Playing)
     }
 
     pub fn seek_to(&mut self, pos: i32) {

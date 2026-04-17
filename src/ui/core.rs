@@ -1937,32 +1937,12 @@ impl MusicModel {
     }
 
     pub fn is_playing(&self) -> bool {
-        if let Ok(ff) = self.ffmpeg.lock() {
-            matches!(ff.get_playback_state(), PlaybackState::Playing)
-        } else {
-            false
-        }
+        self.playback.is_playing()
     }
 
     pub fn toggle_play(&mut self) {
-        if let Ok(mut ff) = self.ffmpeg.lock() {
-            let state = ff.get_playback_state();
-
-            match state {
-                PlaybackState::Playing => {
-                    ff.pause();
-                }
-                PlaybackState::Paused => {
-                    ff.resume();
-                }
-                PlaybackState::Stopped | PlaybackState::Loading | PlaybackState::Priming => {
-                    if let Some(ref path) = ff.get_current_path() {
-                        ff.load(path);
-                        ff.play();
-                    }
-                }
-            }
-        }
+        self.playback.toggle();
+        self.playing_changed();
     }
 
     pub fn load_track_info(&mut self, path: String) {
@@ -2025,13 +2005,7 @@ impl MusicModel {
     }
 
     pub fn update_tick(&mut self) {
-        let engine_state = {
-            if let Ok(ff) = self.ffmpeg.lock() {
-                ff.get_playback_state()
-            } else {
-                PlaybackState::Stopped
-            }
-        };
+        let engine_state = self.playback.get_playback_state();
 
         let is_playing = matches!(engine_state, PlaybackState::Playing);
 
