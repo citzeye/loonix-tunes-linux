@@ -13,6 +13,9 @@ pub mod resample;
 // DSP
 pub mod dsp;
 
+// Presets
+pub mod presets;
+
 // Pre-scan loudness
 pub mod scanner;
 
