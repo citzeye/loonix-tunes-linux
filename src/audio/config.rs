@@ -226,14 +226,15 @@ impl AppConfig {
         map.insert("tabborder".to_string(), "#00ffa2".to_string());
         map.insert("tabhover".to_string(), "#ff1ae0".to_string());
         map.insert("playlisttext".to_string(), "#c6c6c6".to_string());
-        map.insert("playlistfolder".to_string(), "#ff881a".to_string());
+        map.insert("playlistfolder".to_string(), "#fa7900".to_string());
         map.insert("playlistactive".to_string(), "#00ffa2".to_string());
-        map.insert("playlisticon".to_string(), "#ff881a".to_string());
+        map.insert("playlisticon".to_string(), "#fa7900".to_string());
 
         // DSP Panel
         map.insert("dspbg".to_string(), "#15151B".to_string()); // outer
         map.insert("dsptext".to_string(), "#6d6d6d".to_string());
         map.insert("dsptexthover".to_string(), "#fa7900".to_string());
+        map.insert("dsptextactive".to_string(), "#fa7900".to_string());
         map.insert("dspborder".to_string(), "#6d6d6d".to_string());
         map.insert("dspgridbg".to_string(), "#111111".to_string());
         
@@ -242,7 +243,7 @@ impl AppConfig {
             // EQ Panel
             map.insert("dspeqbg".to_string(), "#151515".to_string()); // eq wrapper
             map.insert("dspeqicon".to_string(), "#9442ff".to_string());
-            map.insert("dspactive".to_string(), "#00ffa2".to_string());
+            
             
             map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
             map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
@@ -266,7 +267,6 @@ impl AppConfig {
             // FX Panel
             map.insert("dspfxbg".to_string(), "#151515".to_string()); // fx wrapper
             map.insert("dspfxicon".to_string(), "#9442ff".to_string());
-            map.insert("dspfxactive".to_string(), "#9442ff".to_string());
             map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
             map.insert("dspfxsliderbg".to_string(), "#111111".to_string());
             map.insert("dspfxhandle".to_string(), "#9442ff".to_string());

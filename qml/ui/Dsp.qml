@@ -75,7 +75,7 @@ Popup {
                 }
 
                 GridLayout {
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter 
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     width: 280
                     columns: 12
                     rows: 3
@@ -239,7 +239,6 @@ Popup {
                         fontFamily: symbols.name
                         fontSize: 14
                     }
-                    
                 }
 
                 Item {
@@ -591,7 +590,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
+                    color: defBtn.isActive ? theme.colormap.dsptextactive : (defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -599,7 +598,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: defBtn.isActive ? theme.colormap.dspactive : theme.colormap.dspborder
+                    border.color: defBtn.isActive ? theme.colormap.dsptextactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index);
@@ -625,7 +624,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
+                    color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -633,7 +632,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: pBtn.isActive ? theme.colormap.dspactive : theme.colormap.dspborder
+                    border.color: pBtn.isActive ? theme.colormap.dsptextactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index + 6);
@@ -658,13 +657,13 @@ Popup {
                 dspContent.resetEQ();
             }
 
-background: Rectangle {
-                        color: theme.colormap.dspgridbg
-                        border.color: theme.colormap.dspborder
-                        radius: 2
-                    }
+            background: Rectangle {
+                color: theme.colormap.dspgridbg
+                border.color: theme.colormap.dspborder
+                radius: 2
+            }
 
-                    contentItem: Text {
+            contentItem: Text {
                 text: "RESET ALL"
                 font.family: kodeMono.name
                 font.pixelSize: 10
@@ -687,7 +686,7 @@ background: Rectangle {
             }
 
             background: Rectangle {
-                color: saveBtn.hovered ? theme.colormap.dspbg : theme.colormap.dspgridbg
+                color: theme.colormap.dspgridbg
                 border.color: theme.colormap.dspborder
                 radius: 2
             }
@@ -1094,14 +1093,14 @@ background: Rectangle {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: isActive ? theme.colormap.dsptext : theme.colormap.dsptext
+            color: isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
         }
 
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
             onEntered: modeText.color = theme.colormap.dsptexthover
-            onExited: modeText.color = isActive ? theme.colormap.dsptext : theme.colormap.dsptext
+            onExited: modeText.color = isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
             onClicked: rootItem.clicked()
         }
     }
@@ -1163,14 +1162,14 @@ background: Rectangle {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: isActive ? theme.colormap.dsptext : theme.colormap.dsptext
+            color: isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
         }
 
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
             onEntered: modeText.color = theme.colormap.dsptexthover
-            onExited: modeText.color = isActive ? theme.colormap.dsptext : theme.colormap.dsptext
+            onExited: modeText.color = isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
             onClicked: rootItem.clicked()
         }
     }
@@ -1448,6 +1447,7 @@ background: Rectangle {
                 sliderValue = newVal;
                 if (linkSlider) {
                     linkSlider.controlValue = newVal;
+                    linkSlider.sliderChanged(newVal);
                 }
             }
         }
@@ -1656,7 +1656,7 @@ background: Rectangle {
                 width: 10
                 height: 10
                 radius: 5
-color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
+                color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
             }
             MouseArea {
                 anchors.fill: parent
