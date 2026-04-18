@@ -574,7 +574,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: defBtn.hovered ? "#00ffa2" : "#57caab"
+                    color: defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -608,7 +608,7 @@ Popup {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: pBtn.hovered ? "#00ffa2" : "#57caab"
+                    color: pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -642,7 +642,7 @@ Popup {
             }
 
             background: Rectangle {
-                color: resetBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspgridbg
+                color: resetBtn.hovered ? theme.colormap.dspbg : theme.colormap.dspgridbg
                 border.color: theme.colormap.dspborder
                 radius: 2
             }
@@ -652,7 +652,7 @@ Popup {
                 font.family: kodeMono.name
                 font.pixelSize: 10
                 font.bold: true
-                color: resetBtn.hovered ? "black" : theme.colormap.dspfxtext
+                color: resetBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -670,7 +670,7 @@ Popup {
             }
 
             background: Rectangle {
-                color: saveBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspgridbg
+                color: saveBtn.hovered ? theme.colormap.dspbg : theme.colormap.dspgridbg
                 border.color: theme.colormap.dspborder
                 radius: 2
             }
@@ -680,7 +680,7 @@ Popup {
                 font.family: kodeMono.name
                 font.pixelSize: 10
                 font.bold: true
-                color: saveBtn.hovered ? "black" : theme.colormap.dspfxtext
+                color: saveBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -715,7 +715,7 @@ Popup {
                 font.family: kodeMono.name
                 font.pixelSize: 12
                 font.bold: true
-                color: theme.colormap.dspfxtext
+                color: theme.colormap.dsptext
             }
 
             TextInput {
@@ -725,7 +725,7 @@ Popup {
                 maximumLength: 10
                 font.family: kodeMono.name
                 font.pixelSize: 12
-                color: theme.colormap.dspfxtext
+                color: theme.colormap.dsptext
                 verticalAlignment: Text.AlignVCenter
                 validator: RegularExpressionValidator {
                     regularExpression: /[a-zA-Z0-9 ]*/
@@ -768,7 +768,7 @@ Popup {
                     contentItem: Text {
                         text: parent.text
                         font: parent.font
-                        color: parent.hovered ? "black" : theme.colormap.dspfxtext
+                        color: parent.hovered ? theme.colormap.dspgridbg : theme.colormap.dsptext
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -793,7 +793,7 @@ Popup {
                     contentItem: Text {
                         text: parent.text
                         font: parent.font
-                        color: parent.hovered ? "black" : theme.colormap.dspfxtext
+                        color: parent.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -813,7 +813,7 @@ Popup {
         Layout.fillWidth: false
         Layout.preferredWidth: 150
         Layout.preferredHeight: 20
-        color: boxEnabled ? theme.colormap.dspgridbg : theme.colormap.dspfxtext + "33"
+        color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
 
@@ -827,7 +827,7 @@ Popup {
                 text: isOn ? '󰔡' : '󰨙'
                 font.family: symbols.name
                 font.pixelSize: 16
-                color: boxEnabled ? (isOn ? theme.colormap.dspfxhover : theme.colormap.dspfxtext) : theme.colormap.dspfxtext + "66"
+                color: boxEnabled ? (isOn ? theme.colormap.dspfxicon : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                 Layout.preferredWidth: 30
                 MouseArea {
                     id: toggleIconArea
@@ -841,7 +841,7 @@ Popup {
                 text: title
                 font.family: kodeMono.name
                 font.pixelSize: 11
-                color: boxEnabled ? (isOn ? theme.colormap.dspfxtext : theme.colormap.dspfxtext) : theme.colormap.dspfxtext + "66"
+                color: boxEnabled ? (isOn ? theme.colormap.dsptext : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                 Layout.preferredWidth: 160
                 elide: Text.ElideRight
                 MouseArea {
@@ -884,7 +884,7 @@ Popup {
                 text: leftLabel
                 font.family: kodeMono.name
                 font.pixelSize: 11
-                color: theme.colormap.dspfxtext
+                color: theme.colormap.dsptext
                 visible: leftLabel !== ""
             }
 
@@ -1030,7 +1030,7 @@ Popup {
                 }
                 font.family: sansSerif.name
                 font.pixelSize: 11
-                color: theme.colormap.dspfxtext
+                color: theme.colormap.dsptext
                 Layout.preferredWidth: 60
             }
         }
@@ -1055,7 +1055,7 @@ Popup {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: isActive ? theme.colormap.dspfxtext : theme.colormap.dspfxtext
+            color: isActive ? theme.colormap.dsptext : theme.colormap.dsptext
         }
 
         MouseArea {
@@ -1120,7 +1120,7 @@ Popup {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: isActive ? theme.colormap.dspfxtext : theme.colormap.dspfxtext
+            color: isActive ? theme.colormap.dsptext : theme.colormap.dsptext
         }
 
         MouseArea {
@@ -1184,7 +1184,7 @@ Popup {
             text: Math.round(rootItem.currentValue / rootItem.maxValue * 100) + "%"
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
             visible: rootItem.state === "display"
         }
 
@@ -1195,7 +1195,7 @@ Popup {
             horizontalAlignment: TextInput.AlignHCenter
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
             visible: rootItem.state === "edit"
             validator: IntValidator {
                 bottom: 0
@@ -1221,8 +1221,8 @@ Popup {
             id: hoverArea
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: displayText.color = theme.colormap.dspfxtext
-            onExited: displayText.color = theme.colormap.dspfxtext
+            onEntered: displayText.color = theme.colormap.dsptext
+            onExited: displayText.color = theme.colormap.dsptext
             onClicked: rootItem.state = "display"
             onDoubleClicked: {
                 inputField.text = Math.round(rootItem.currentValue / rootItem.maxValue * 100);
@@ -1250,7 +1250,7 @@ Popup {
 
         Layout.preferredWidth: 60
         Layout.preferredHeight: 20
-        color: boxEnabled ? theme.colormap.dspfxbg : theme.colormap.dspfxtext + "33"
+        color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
 
@@ -1262,7 +1262,7 @@ Popup {
             text: Math.round(rootItem.currentValue) + "%"
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
             visible: rootItem.state === "display"
         }
 
@@ -1273,7 +1273,7 @@ Popup {
             horizontalAlignment: TextInput.AlignHCenter
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
             visible: rootItem.state === "edit"
             validator: IntValidator {
                 bottom: 0
@@ -1299,8 +1299,8 @@ Popup {
             id: hoverArea
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: displayText.color = theme.colormap.dspfxtext
-            onExited: displayText.color = theme.colormap.dspfxtext
+            onEntered: displayText.color = theme.colormap.dsptext
+            onExited: displayText.color = theme.colormap.dsptext
             onClicked: rootItem.state = "display"
             onDoubleClicked: {
                 inputField.text = Math.round(rootItem.currentValue);
@@ -1346,7 +1346,7 @@ Popup {
             }
             font.family: sansSerif.name
             font.pixelSize: 10
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
         }
     }
 
@@ -1385,7 +1385,7 @@ Popup {
             }
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
         }
     }
 
@@ -1409,10 +1409,10 @@ Popup {
 
         Text {
             anchors.centerIn: parent
-            text: '󰜉'
+            text: '󰑓'
             font.family: symbols.name
             font.pixelSize: 12
-            color: theme.colormap.dspfxtext
+            color: theme.colormap.dsptext
         }
 
         MouseArea {
@@ -1491,7 +1491,7 @@ Popup {
                     width: 2
                     height: 8
                     anchors.centerIn: parent
-                    color: theme.colormap.dspfxtext
+                    color: theme.colormap.dsptext
                 }
 
                 Rectangle {
@@ -1529,7 +1529,7 @@ Popup {
             text: rootItem.displayText
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspeqtext
+            color: theme.colormap.dsptext
         }
     }
 
@@ -1619,7 +1619,7 @@ color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10hand
             text: rootItem.nameLabel
             font.family: sansSerif.name
             font.pixelSize: 11
-            color: theme.colormap.dspeqtext
+            color: theme.colormap.dsptext
         }
     }
 
