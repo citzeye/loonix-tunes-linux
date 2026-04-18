@@ -195,8 +195,12 @@ Popup {
                     }
 
                     // Row 3: Names (bawah)
+                    // amp
                     EqNameBox {
-                        nameLabel: "AMP"
+                        nameLabel: "󰯫"
+                        tooltipText: "Preamp"
+                        fontFamily: symbols.name
+                        fontSize: 14
                     }
                     EqNameBox {
                         nameLabel: "31"
@@ -228,9 +232,14 @@ Popup {
                     EqNameBox {
                         nameLabel: "16k"
                     }
+                    // fader
                     EqNameBox {
-                        nameLabel: "FADER"
+                        nameLabel: "󰯺"
+                        tooltipText: "Fader"
+                        fontFamily: symbols.name
+                        fontSize: 14
                     }
+                    
                 }
 
                 Item {
@@ -1626,6 +1635,9 @@ color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10hand
     component EqNameBox: Rectangle {
         id: rootItem
         property string nameLabel: ""
+        property string tooltipText: ""
+        property string fontFamily: sansSerif.name
+        property int fontSize: 11
 
         Layout.preferredWidth: 20
         Layout.fillWidth: false
@@ -1633,11 +1645,31 @@ color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10hand
         color: "transparent"
 
         Text {
+            id: labelText
             anchors.centerIn: parent
             text: rootItem.nameLabel
-            font.family: sansSerif.name
-            font.pixelSize: 11
+            font.family: rootItem.fontFamily
+            font.pixelSize: rootItem.fontSize
             color: theme.colormap.dsptext
+            Rectangle {
+                visible: ma.containsMouse
+                y: -20
+                width: labelText.width
+                height: 16
+                color: "transparent"
+                Text {
+                    anchors.centerIn: parent
+                    text: rootItem.tooltipText
+                    font.family: kodeMono.name
+                    font.pixelSize: 13
+                    color: theme.colormap.dsptexthover
+                }
+            }
+            MouseArea {
+                id: ma
+                anchors.fill: parent
+                hoverEnabled: true
+            }
         }
     }
 

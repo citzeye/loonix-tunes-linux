@@ -233,7 +233,7 @@ impl AppConfig {
         // DSP Panel
         map.insert("dspbg".to_string(), "#15151B".to_string()); // outer
         map.insert("dsptext".to_string(), "#6d6d6d".to_string());
-        map.insert("dsptexthover".to_string(), "#ff881a".to_string());
+        map.insert("dsptexthover".to_string(), "#fa7900".to_string());
         map.insert("dspborder".to_string(), "#6d6d6d".to_string());
         map.insert("dspgridbg".to_string(), "#111111".to_string());
         
