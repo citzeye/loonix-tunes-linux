@@ -281,6 +281,7 @@ Popup {
                         enabled: compToggle.isOn && musicModel.dsp_enabled
                         sliderValue: compSlider.currentValue
                         showDbCompressor: true
+                        linkSlider: compSlider
                     }
                     FxResetButton {
                         enabled: compToggle.isOn && musicModel.dsp_enabled
@@ -312,6 +313,7 @@ Popup {
                     FxValueBox {
                         enabled: surrToggle.isOn && musicModel.dsp_enabled
                         sliderValue: surrSlider.currentValue
+                        linkSlider: surrSlider
                     }
                     FxResetButton {
                         enabled: surrToggle.isOn && musicModel.dsp_enabled
@@ -341,6 +343,7 @@ Popup {
                     FxValueBox {
                         enabled: monoToggle.isOn && musicModel.dsp_enabled
                         sliderValue: monoSlider.currentValue
+                        linkSlider: monoSlider
                     }
                     FxResetButton {
                         enabled: monoToggle.isOn && musicModel.dsp_enabled
@@ -370,6 +373,7 @@ Popup {
                     FxValueBox {
                         enabled: midToggle.isOn
                         sliderValue: midSlider.currentValue
+                        linkSlider: midSlider
                     }
                     FxResetButton {
                         enabled: midToggle.isOn
@@ -399,6 +403,7 @@ Popup {
                     FxValueBox {
                         enabled: stereoEnhToggle.isOn
                         sliderValue: stereoSlider.currentValue
+                        linkSlider: stereoSlider
                     }
                     FxResetButton {
                         enabled: stereoEnhToggle.isOn
@@ -428,6 +433,7 @@ Popup {
                     FxValueBox {
                         enabled: crossfeedToggle.isOn
                         sliderValue: crossfeedSlider.currentValue
+                        linkSlider: crossfeedSlider
                     }
                     FxResetButton {
                         enabled: crossfeedToggle.isOn
@@ -457,6 +463,7 @@ Popup {
                     FxValueBox {
                         enabled: crystalToggle.isOn
                         sliderValue: crystalAmtSlider.currentValue
+                        linkSlider: crystalAmtSlider
                     }
                     FxResetButton {
                         enabled: crystalToggle.isOn
@@ -519,6 +526,7 @@ Popup {
                         enabled: pitchToggle.isOn
                         sliderValue: pitchSlider.currentValue
                         showSemitones: true
+                        linkSlider: pitchSlider
                     }
                     FxResetButton {
                         enabled: pitchToggle.isOn
@@ -1032,6 +1040,7 @@ background: Rectangle {
             }
 
             Text {
+                id: valText
                 text: {
                     if (showHz) {
                         var freq = hzMin + (controlValue * (hzMax - hzMin));
@@ -1047,6 +1056,20 @@ background: Rectangle {
                 font.pixelSize: 11
                 color: theme.colormap.dsptext
                 Layout.preferredWidth: 60
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: valText.color = theme.colormap.dsptexthover
+                    onExited: valText.color = theme.colormap.dsptext
+                    onWheel: event => {
+                        var step = 0.01;
+                        var delta = event.angleDelta.y > 0 ? step : -step;
+                        var newVal = Math.max(0.0, Math.min(1.0, controlValue + delta));
+                        controlValue = newVal;
+                        rootItem.currentValue = newVal;
+                        rootItem.sliderChanged(newVal);
+                    }
+                }
             }
         }
     }
@@ -1382,6 +1405,7 @@ background: Rectangle {
         property real hzMax: 10000.0
         property bool showSemitones: false
         property bool showDbCompressor: false
+        property var linkSlider: null
 
         Layout.preferredWidth: 60
         Layout.preferredHeight: 20
@@ -1390,6 +1414,7 @@ background: Rectangle {
         antialiasing: false
 
         Text {
+            id: displayText
             anchors.centerIn: parent
             text: {
                 if (showDbCompressor) {
@@ -1409,6 +1434,22 @@ background: Rectangle {
             font.family: sansSerif.name
             font.pixelSize: 11
             color: theme.colormap.dsptext
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: displayText.color = theme.colormap.dsptexthover
+            onExited: displayText.color = theme.colormap.dsptext
+            onWheel: event => {
+                var step = 0.01;
+                var delta = event.angleDelta.y > 0 ? step : -step;
+                var newVal = Math.max(0.0, Math.min(1.0, sliderValue + delta));
+                sliderValue = newVal;
+                if (linkSlider) {
+                    linkSlider.controlValue = newVal;
+                }
+            }
         }
     }
 
