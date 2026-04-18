@@ -67,162 +67,174 @@ Popup {
             Layout.preferredHeight: 100
             color: theme.colormap.dspeqbg
 
-            GridLayout {
+            RowLayout {
                 anchors.fill: parent
-                anchors.margins: 3
-                columns: 12
-                rows: 3
-                rowSpacing: 3
-                columnSpacing: 2
 
-                // Row 1: Numbers (atas) - connected to sliders
-                EqNumberBox {
-                    id: numPreamp
-                    displayText: eqPreamp.currentValue > 0 ? "+" + Math.round(eqPreamp.currentValue) : "" + Math.round(eqPreamp.currentValue)
-                }
-                EqNumberBox {
-                    id: num31
-                    displayText: Math.round(eq31.currentValue)
-                }
-                EqNumberBox {
-                    id: num62
-                    displayText: Math.round(eq62.currentValue)
-                }
-                EqNumberBox {
-                    id: num125
-                    displayText: Math.round(eq125.currentValue)
-                }
-                EqNumberBox {
-                    id: num250
-                    displayText: Math.round(eq250.currentValue)
-                }
-                EqNumberBox {
-                    id: num500
-                    displayText: Math.round(eq500.currentValue)
-                }
-                EqNumberBox {
-                    id: num1k
-                    displayText: Math.round(eq1k.currentValue)
-                }
-                EqNumberBox {
-                    id: num2k
-                    displayText: Math.round(eq2k.currentValue)
-                }
-                EqNumberBox {
-                    id: num4k
-                    displayText: Math.round(eq4k.currentValue)
-                }
-                EqNumberBox {
-                    id: num8k
-                    displayText: Math.round(eq8k.currentValue)
-                }
-                EqNumberBox {
-                    id: num16k
-                    displayText: Math.round(eq16k.currentValue)
-                }
-                EqNumberBox {
-                    id: numFader
-                    displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%"
+                Item {
+                    Layout.fillWidth: true
                 }
 
-                // Row 2: Sliders (tengah) - bound to musicModel.eqBands via reactive property
-                EqSliderBox {
-                    id: eqPreamp
-                    controlValue: musicModel.get_preamp_gain()
-                    onSliderChanged: val => musicModel.set_preamp_gain(val)
-                }
-                EqSliderBox {
-                    id: eq31
-                    controlValue: musicModel.eqBands[0]
-                    onSliderChanged: val => musicModel.set_eq_band(0, val)
-                }
-                EqSliderBox {
-                    id: eq62
-                    controlValue: musicModel.eqBands[1]
-                    onSliderChanged: val => musicModel.set_eq_band(1, val)
-                }
-                EqSliderBox {
-                    id: eq125
-                    controlValue: musicModel.eqBands[2]
-                    onSliderChanged: val => musicModel.set_eq_band(2, val)
-                }
-                EqSliderBox {
-                    id: eq250
-                    controlValue: musicModel.eqBands[3]
-                    onSliderChanged: val => musicModel.set_eq_band(3, val)
-                }
-                EqSliderBox {
-                    id: eq500
-                    controlValue: musicModel.eqBands[4]
-                    onSliderChanged: val => musicModel.set_eq_band(4, val)
-                }
-                EqSliderBox {
-                    id: eq1k
-                    controlValue: musicModel.eqBands[5]
-                    onSliderChanged: val => musicModel.set_eq_band(5, val)
-                }
-                EqSliderBox {
-                    id: eq2k
-                    controlValue: musicModel.eqBands[6]
-                    onSliderChanged: val => musicModel.set_eq_band(6, val)
-                }
-                EqSliderBox {
-                    id: eq4k
-                    controlValue: musicModel.eqBands[7]
-                    onSliderChanged: val => musicModel.set_eq_band(7, val)
-                }
-                EqSliderBox {
-                    id: eq8k
-                    controlValue: musicModel.eqBands[8]
-                    onSliderChanged: val => musicModel.set_eq_band(8, val)
-                }
-                EqSliderBox {
-                    id: eq16k
-                    controlValue: musicModel.eqBands[9]
-                    onSliderChanged: val => musicModel.set_eq_band(9, val)
-                }
-                EqSliderBox {
-                    id: eqFader
-                    controlValue: musicModel.fader_offset
-                    onSliderChanged: val => musicModel.set_fader(val)
+                GridLayout {
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter 
+                    width: 280
+                    columns: 12
+                    rows: 3
+                    rowSpacing: 3
+                    columnSpacing: 2
+
+                    // Row 1: Numbers (atas) - connected to sliders
+                    EqNumberBox {
+                        id: numPreamp
+                        displayText: eqPreamp.currentValue > 0 ? "+" + Math.round(eqPreamp.currentValue) : "" + Math.round(eqPreamp.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num31
+                        displayText: Math.round(eq31.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num62
+                        displayText: Math.round(eq62.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num125
+                        displayText: Math.round(eq125.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num250
+                        displayText: Math.round(eq250.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num500
+                        displayText: Math.round(eq500.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num1k
+                        displayText: Math.round(eq1k.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num2k
+                        displayText: Math.round(eq2k.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num4k
+                        displayText: Math.round(eq4k.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num8k
+                        displayText: Math.round(eq8k.currentValue)
+                    }
+                    EqNumberBox {
+                        id: num16k
+                        displayText: Math.round(eq16k.currentValue)
+                    }
+                    EqNumberBox {
+                        id: numFader
+                        displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%"
+                    }
+
+                    // Row 2: Sliders (tengah) - bound to musicModel.eqBands via reactive property
+                    EqSliderBox {
+                        id: eqPreamp
+                        controlValue: musicModel.get_preamp_gain()
+                        onSliderChanged: val => musicModel.set_preamp_gain(val)
+                    }
+                    EqSliderBox {
+                        id: eq31
+                        controlValue: musicModel.eqBands[0]
+                        onSliderChanged: val => musicModel.set_eq_band(0, val)
+                    }
+                    EqSliderBox {
+                        id: eq62
+                        controlValue: musicModel.eqBands[1]
+                        onSliderChanged: val => musicModel.set_eq_band(1, val)
+                    }
+                    EqSliderBox {
+                        id: eq125
+                        controlValue: musicModel.eqBands[2]
+                        onSliderChanged: val => musicModel.set_eq_band(2, val)
+                    }
+                    EqSliderBox {
+                        id: eq250
+                        controlValue: musicModel.eqBands[3]
+                        onSliderChanged: val => musicModel.set_eq_band(3, val)
+                    }
+                    EqSliderBox {
+                        id: eq500
+                        controlValue: musicModel.eqBands[4]
+                        onSliderChanged: val => musicModel.set_eq_band(4, val)
+                    }
+                    EqSliderBox {
+                        id: eq1k
+                        controlValue: musicModel.eqBands[5]
+                        onSliderChanged: val => musicModel.set_eq_band(5, val)
+                    }
+                    EqSliderBox {
+                        id: eq2k
+                        controlValue: musicModel.eqBands[6]
+                        onSliderChanged: val => musicModel.set_eq_band(6, val)
+                    }
+                    EqSliderBox {
+                        id: eq4k
+                        controlValue: musicModel.eqBands[7]
+                        onSliderChanged: val => musicModel.set_eq_band(7, val)
+                    }
+                    EqSliderBox {
+                        id: eq8k
+                        controlValue: musicModel.eqBands[8]
+                        onSliderChanged: val => musicModel.set_eq_band(8, val)
+                    }
+                    EqSliderBox {
+                        id: eq16k
+                        controlValue: musicModel.eqBands[9]
+                        onSliderChanged: val => musicModel.set_eq_band(9, val)
+                    }
+                    EqSliderBox {
+                        id: eqFader
+                        controlValue: musicModel.fader_offset
+                        onSliderChanged: val => musicModel.set_fader(val)
+                    }
+
+                    // Row 3: Names (bawah)
+                    EqNameBox {
+                        nameLabel: "AMP"
+                    }
+                    EqNameBox {
+                        nameLabel: "31"
+                    }
+                    EqNameBox {
+                        nameLabel: "62"
+                    }
+                    EqNameBox {
+                        nameLabel: "125"
+                    }
+                    EqNameBox {
+                        nameLabel: "250"
+                    }
+                    EqNameBox {
+                        nameLabel: "500"
+                    }
+                    EqNameBox {
+                        nameLabel: "1k"
+                    }
+                    EqNameBox {
+                        nameLabel: "2k"
+                    }
+                    EqNameBox {
+                        nameLabel: "4k"
+                    }
+                    EqNameBox {
+                        nameLabel: "8k"
+                    }
+                    EqNameBox {
+                        nameLabel: "16k"
+                    }
+                    EqNameBox {
+                        nameLabel: "FADER"
+                    }
                 }
 
-                // Row 3: Names (bawah)
-                EqNameBox {
-                    nameLabel: "AMP"
-                }
-                EqNameBox {
-                    nameLabel: "31"
-                }
-                EqNameBox {
-                    nameLabel: "62"
-                }
-                EqNameBox {
-                    nameLabel: "125"
-                }
-                EqNameBox {
-                    nameLabel: "250"
-                }
-                EqNameBox {
-                    nameLabel: "500"
-                }
-                EqNameBox {
-                    nameLabel: "1k"
-                }
-                EqNameBox {
-                    nameLabel: "2k"
-                }
-                EqNameBox {
-                    nameLabel: "4k"
-                }
-                EqNameBox {
-                    nameLabel: "8k"
-                }
-                EqNameBox {
-                    nameLabel: "16k"
-                }
-                EqNameBox {
-                    nameLabel: "FADER"
+                Item {
+                    Layout.fillWidth: true
                 }
             }
         }
@@ -1576,9 +1588,7 @@ Popup {
                 width: 10
                 height: 10
                 radius: 5
-                color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
-                border.color: theme.colormap.dspfxborder
-                border.width: 1
+color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
             }
             MouseArea {
                 anchors.fill: parent
