@@ -11,10 +11,6 @@ Item {
     property string currentWallpaper: ""
     property bool wallSyncEnabled: false
     property bool wallSyncSyncing: false
-    property bool appearanceContextMenuVisible: false
-    property int appearanceContextMenuX: 0
-    property int appearanceContextMenuY: 0
-    property int appearanceContextMenuIndex: -1
     property bool playlistContextMenuVisible: false
 
     function openThemeEditorWithTarget(targetIndex) {
@@ -137,7 +133,7 @@ Item {
                         radius: 4
                         color: presetName === theme.current_theme ? theme.colormap["playeraccent"] : theme.colormap["bgoverlay"]
                         border.color: {
-                             if (prefAppearanceRoot.appearanceContextMenuVisible && prefAppearanceRoot.appearanceContextMenuIndex === presetIndex) {
+                             if (prefPage.appearanceMenuVisible && prefPage.appearanceMenuIndex === presetIndex) {
                                 return theme.colormap["playeraccent"]
                             }
                             if (customItemArea.containsMouse) {
@@ -145,7 +141,7 @@ Item {
                             }
                             return theme.colormap["graysolid"]
                         }
-                        border.width: (prefAppearanceRoot.appearanceContextMenuVisible && prefAppearanceRoot.appearanceContextMenuIndex === presetIndex) ? 2 : 1
+                        border.width: (prefPage.appearanceMenuVisible && prefPage.appearanceMenuIndex === presetIndex) ? 2 : 1
 
                         Behavior on color { ColorAnimation { duration: 150 } }
                         Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -167,14 +163,14 @@ Item {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: (mouse) => {
                                 if (mouse.button === Qt.RightButton) {
-                                    var mappedPos = customItemArea.mapToItem(root, 0, customItemArea.height)
-                                    prefAppearanceRoot.appearanceContextMenuX = mappedPos.x
-                                    prefAppearanceRoot.appearanceContextMenuY = mappedPos.y
-                                    prefAppearanceRoot.appearanceContextMenuIndex = presetIndex
-                                    prefAppearanceRoot.appearanceContextMenuVisible = true
-                                    prefAppearanceRoot.playlistContextMenuVisible = false
+                                    var p = customItemArea.mapToItem(
+                                        prefPage,
+                                        0,
+                                        customItemArea.height
+                                    )
+                                    prefPage.openAppearanceMenu(p.x, p.y, presetIndex)
                                 } else if (mouse.button === Qt.LeftButton) {
-                                    prefAppearanceRoot.appearanceContextMenuVisible = false
+                                    prefPage.closeAppearanceMenu()
                                     theme.set_theme(presetName)
                                 }
                             }
@@ -394,12 +390,5 @@ Item {
 
             Item { Layout.preferredHeight: 40 }
         }
-    }
-
-    AppearanceContextMenu {
-        id: appearanceMenu
-        visible: prefAppearanceRoot.appearanceContextMenuVisible
-        x: prefAppearanceRoot.appearanceContextMenuX
-        y: prefAppearanceRoot.appearanceContextMenuY
     }
 }

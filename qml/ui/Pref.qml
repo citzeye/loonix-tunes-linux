@@ -13,21 +13,48 @@ Item {
     enabled: root.prefDialogVisible
 
     // ==========================================
+    // GLOBAL PROPERTIES FOR APPEARANCE MENU
+    // ==========================================
+    property bool appearanceMenuVisible: false
+    property real appearanceMenuX: 0
+    property real appearanceMenuY: 0
+    property int appearanceMenuIndex: -1
+
+    function openAppearanceMenu(x, y, index) {
+        appearanceMenuX = x;
+        appearanceMenuY = y;
+        appearanceMenuIndex = index;
+        appearanceMenuVisible = true;
+    }
+
+    function closeAppearanceMenu() {
+        appearanceMenuVisible = false;
+    }
+
+    function openRenameDialog() {
+        appearanceMenuVisible = false;
+        root.customRenameDialogIndex = appearanceMenuIndex;
+        root.customRenameDialogVisible = true;
+    }
+
+    // ==========================================
     // 1. BACKGROUND BLOCKER (Tembok Luar)
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: "transparent" 
-        
+        color: "transparent"
+
         MouseArea {
             anchors.fill: parent
-            acceptedButtons: Qt.AllButtons 
-            hoverEnabled: true 
-            
-            onWheel: (wheel) => { wheel.accepted = true } 
-            
+            acceptedButtons: Qt.AllButtons
+            hoverEnabled: true
+
+            onWheel: wheel => {
+                wheel.accepted = true;
+            }
+
             onClicked: {
-                root.prefDialogVisible = false
+                root.prefDialogVisible = false;
             }
         }
     }
@@ -52,9 +79,11 @@ Item {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.AllButtons
-            hoverEnabled: true 
+            hoverEnabled: true
             cursorShape: Qt.ArrowCursor
-            onWheel: (wheel) => { wheel.accepted = true } 
+            onWheel: wheel => {
+                wheel.accepted = true;
+            }
             // Sengaja GAK ADA onClicked, supaya dia cuma "nelen" klik tanpa melakukan apa-apa
         }
 
@@ -101,7 +130,9 @@ Item {
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     }
 
-                    Item { Layout.fillWidth: true }
+                    Item {
+                        Layout.fillWidth: true
+                    }
 
                     Text {
                         id: closeButton
@@ -245,6 +276,28 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 5
                 color: "transparent"
+            }
+        }
+
+        // ==========================================
+        // GLOBAL FLOATING MENU (Same level as popupContainer)
+        // ==========================================
+        Item {
+            id: appearanceMenuLayer
+            anchors.fill: parent
+            visible: prefPage.appearanceMenuVisible
+            z: 9999
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: prefPage.appearanceMenuVisible = false
+            }
+
+            AppearanceContextMenu {
+                id: appearanceMenu
+                x: prefPage.appearanceMenuX
+                y: prefPage.appearanceMenuY
+                presetIndex: prefPage.appearanceMenuIndex
             }
         }
     }

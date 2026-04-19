@@ -61,7 +61,7 @@ impl ThemeConfig {
         crate::audio::config::config_dir().map(|p| p.join("theme.json"))
     }
 
-    pub fn blue_colors() -> HashMap<String, String> {
+    pub fn user_template_colors() -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.insert("bgmain".to_string(), "#121212".to_string());
         map.insert("bgoverlay".to_string(), "#1e1e1e".to_string());
@@ -143,7 +143,7 @@ impl ThemeConfig {
 
 impl Default for ThemeConfig {
     fn default() -> Self {
-        let blue_colors = Self::blue_colors();
+        let blue_colors = Self::user_template_colors();
         Self {
             active_theme: "Loonix".to_string(),
             themes: vec![
@@ -185,8 +185,12 @@ pub struct ThemeManager {
     pub get_default_colors: qt_method!(fn(&self) -> QVariantMap),
     pub get_theme_list: qt_method!(fn(&self) -> QVariantList),
     pub get_custom_themes: qt_method!(fn(&self) -> QVariantList),
+    pub set_theme: qt_method!(fn(&mut self, name: String)),
+    pub cycle_theme: qt_method!(fn(&mut self)),
     pub get_editor_starter_colors:
         qt_method!(fn(&self, is_edit_mode: bool, index: i32) -> QVariantMap),
+    pub get_color_template: qt_method!(fn(&self) -> QVariantMap),
+    pub save_theme_editor: qt_method!(fn(&mut self, index: i32, name: String, colors: QVariantMap)),
     pub sync_with_wallpaper: qt_method!(fn(&mut self)),
     pub set_loonix_manual: qt_method!(fn(&mut self)),
     pub set_wallpaper_path: qt_method!(fn(&mut self, path: String)),
@@ -602,8 +606,7 @@ pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
             let colors = &self.themes[index as usize].colors;
             if let Some(ref c) = colors {
                 if c.is_empty() {
-                    return self
-                        .current_raw_colors
+                    return ThemeConfig::user_template_colors()
                         .iter()
                         .map(|(k, v)| {
                             (
@@ -628,7 +631,7 @@ pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
     }
 
     pub fn set_custom_theme_colors(&mut self, index: i32, colors: QVariantMap) {
-        let mut color_map = ThemeConfig::blue_colors();
+        let mut color_map = ThemeConfig::user_template_colors();
         for (k, v) in &colors {
             color_map.insert(k.to_string(), v.to_qstring().to_string());
         }
@@ -644,8 +647,37 @@ pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
         }
     }
 
+    pub fn get_color_template(&self) -> QVariantMap {
+        ThemeConfig::user_template_colors()
+            .iter()
+            .map(|(k, v)| {
+                (
+                    QString::from(k.as_str()),
+                    QVariant::from(QString::from(v.as_str())),
+                )
+            })
+            .collect()
+    }
+
+    pub fn save_theme_editor(&mut self, index: i32, name: String, colors: QVariantMap) {
+        let mut color_map = ThemeConfig::user_template_colors();
+        for (k, v) in &colors {
+            color_map.insert(k.to_string(), v.to_qstring().to_string());
+        }
+
+        let idx = index as usize;
+        if idx < self.themes.len() {
+            self.themes[idx].name = name.clone();
+            self.themes[idx].colors = Some(color_map);
+            self.save_config();
+            self.themes_changed();
+
+            self.set_theme(name);
+        }
+    }
+
     pub fn get_default_colors(&self) -> QVariantMap {
-        ThemeConfig::blue_colors()
+        ThemeConfig::user_template_colors()
             .iter()
             .map(|(k, v)| {
                 (
@@ -671,11 +703,13 @@ pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
     pub fn get_custom_themes(&self) -> QVariantList {
         self.themes
             .iter()
-            .filter(|t| t.colors.is_some())
-            .map(|t| {
+            .enumerate()
+            .filter(|(_, t)| t.colors.is_some())
+            .map(|(i, t)| {
                 let mut map = QVariantMap::default();
                 map.insert(QString::from("name"), QVariant::from(QString::from(t.name.clone())));
                 map.insert(QString::from("is_active"), QVariant::from(t.is_active));
+                map.insert(QString::from("original_index"), QVariant::from(i as i32));
                 QVariant::from(map)
             })
             .collect()
@@ -745,7 +779,7 @@ pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
 
     pub fn set_theme(&mut self, name: String) {
         // Get colors based on theme
-        let base_colors = ThemeConfig::blue_colors();
+        let base_colors = ThemeConfig::user_template_colors();
         let colors = if let Some(entry) = self.themes.iter().find(|t| t.name == name) {
             // Check if this is a custom theme (has colors) or built-in (no colors)
             if let Some(ref c) = entry.colors {

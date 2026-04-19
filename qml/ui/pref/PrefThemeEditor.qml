@@ -13,9 +13,10 @@ Item {
     property int refreshTicker: 0
     property int selectedProfileIndex: 0
     function getCustomThemeName(index) {
-        var themeList = theme.get_theme_list() || [];
-        if (index >= 0 && index < themeList.length) {
-            return themeList[index].name || "Custom " + (index - 7);
+        var themeList = theme.get_custom_themes() || [];
+        var themeItem = themeList.find(function(t) { return t.original_index === index; });
+        if (themeItem) {
+            return themeItem.name;
         }
         return "Custom Theme";
     }
@@ -59,29 +60,58 @@ Item {
             "dspbg": inEqBg.inputText,
             "dspborder": inEqBorder.inputText,
             "dspeqtext": inEqText.inputText,
+            "dspeqsubtext": inEqText.inputText,
             "dspeqicon": inEqIcon.inputText,
             "dspeqhover": inEqHover.inputText,
+            "dspeqpresettext": inEqText.inputText,
             "dspeqpresetactive": inEqPresetActive.inputText,
+            "dspeqslider": inEq10Slider.inputText,
+            "dspeqsliderbg": inEq10Slider.inputText,
+            "dspeqhandle": inEq10Handle.inputText,
             "dspeq10slider": inEq10Slider.inputText,
             "dspeq10handle": inEq10Handle.inputText,
             "dspeqfaderslider": inEqFaderSlider.inputText,
+            "dspeqfaderhandle": inEqFaderSlider.inputText,
+            "dspeqmixslider": inEqFaderSlider.inputText,
+            "dspeqmixhandle": inEqFaderSlider.inputText,
             "dspfxbg": inFxBg.inputText,
             "dspfxtext": inFxText.inputText,
+            "dspfxsubtext": inFxText.inputText,
             "dspfxicon": inFxIcon.inputText,
             "dspfxhover": inFxHover.inputText,
             "dspfxactive": inFxActive.inputText,
             "dspfxslider": inFxSlider.inputText,
             "dspfxsliderbg": inFxSliderBg.inputText,
             "dspfxhandle": inFxHandle.inputText,
+            "dspslider": inEq10Slider.inputText,
+            "dspsliderbg": inEqBg.inputText,
+            "dsphandle": inEq10Handle.inputText,
+            "dsp10slider": inEq10Slider.inputText,
+            "dsp10handle": inEq10Handle.inputText,
+            "dsp10bg": inEqBg.inputText,
+            "dspfaderslider": inEqFaderSlider.inputText,
+            "dspfaderhandle": inEqFaderSlider.inputText,
+            "dspfaderbg": inEqBg.inputText,
+            "dspmixslider": inEqFaderSlider.inputText,
+            "dspmixhandle": inEqFaderSlider.inputText,
+            "dspmixbg": inEqBg.inputText,
+            "dspicon": inEqIcon.inputText,
+            "dsphover": inEqHover.inputText,
+            "dspactive": inEqPresetActive.inputText,
         };
     }
 
     onVisibleChanged: {
         if (visible) {
-            prefThemeEditorRoot.selectedProfileIndex = root.prefThemeEditorProfileTarget >= 0 ? root.prefThemeEditorProfileTarget : 0;
+            var targetIndex = root.prefThemeEditorProfileTarget;
+            if (targetIndex < 0) {
+                var customThemes = theme.get_custom_themes() || [];
+                targetIndex = customThemes.length > 0 ? customThemes[0].original_index : 8;
+            }
+            prefThemeEditorRoot.selectedProfileIndex = targetIndex;
 
-            if (root.prefThemeEditorProfileTarget >= 0) {
-                var savedColors = theme.get_custom_theme_colors(root.prefThemeEditorProfileTarget);
+            if (targetIndex >= 8 && targetIndex <= 10) {
+                var savedColors = theme.get_custom_theme_colors(targetIndex);
                 inBgMain.inputText = savedColors.bgmain;
                 inBgOverlay.inputText = savedColors.bgoverlay;
                 inGraySolid.inputText = savedColors.graysolid;
@@ -225,7 +255,7 @@ Item {
                     id: themeNameInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
-                    text: root.prefThemeEditorProfileTarget >= 0 ? prefThemeEditorRoot.getCustomThemeName(root.prefThemeEditorProfileTarget) : (prefThemeEditorRoot.selectedProfileIndex >= 0 ? prefThemeEditorRoot.getCustomThemeName(prefThemeEditorRoot.selectedProfileIndex) : "New Theme")
+                    text: prefThemeEditorRoot.selectedProfileIndex >= 0 ? prefThemeEditorRoot.getCustomThemeName(prefThemeEditorRoot.selectedProfileIndex) : "New Theme"
                     color: theme.colormap.playeraccent
                     font.family: kodeMono.name
                     font.pixelSize: 12
@@ -278,13 +308,12 @@ Item {
                             font.pixelSize: 10
                         }
                         Repeater {
-                            model: theme.get_theme_list()
+                            model: theme.get_custom_themes()
                             delegate: RadioButton {
-                                text: modelData.name
-                                checked: prefThemeEditorRoot.selectedProfileIndex === index
+                                text: modelData.name + " (" + modelData.original_index + ")"
+                                checked: prefThemeEditorRoot.selectedProfileIndex === modelData.original_index
                                 onClicked: {
-                                    prefThemeEditorRoot.selectedProfileIndex = index;
-                                    root.prefThemeEditorProfileTarget = index;
+                                    prefThemeEditorRoot.selectedProfileIndex = modelData.original_index;
                                 }
                                 contentItem: Text {
                                     text: parent.text
@@ -426,12 +455,17 @@ Item {
                     }
 
                     SectionHeader {
-                        sectionTitle: "EQ"
+                        sectionTitle: "DSP"
                     }
                     ColorInputRow {
                         id: inEqBg
                         labelText: "dspeqbg"
                         hexValue: theme.colormap.dspeqbg
+                    }
+                    ColorInputRow {
+                        id: inEqBorder
+                        labelText: "dspborder"
+                        hexValue: theme.colormap.dspborder
                     }
                     ColorInputRow {
                         id: inEqText
@@ -467,9 +501,6 @@ Item {
                         id: inEqFaderSlider
                         labelText: "dspeqfaderslider"
                         hexValue: theme.colormap.dspeqfaderslider
-                    }
-                    SectionHeader {
-                        sectionTitle: "FX"
                     }
                     ColorInputRow {
                         id: inFxBg
@@ -580,11 +611,10 @@ Item {
                         anchors.fill: parent
                         onClicked: {
                             var newName = themeNameInput.text;
-                            theme.set_custom_theme_name(prefThemeEditorRoot.selectedProfileIndex, newName);
-                            theme.set_custom_theme_colors(prefThemeEditorRoot.selectedProfileIndex, scanCurrentEditorColors());
-                            if (root.prefThemeEditorProfileTarget === -1 || (prefThemeEditorRoot.getCustomThemeName(prefThemeEditorRoot.selectedProfileIndex) === theme.current_theme)) {
-                                theme.set_theme(newName);
-                            }
+                            var idx = prefThemeEditorRoot.selectedProfileIndex;
+                            theme.set_custom_theme_name(idx, newName);
+                            theme.set_custom_theme_colors(idx, scanCurrentEditorColors());
+                            theme.set_theme(newName);
                             root.prefThemeEditorVisible = false;
                         }
                     }

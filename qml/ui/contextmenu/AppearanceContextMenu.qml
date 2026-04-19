@@ -6,10 +6,9 @@ import QtQuick.Controls
 
 Item {
   id: appearanceCtxRoot
-  z: 10000
-  visible: root.appearanceContextMenuVisible
-  x: root.appearanceContextMenuX
-  y: root.appearanceContextMenuY
+  z: 10001
+  visible: prefPage.appearanceMenuVisible
+  property int presetIndex: -1
   implicitWidth: menuGrid.width + 16
   implicitHeight: menuGrid.height + 16
 
@@ -31,20 +30,12 @@ Item {
     radius: 4
   }
 
-  MouseArea {
-    anchors.fill: parent
-    anchors.margins: -10000
-    hoverEnabled: true
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
-    onClicked: {
-      root.appearanceContextMenuVisible = false
-    }
-  }
+  
 
   GridLayout {
     id: menuGrid
     anchors.centerIn: parent
-    columns: 3
+    columns: 2
     rowSpacing: 2
     columnSpacing: 2
 
@@ -77,9 +68,12 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         onClicked: {
-          parent.parent.appearanceContextMenuVisible = false
-          parent.parent.prefThemeEditorProfileTarget = parent.parent.appearanceContextMenuIndex
-          parent.parent.prefThemeEditorVisible = true
+          var idx = prefPage.appearanceMenuIndex
+          var themeName = theme.get_custom_theme_name(idx)
+          theme.set_theme(themeName)
+          prefPage.appearanceMenuVisible = false
+          root.prefThemeEditorProfileTarget = idx
+          root.prefThemeEditorVisible = true
         }
       }
     }
@@ -113,8 +107,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         onClicked: {
-          root.appearanceContextMenuAction = "rename"
-          root.appearanceContextMenuVisible = false
+          prefPage.openRenameDialog()
         }
       }
     }
@@ -147,7 +140,42 @@ Item {
         id: tile3MA
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: root.appearanceContextMenuVisible = false
+        onClicked: prefPage.appearanceMenuVisible = false
+      }
+    }
+
+    // TILE 4 - Reset
+    Rectangle {
+      Layout.preferredWidth: 50
+      Layout.preferredHeight: 50
+      radius: 4
+      color: theme.colormap.bgmain
+      Column {
+        anchors.centerIn: parent
+        spacing: 4
+        Text {
+          anchors.horizontalCenter: parent.horizontalCenter
+          text: '⟲'
+          font.family: symbols.name
+          font.pixelSize: 18
+          color: tile4MA.containsMouse ? theme.colormap.playlisticon : theme.colormap.tabtext
+        }
+        Text {
+          anchors.horizontalCenter: parent.horizontalCenter
+          text: 'Reset'
+          font.family: kodeMono.name
+          font.pixelSize: 10
+          color: tile4MA.containsMouse ? theme.colormap.playlisticon : theme.colormap.tabtext
+        }
+      }
+      MouseArea {
+        id: tile4MA
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: {
+          prefPage.appearanceMenuVisible = false
+          theme.set_custom_theme_colors(prefPage.appearanceMenuIndex, theme.get_default_colors())
+        }
       }
     }
   }

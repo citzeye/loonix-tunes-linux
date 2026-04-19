@@ -1234,7 +1234,6 @@ Window {
     TabContextMenu {}
     PlaylistContextMenu {}
     TrackInfo {}
-    AppearanceContextMenu {}
     PrefThemeEditor {}
 
     // ==========================================
