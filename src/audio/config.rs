@@ -65,7 +65,7 @@ impl DspConfig {
     pub fn load() -> Self {
         match Self::load_dsp_config() {
             Ok(cfg) => cfg,
-            Err(_) => Self::default(),
+            Err(_) => Self::dsp_user_template(),
         }
     }
 
@@ -74,6 +74,41 @@ impl DspConfig {
         let content = fs::read_to_string(&path)?;
         let config: DspConfig = serde_json::from_str(&content)?;
         Ok(config)
+    }
+
+    pub fn dsp_user_template() -> Self {
+        Self {
+            user_preset_names: [
+                "User 1".into(),
+                "User 2".into(),
+                "User 3".into(),
+                "User 4".into(),
+                "User 5".into(),
+                "User 6".into(),
+            ],
+            user_preset_gains: [[0.0; 10]; 6],
+            user_preset_macro: [0.0; 6],
+            user_fx_enabled: [false; 6],
+            user_fx_bass_enabled: [false; 6],
+            user_fx_bass_gain: [0.0; 6],
+            user_fx_bass_cutoff: [0.0; 6],
+            user_fx_bass_mode: [0; 6],
+            user_fx_crystal_enabled: [false; 6],
+            user_fx_crystal_amount: [0.0; 6],
+            user_fx_surround_enabled: [false; 6],
+            user_fx_surround_width: [0.0; 6],
+            user_fx_mono_enabled: [false; 6],
+            user_fx_mono_width: [0.0; 6],
+            user_fx_stereo_enabled: [false; 6],
+            user_fx_stereo_amount: [0.0; 6],
+            user_fx_crossfeed_enabled: [false; 6],
+            user_fx_crossfeed_amount: [0.0; 6],
+            user_fx_compressor_enabled: [false; 6],
+            user_fx_compressor_threshold: [0.0; 6],
+            user_fx_reverb_enabled: [false; 6],
+            user_fx_reverb_mode: [0; 6],
+            user_fx_reverb_amount: [0; 6],
+        }
     }
 
     pub fn save(&self) -> Result<(), ConfigError> {

@@ -244,6 +244,7 @@ pub struct MusicModel {
     pub toggleCrossfeed: qt_method!(fn(&mut self)),
     pub setStdCrossfeedAmount: qt_method!(fn(&mut self, val: f64)),
     pub toggleDsp: qt_method!(fn(&mut self)),
+    pub resetAllDsp: qt_method!(fn(&mut self)),
     pub togglePreamp: qt_method!(fn(&mut self)),
     pub toggleLimiter: qt_method!(fn(&mut self)),
     pub toggle_normalizer: qt_method!(fn(&mut self)),
@@ -1551,6 +1552,63 @@ impl MusicModel {
 
     pub fn toggleDsp(&mut self) {
         self.dsp.toggle_dsp();
+        self.sync_dsp_from_controller();
+    }
+
+    pub fn resetAllDsp(&mut self) {
+        // FIRST: Force OFF all FX - this prevents auto-enable from keeping them ON
+        if self.compressor_active {
+            self.toggleCompressor();
+        }
+        if self.surround_active {
+            self.toggleSurround();
+        }
+        if self.mono_active {
+            self.toggleStereoWidth();
+        }
+        if self.middle_active {
+            self.toggleMiddleClarity();
+        }
+        if self.stereo_active {
+            self.toggleStereoEnhance();
+        }
+        if self.crossfeed_active {
+            self.toggleCrossfeed();
+        }
+        if self.crystal_active {
+            self.toggleCrystalizer();
+        }
+        if self.bass_active {
+            self.toggleBassBooster();
+        }
+        if self.reverb_active {
+            self.toggleReverb();
+        }
+        if self.pitch_active {
+            self.togglePitch();
+        }
+
+        // SECOND: Set all values to ZERO (no default musical values)
+        // Set EQ flat
+        for i in 0..10 {
+            self.set_eq_band(i as i32, 0.0);
+        }
+        self.set_preamp_gain(0.0);
+        self.set_fader(0.0);
+
+        // Set all FX amounts to ZERO
+        self.setStdCompressorThreshold(0.0);
+        self.setStdSurroundWidth(0.0);
+        self.setStdStereoWidthAmount(0.0);
+        self.setStdMiddleClarityAmount(0.0);
+        self.setStdStereoEnhanceAmount(0.0);
+        self.setStdCrossfeedAmount(0.0);
+        self.set_crystalizer_amount(0.0);
+        self.setStdBassGain(0.0);
+        self.set_reverb_amount(0);
+        self.setStdPitchSemitones(0.0);
+
+        // FINAL: Sync everything to ensure UI matches DSP state
         self.sync_dsp_from_controller();
     }
 

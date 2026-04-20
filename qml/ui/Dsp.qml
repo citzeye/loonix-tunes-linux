@@ -511,7 +511,7 @@ Popup {
                         id: pitchToggle
                         title: "PITCH SHIFTER"
                         isOn: musicModel.pitch_active
-                        boxEnabled: musicModel.dsp_enabled
+                        boxEnabled: true
                         onToggled: musicModel.togglePitch()
                     }
 
@@ -655,17 +655,17 @@ Popup {
             }
 
             background: Rectangle {
-                color: musicModel.dsp_enabled ? theme.colormap.dspgridbg : theme.colormap.playeraccent
+                color: musicModel.dsp_enabled ? theme.colormap.dspgridbg : theme.colormap.dspgridbg
                 border.color: theme.colormap.dspborder
                 radius: 2
             }
 
             contentItem: Text {
-                text: musicModel.dsp_enabled ? "BYPASS" : "ACTIVE"
+                text: musicModel.dsp_enabled ? "DSP ON" : "DSP OFF"
                 font.family: kodeMono.name
                 font.pixelSize: 10
                 font.bold: true
-                color: bypassBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
+                color: musicModel.dsp_enabled ? theme.colormap.dsptext : theme.colormap.dsptexthover
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -678,7 +678,7 @@ Popup {
             Layout.preferredHeight: 20
 
             onClicked: {
-                dspContent.resetEQ();
+                musicModel.resetAllDsp();
             }
 
             background: Rectangle {

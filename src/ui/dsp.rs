@@ -1515,4 +1515,74 @@ impl DspController {
     pub fn set_eq_instant_apply(&mut self) {
         // No-op: eq.rs already does instant updates
     }
+
+    // --- RESET ALL TO FLAT ---
+    pub fn reset_all(&mut self) {
+        // Reset EQ bands to flat (all zeros)
+        for band in self.eq_bands.iter_mut() {
+            *band = 0.0;
+        }
+        // Sync EQ bands to audio
+        self.sync_eq_bands();
+
+        // Reset preamp and fader
+        self.set_preamp_gain(0.0);
+        self.set_fader(0.0);
+
+        // Turn off all FX and reset amounts
+        if self.compressor_active {
+            self.toggle_compressor();
+        }
+        self.set_compressor_threshold(1.0);
+
+        if self.surround_active {
+            self.toggle_surround();
+        }
+        self.set_surround_width(1.8);
+
+        if self.mono_active {
+            self.toggle_stereo_width();
+        }
+        self.set_stereo_width_amount(1.0);
+
+        if self.middle_active {
+            self.toggle_middle_clarity();
+        }
+        self.set_middle_clarity_amount(0.0);
+
+        if self.stereo_active {
+            self.toggle_stereo_enhance();
+        }
+        self.set_stereo_enhance_amount(0.0);
+
+        if self.crossfeed_active {
+            self.toggle_crossfeed();
+        }
+        self.set_crossfeed_amount(0.0);
+
+        if self.crystal_active {
+            self.toggle_crystalizer();
+        }
+        self.set_crystalizer_amount(0.0);
+
+        if self.bass_active {
+            self.toggle_bass();
+        }
+        self.set_bass_gain(0.0);
+        self.set_bass_cutoff(180.0);
+        self.set_bass_mode(0);
+
+        if self.reverb_active {
+            self.toggle_reverb();
+        }
+        self.set_reverb_amount(50);
+        self.set_reverb_mode(1);
+
+        if self.pitch_active {
+            self.toggle_pitch();
+        }
+        self.set_pitch_semitones(0.0);
+
+        self.active_preset_index = 0;
+    }
 }
