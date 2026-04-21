@@ -537,6 +537,13 @@ RowLayout {
                         boxEnabled: reverbToggle.isOn && musicModel.dsp_enabled
                         currentValue: musicModel.reverb_amount
                         onValueChanged: val => musicModel.set_reverb_amount(Math.round(val))
+
+                        Connections {
+                            target: musicModel
+                            function onReverb_amount_changed() {
+                                reverbAmountEditor.currentValue = musicModel.reverb_amount
+                            }
+                        }
                     }
 
                     FxResetButton {
@@ -1166,22 +1173,23 @@ RowLayout {
         antialiasing: false
 
         Text {
-            id: modeText
-            anchors.centerIn: parent
-            text: modeLabel
-            font.family: kodeMono.name
-            font.pixelSize: 11
-            font.bold: isActive
-            color: isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
-        }
+        id: modeText
+        anchors.centerIn: parent
+        text: modeLabel
+        font.family: kodeMono.name
+        font.pixelSize: 11
+        font.bold: isActive
+        color: !rootItem.parent.parent.boxEnabled ? theme.colormap.dsptext + "66" : 
+               (buttonArea.containsMouse ? theme.colormap.dsptexthover : 
+               (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext))
+    }
 
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onEntered: modeText.color = theme.colormap.dsptexthover
-            onExited: modeText.color = isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
-            onClicked: rootItem.clicked()
-        }
+    MouseArea {
+        id: buttonArea
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: rootItem.clicked()
+    }
     }
 
     // Reverb mode selector with state
@@ -1312,14 +1320,14 @@ RowLayout {
         state: "display"
 
         Text {
-            id: displayText
-            anchors.centerIn: parent
-            text: Math.round(rootItem.currentValue) + "%"
-            font.family: sansSerif.name
-            font.pixelSize: 11
-            color: theme.colormap.dsptext
-            visible: rootItem.state === "display"
-        }
+        id: displayText
+        anchors.centerIn: parent
+        text: Math.round(rootItem.currentValue) + "%"
+        font.family: sansSerif.name
+        font.pixelSize: 11
+        color: !rootItem.boxEnabled ? theme.colormap.dsptext + "66" : theme.colormap.dsptext
+        visible: rootItem.state === "display"
+    }
 
         TextInput {
             id: inputField

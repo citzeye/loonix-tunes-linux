@@ -415,10 +415,10 @@ impl DspController {
         crate::audio::dsp::reverb::get_reverb_amount_arc()
             .store(current_amount, std::sync::atomic::Ordering::Relaxed);
 
-        self.reverb_changed();
         self.reverb_active_changed();
         self.reverb_mode_changed();
         self.reverb_amount_changed();
+        self.reverb_changed();
         self.save_config();
     }
 
@@ -486,8 +486,9 @@ impl DspController {
         self.reverb_mode = preset_id as i32;
         self.reverb_active = preset_id > 0;
         self.reverb_active_changed();
-        self.reverb_changed();
         self.reverb_mode_changed();
+        self.reverb_amount_changed();
+        self.reverb_changed();
         self.save_config();
     }
 
@@ -838,7 +839,8 @@ impl DspController {
     // --- DSP MASTER METHODS ---
     pub fn toggle_dsp(&mut self) {
         self.dsp_enabled = !self.dsp_enabled;
-        self.dsp_changed();
+        self.dsp_changed();    
+        self.emit_all_signals();     
 
         if let Ok(mut ff) = self.ffmpeg.lock() {
             ff.set_dsp_enabled(self.dsp_enabled);
@@ -1291,23 +1293,26 @@ impl DspController {
         self.compressor_active_changed();
         self.compressor_threshold_changed();
 
-        // REVERB: Sync from preset (raw u32, no to_bits())
+        // Reverb - Murni snapshot
         self.reverb_active = preset.reverb_enabled;
         self.reverb_mode = preset.reverb_mode as i32;
         self.reverb_amount = preset.reverb_amount as i32;
+
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
-            .store(preset.reverb_enabled, std::sync::atomic::Ordering::Relaxed);
+            .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-            preset.reverb_mode as u32,
+            self.reverb_mode as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-            preset.reverb_amount as u32,
+            self.reverb_amount as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.reverb_changed();
+
+        self.reverb_active_changed();
         self.reverb_mode_changed();
-        self.reverb_amount_changed();
+        self.reverb_amount_changed(); 
+        self.reverb_changed();
 
         self.default_fx_snapshot = Some(preset.clone());
         self.save_config();
@@ -1412,25 +1417,28 @@ impl DspController {
         self.compressor_active_changed();
         self.compressor_threshold_changed();
 
-        // Reverb
+        // Reverb - Murni dari array user
         self.reverb_active = self.user_fx_reverb_enabled[idx];
         self.reverb_mode = self.user_fx_reverb_mode[idx];
         self.reverb_amount = self.user_fx_reverb_amount[idx];
+
         crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
-            self.user_fx_reverb_enabled[idx],
+            self.reverb_active,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-            self.user_fx_reverb_mode[idx] as u32,
+            self.reverb_mode as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-            self.user_fx_reverb_amount[idx] as u32,
+            self.reverb_amount as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.reverb_changed();
+
+        self.reverb_active_changed();
         self.reverb_mode_changed();
         self.reverb_amount_changed();
+        self.reverb_changed();
 
         self.default_fx_snapshot = Some(FxPreset {
             name: String::from("User"),
@@ -1597,22 +1605,27 @@ impl DspController {
 
     pub fn reverb_indie_reset(&mut self) {
         if let Some(default) = &self.default_fx_snapshot {
-            self.reverb_active = default.reverb_enabled || default.reverb_amount > 0;
+            // Pola BASS: Pakai data asli snapshot, buang logika "|| amount > 0"
+            self.reverb_active = default.reverb_enabled;
             self.reverb_mode = default.reverb_mode;
             self.reverb_amount = default.reverb_amount;
+
             crate::audio::dsp::reverb::get_reverb_enabled_arc()
                 .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-                default.reverb_mode as u32,
+                self.reverb_mode as u32,
                 std::sync::atomic::Ordering::Relaxed,
             );
             crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-                default.reverb_amount as u32,
+                self.reverb_amount as u32,
                 std::sync::atomic::Ordering::Relaxed,
             );
-            self.reverb_active_changed();
+
+            // Trigger UI Update (Sama persis polanya ama Bass Reset)
+            self.reverb_active_changed(); 
             self.reverb_mode_changed();
             self.reverb_amount_changed();
+            self.reverb_changed();
         }
     }
 
