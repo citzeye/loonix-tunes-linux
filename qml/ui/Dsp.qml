@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 Popup {
     id: dspRoot
-    width: 500
+    width: 520
     height: 442
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -38,7 +38,7 @@ Popup {
             Layout.preferredHeight: 100
             color: theme.colormap.dspeqbg
 
-            RowLayout {
+RowLayout {
                 anchors.fill: parent
 
                 Item {
@@ -47,10 +47,10 @@ Popup {
 
                 GridLayout {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    width: 280
+                    width:240
                     columns: 12
                     rows: 3
-                    rowSpacing: 3
+                    rowSpacing: 2
                     columnSpacing: 2
 
                     // Row 1: Numbers (atas) - connected to sliders

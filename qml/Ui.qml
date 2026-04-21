@@ -922,7 +922,7 @@ Window {
                                 id: bassboosterMA
                                 anchors.fill: bassboosterIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggleBass()
+                                onClicked: musicModel.toggleBassBooster()
                             }
                         }
 
@@ -1218,8 +1218,7 @@ Window {
     Dsp {
         id: dsp
         x: (parent.width - width) / 2
-        y: 171
-        width: 500
+        y: (parent.height - height) / 2
     }
 
     Pref {

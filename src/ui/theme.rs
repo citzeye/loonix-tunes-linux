@@ -1017,7 +1017,7 @@ impl ThemeManager {
                     "dspgridbg", "#111111",
                     "dspeqbg", "#151515",
                     "dspeqicon", "#9442ff",
-                    "dspeqslider", "#ff1ae0",
+                    "dspeqslider", "#00ffdd",
                     "dspeqsliderbg", "#15151B",
                     "dspeqhandle", "#ff1ae0",
                     "dspeampbg", "#111111",
@@ -1032,7 +1032,7 @@ impl ThemeManager {
                     "dspeqfaderhandle", "#9442ff",
                     "dspfxbg", "#151515",
                     "dspfxicon", "#9442ff",
-                    "dspfxslider", "#ff1ae0",
+                    "dspfxslider", "#00ffdd",
                     "dspfxsliderbg", "#111111",
                     "dspfxhandle", "#9442ff",
                 });
