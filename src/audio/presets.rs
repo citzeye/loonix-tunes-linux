@@ -42,7 +42,7 @@ pub struct FxPreset {
 pub const EQ_PRESETS: [EqPreset; 6] = [
     EqPreset {
         name: "LOONIX",
-        gains: [5.0, 8.0, -3.0, -3.0, -5.0, -5.0, -2.0, -2.0, 5.0, 0.0],
+        gains: [5.0, 8.0, -3.0, -3.0, 2.0, -3.0, -3.0, -2.0, 5.0, 0.0],
         preamp: 0.0,
         macro_val: 0.0,
     },
@@ -82,7 +82,7 @@ pub const FX_PRESETS: [FxPreset; 6] = [
     FxPreset {
         name: "LOONIX",
         bass_enabled: true,
-        bass_gain: 8.0,
+        bass_gain: 9.0,
         bass_cutoff: 180.0,
         bass_mode: 2,
         crystal_enabled: true,
@@ -95,7 +95,7 @@ pub const FX_PRESETS: [FxPreset; 6] = [
         pitch_enabled: false,
         pitch_semitones: 0.0,
         middle_enabled: true,
-        middle_amount: 0.25,
+        middle_amount: 0.5,
         stereo_enabled: true,
         stereo_amount: 0.4,
         crossfeed_enabled: false,
