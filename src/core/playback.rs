@@ -6,7 +6,7 @@ use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};
 use qmetaobject::prelude::*;
 use qmetaobject::QString;
-use rand::seq::SliceRandom;
+use rand::Rng;
 use std::sync::{Arc, Mutex};
 
 pub struct PlaybackController {
@@ -167,16 +167,36 @@ impl PlaybackController {
         }
     }
 
-    pub fn toggle_shuffle(&mut self, display_list: &[MusicItem]) {
+    pub fn toggle_shuffle(&mut self, display_list: &[MusicItem], current_idx: i32) {
         self.shuffle_active = !self.shuffle_active;
-        self.queue_index = 0;
-
+        
         if self.shuffle_active && !display_list.is_empty() {
-            self.shuffle_queue.clear();
             let total = display_list.len();
             let mut indices: Vec<i32> = (0..total as i32).collect();
-            indices.shuffle(&mut rand::rng());
+            
+            // Fisher-Yates with better seed (LCG)
+            use std::time::{SystemTime, UNIX_EPOCH};
+            let mut seed = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos() as usize;
+            
+            for i in (1..total).rev() {
+                seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
+                let j = (seed % (i + 1)) as usize;
+                indices.swap(i, j);
+            }
+
+            // FIX: Put current song at front of shuffle queue
+            if current_idx >= 0 {
+                if let Some(pos) = indices.iter().position(|&x| x == current_idx) {
+                    indices.remove(pos);
+                    indices.insert(0, current_idx);
+                }
+            }
+            
             self.shuffle_queue = indices;
+            self.queue_index = 0;
         }
     }
 
@@ -195,13 +215,14 @@ impl PlaybackController {
 
         let total = display_list.len();
         let next_idx = if self.shuffle_active {
-            self.queue_index += 1;
-            if self.queue_index >= self.shuffle_queue.len() {
+            if self.queue_index + 1 >= self.shuffle_queue.len() {
                 if self.loop_active {
                     self.queue_index = 0;
                 } else {
                     return None;
                 }
+            } else {
+                self.queue_index += 1;
             }
             self.shuffle_queue[self.queue_index] as usize
         } else {

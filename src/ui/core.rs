@@ -1237,38 +1237,31 @@ impl MusicModel {
             return;
         }
 
-        // Use playback_playlist as source of truth (NOT display_list)
-        if self.playback_playlist.is_empty() {
-            self.stop_playback();
-            return;
+        // Use PlaybackController's shuffle logic
+        if let Some((next_idx, next_item)) = self.playback.play_next(&self.playback_playlist, self.playback_index) {
+            // Update state to sync with controller
+            self.playback_index = next_idx as i32;
+            self.current_index = self.playback_index;
+            self.current_title = QString::from(next_item.name.clone());
+
+            // Tell audio engine to play
+            self.playback.play_at(&next_item);
+            self.position = self.playback.position;
+            self.duration = self.playback.duration;
+
+            // Notify QML that data changed
+            self.current_index_changed();
+            self.title_changed();
+            self.is_playing = true;
+            self.playing_changed();
+            self.position_changed();
+            self.duration_changed();
+        } else {
+            // No more tracks and loop is off
+            self.playback.stop();
+            self.is_playing = false;
+            self.playing_changed();
         }
-
-        // Advance playback_index
-        self.playback_index += 1;
-
-        // Check bounds
-        if (self.playback_index as usize) >= self.playback_playlist.len() {
-            if self.loop_active {
-                self.playback_index = 0;
-            } else {
-                self.stop_playback();
-                return;
-            }
-        }
-
-        // Play the next track from playback_playlist
-        let next_item = &self.playback_playlist[self.playback_index as usize];
-        self.current_index = self.playback_index;
-        self.playback.play_at(next_item);
-        self.position = self.playback.position;
-        self.duration = self.playback.duration;
-        self.current_title = self.playback.current_title.clone();
-
-        self.current_index_changed();
-        self.title_changed();
-        self.playing_changed();
-        self.position_changed();
-        self.duration_changed();
     }
 
     pub fn play_previous(&mut self) {
@@ -1320,7 +1313,7 @@ impl MusicModel {
     }
 
     pub fn toggle_shuffle(&mut self) {
-        self.playback.toggle_shuffle(&self.display_list);
+        self.playback.toggle_shuffle(&self.display_list, self.current_index);
         self.shuffle_active = self.playback.shuffle_active;
         self.shuffle = self.shuffle_active;
         self.shuffle_changed();
