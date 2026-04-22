@@ -37,7 +37,7 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
                 clip: true
                 Text {
-                    text: "Judul masalah..."
+                    text: "Bug title..."
                     color: theme.colormap.playersubtext
                     visible: !parent.text && !parent.activeFocus
                     anchors.fill: parent
@@ -68,7 +68,7 @@ Rectangle {
                     selectByMouse: true
                     
                     Text {
-                        text: "Jelaskan kronologi bugnya..."
+                        text: "Describe the bug..."
                         color: theme.colormap.playersubtext
                         visible: !parent.text && !parent.activeFocus
                         x: 8; y: 8
