@@ -219,6 +219,7 @@ pub struct MusicModel {
     pub reverb_damp: qt_property!(f64; NOTIFY reverb_damp_changed),
     pub reverb_room_size_changed: qt_signal!(),
     pub reverb_damp_changed: qt_signal!(),
+    pub user_preset_names: qt_property!(QVariantList; NOTIFY user_presets_changed),
     pub user_presets_changed: qt_signal!(),
 
     // DSP wrapper methods for QML
@@ -261,7 +262,7 @@ pub struct MusicModel {
     pub get_preamp_gain: qt_method!(fn(&self) -> f64),
     pub set_preamp_gain: qt_method!(fn(&mut self, gain: f64)),
     pub save_user_eq: qt_method!(fn(&mut self, preset: i32, name: String, macro_val: f64)),
-    pub save_user_preset: qt_method!(fn(&mut self, name: String) -> i32),
+    pub save_user_preset: qt_method!(fn(&mut self, slot: usize, name: String) -> i32),
     pub get_eq_preset_count: qt_method!(fn(&self) -> i32),
     pub get_eq_preset_name: qt_method!(fn(&self, index: i32) -> QString),
     pub get_eq_preset_gains: qt_method!(fn(&self, index: i32) -> QVariantList),
@@ -464,6 +465,9 @@ impl MusicModel {
         model.output.mode = saved_config.mode;
 
         model.dsp.emit_all_signals();
+
+        // Initialize user preset names
+        model.user_preset_names = model.dsp.get_user_preset_names_list();
 
         // Initialize DSP wrapper properties
         model.sync_dsp_from_controller();
@@ -1673,8 +1677,9 @@ impl MusicModel {
         self.user_presets_changed();
     }
 
-    pub fn save_user_preset(&mut self, name: String) -> i32 {
-        let result = self.dsp.save_user_preset(name);
+    pub fn save_user_preset(&mut self, slot: usize, name: String) -> i32 {
+        let result = self.dsp.save_user_preset(slot, name);
+        self.user_preset_names = self.dsp.get_user_preset_names_list();
         self.user_presets_changed();
         result
     }

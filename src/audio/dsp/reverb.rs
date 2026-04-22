@@ -257,7 +257,7 @@ impl Reverb {
         // 🔥 TRUE STEREO: Each channel has its own predelay buffer
         self.predelay_l[self.predelay_idx] = input_l * FIXED_GAIN;
 
-        let delayed_l = self.predelay_l[(self.predelay_idx + 4096 - self.predelay_size) % 4096];
+        let _delayed_l = self.predelay_l[(self.predelay_idx + 4096 - self.predelay_size) % 4096];
         self.predelay_idx = (self.predelay_idx + 1) % 4096;
 
         let mut out_l = 0.0f32;
@@ -313,30 +313,30 @@ impl DspProcessor for Reverb {
             return;
         }
 
-        let mut new_mode = ReverbMode::Off;
+        let mut _new_mode = ReverbMode::Off;
         let mode_idx = match mode {
             ReverbMode::Studio => {
-                new_mode = ReverbMode::Studio;
+                _new_mode = ReverbMode::Studio;
                 0
             }
             ReverbMode::Stage => {
-                new_mode = ReverbMode::Stage;
+                _new_mode = ReverbMode::Stage;
                 1
             }
             ReverbMode::Stadium => {
-                new_mode = ReverbMode::Stadium;
+                _new_mode = ReverbMode::Stadium;
                 2
             }
             ReverbMode::Off => {
-                new_mode = ReverbMode::Off;
+                _new_mode = ReverbMode::Off;
                 return;
             }
         };
 
         // Only reset when mode actually changes
-        if new_mode != self.current_mode {
+        if _new_mode != self.current_mode {
             self.reset();
-            self.current_mode = new_mode;
+            self.current_mode = _new_mode;
         }
 
         // Get mode parameters

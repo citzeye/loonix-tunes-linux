@@ -604,7 +604,7 @@ RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: musicModel.get_user_preset_name(index)
+                    text: musicModel.user_preset_names[index]
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
@@ -717,15 +717,19 @@ RowLayout {
     component SavePresetDialog: Popup {
         id: saveDialog
         width: 250
-        height: 100
+        height: 120
         modal: true
+        focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         anchors.centerIn: parent
 
         property alias presetName: nameInput.text
+        property int selectedSlot: -1
+
+        onOpened: nameInput.forceActiveFocus()
 
         background: Rectangle {
-            color: theme.colormap.dspgridbg
+            color: theme.colormap.dspbg
             border.color: theme.colormap.dspborder
             border.width: 1
             radius: 2
@@ -736,34 +740,138 @@ RowLayout {
             spacing: 8
             anchors.fill: parent
 
-            Text {
-                text: "SAVE PRESET"
+            // Preset slot selector
+
+            ComboBox {
+                id: slotSelector
+                model: musicModel.user_preset_names
+                currentIndex: -1
+                Layout.fillWidth: true
+                Layout.preferredHeight: 24
+                textRole: "display"
                 font.family: kodeMono.name
                 font.pixelSize: 12
-                font.bold: true
-                color: theme.colormap.dsptext
+                onCurrentIndexChanged: {
+                    saveDialog.selectedSlot = currentIndex
+                    if (currentIndex >= 0) {
+                        nameInput.enabled = true
+                        nameInput.forceActiveFocus()
+                    } else {
+                        nameInput.enabled = false
+                    }
+                }
+
+                // Main button background
+                background: Rectangle {
+                    color: theme.colormap.dspgridbg
+                }
+
+                // Selected text display
+                contentItem: Text {
+                    leftPadding: 5
+                    text: slotSelector.currentIndex >= 0 ? musicModel.user_preset_names[slotSelector.currentIndex] : "Select slot..."
+                    font.family: kodeMono.name
+                    font.pixelSize: 12
+                    color: theme.colormap.dsptext
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+
+                // Dropdown arrow indicator
+                indicator: Text {
+                    x: slotSelector.width - width - 10
+                    y: (slotSelector.height - height) / 2
+                    text: "▼"
+                    font.family: kodeMono.name
+                    font.pixelSize: 10
+                    color: theme.colormap.dsptext
+                    opacity: slotSelector.pressed ? 0.5 : 1.0
+                }
+
+                // Popup dropdown container
+                popup: Popup {
+                    y: slotSelector.height
+                    width: slotSelector.width
+                    padding: 2
+
+                    background: Rectangle {
+                        color: theme.colormap.dspbg
+                        border.color: theme.colormap.dspborder
+                        border.width: 1
+                        radius: 2
+                    }
+
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: slotSelector.delegateModel
+                        currentIndex: slotSelector.highlightedIndex
+
+                        ScrollIndicator.vertical: ScrollIndicator { }
+                    }
+                }
+
+                // Dropdown list items
+                delegate: ItemDelegate {
+                    width: slotSelector.width - 4
+                    height: 22
+
+                    contentItem: Text {
+                        leftPadding: 8
+                        text: String(modelData).length > 14 ? String(modelData).substring(0, 14) : String(modelData)
+                        font.family: kodeMono.name
+                        font.pixelSize: 11
+                        color: highlighted ? theme.colormap.dsptextactive : theme.colormap.dsptext
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    background: Rectangle {
+                        color: theme.colormap.dspgridbg
+                    }
+                }
+            }
+
+            Connections {
+                target: musicModel
+                function onUser_presets_changed() {
+                    var oldIdx = slotSelector.currentIndex;
+                    slotSelector.currentIndex = -1;
+                    slotSelector.currentIndex = oldIdx;
+                }
             }
 
             TextInput {
                 id: nameInput
                 Layout.fillWidth: true
-                Layout.preferredHeight: 24
-                maximumLength: 10
+                Layout.preferredHeight: 26
+                focus: true
+                enabled: true
+                color: theme.colormap.dsptext
                 font.family: kodeMono.name
                 font.pixelSize: 12
-                color: theme.colormap.dsptext
+                selectByMouse: true
+                clip: true
+                maximumLength: 10
                 verticalAlignment: Text.AlignVCenter
-                validator: RegularExpressionValidator {
-                    regularExpression: /[a-zA-Z0-9 ]*/
+                leftPadding: 5
+
+                onAccepted: {
+                    var result = musicModel.save_user_preset(saveDialog.selectedSlot, presetName);
+                    if (result >= 0) {
+                        saveDialog.close();
+                    }
+                }
+
+                cursorDelegate: Rectangle {
+                    width: 1
+                    color: theme.colormap.dsptextactive
                 }
 
                 Rectangle {
+                    z: -1
                     anchors.fill: parent
                     color: theme.colormap.dspgridbg
-                    border.color: theme.colormap.dspborder
-                    border.width: 1
                     radius: 2
-                    z: -1
                 }
             }
 
@@ -772,22 +880,18 @@ RowLayout {
                 spacing: 8
 
                 Button {
-                    Layout.fillWidth: true
+                    Layout.fillWidth: false
+                    Layout.preferredWidth: 100
                     Layout.preferredHeight: 24
-                    text: "SAVE"
+                    text: "CANCEL"
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     onClicked: {
-                        var result = musicModel.save_user_preset(presetName);
-                        if (result >= 0) {
-                            dspContent.refreshUserPresetNames();
-                            saveDialog.close();
-                        }
+                        saveDialog.close();
                     }
 
                     background: Rectangle {
                         color: theme.colormap.dspgridbg
-                        border.color: theme.colormap.dspborder
                         radius: 2
                     }
 
@@ -801,18 +905,21 @@ RowLayout {
                 }
 
                 Button {
-                    Layout.fillWidth: true
+                    Layout.fillWidth: false
+                    Layout.preferredWidth: 100
                     Layout.preferredHeight: 24
-                    text: "CANCEL"
+                    text: "SAVE"
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     onClicked: {
-                        saveDialog.close();
+                        var result = musicModel.save_user_preset(saveDialog.selectedSlot, presetName);
+                        if (result >= 0) {
+                            saveDialog.close();
+                        }
                     }
 
                     background: Rectangle {
                         color: theme.colormap.dspgridbg
-                        border.color: theme.colormap.dspborder
                         radius: 2
                     }
 

@@ -937,44 +937,23 @@ impl DspController {
         }
     }
 
-    pub fn save_user_preset(&mut self, name: String) -> i32 {
+    pub fn save_user_preset(&mut self, slot: usize, name: String) -> i32 {
+        // Validate slot is within user preset range (0-5 for User 1-6)
+        if slot >= 6 {
+            return -2; // Invalid slot
+        }
+
         let mut trimmed_name = name.trim().to_string();
         trimmed_name.truncate(10);
         if trimmed_name.is_empty() {
             return -1;
         }
-        let name_upper = trimmed_name.to_uppercase();
+        let _name_upper = trimmed_name.to_uppercase();
 
-        // Find slot: first empty OR matching name
-        let mut found_idx: Option<usize> = None;
-
-        // First try to find matching name
-        for idx in 0..6 {
-            if self.user_eq_names[idx].trim().to_uppercase() == name_upper {
-                found_idx = Some(idx);
-                break;
-            }
-        }
-
-        // If no matching name, find first empty slot
-        if found_idx.is_none() {
-            for idx in 0..6 {
-                if self.user_eq_names[idx].trim().is_empty() {
-                    found_idx = Some(idx);
-                    break;
-                }
-            }
-        }
-
-        // No empty slot and no matching name
-        if found_idx.is_none() {
-            return -2; // No slot available
-        }
-
-        let idx = found_idx.unwrap();
+        let idx = slot;
 
         // Save ALL DSP (EQ + FX)
-        self.user_eq_names[idx] = name_upper;
+        self.user_eq_names[idx] = _name_upper;
         self.user_eq_gains[idx] = self.eq_bands;
         self.user_eq_macro[idx] = self.fader_offset as f32;
 
@@ -1006,7 +985,6 @@ impl DspController {
         self.save_config();
         idx as i32
     }
-
     pub fn get_eq_preset_count(&self) -> i32 {
         self.eq_presets.len() as i32
     }
@@ -1065,6 +1043,19 @@ impl DspController {
         } else {
             QString::default()
         }
+    }
+
+    pub fn get_user_preset_names_list(&self) -> QVariantList {
+        let mut list = QVariantList::default();
+        for i in 0..6 {
+            let name = if self.user_eq_names[i].is_empty() {
+                format!("User {}", i + 1)
+            } else {
+                self.user_eq_names[i].clone()
+            };
+            list.push(QString::from(name).into());
+        }
+        list
     }
 
     // --- PRESET LOADING METHODS ---
