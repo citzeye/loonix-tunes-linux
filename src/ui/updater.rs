@@ -43,7 +43,7 @@ impl UpdateChecker {
                 }
             };
 
-            let url = "https://api.github.com/repos/citzeye/loonix-tunes/releases/latest";
+            let url = "https://api.github.com/repos/citzeye/loonix-tunes-linux/releases/latest";
             match client.get(url).send() {
                 Ok(res) => match res.json::<serde_json::Value>() {
                     Ok(json) => {

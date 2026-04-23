@@ -45,7 +45,7 @@ Download the `.zip` archive, extract the folder, and run `loonix-tunes.exe`. No 
 If you prefer to compile Loonix-Tunes yourself, ensure you have the Rust toolchain, Qt6, and FFmpeg development headers installed.
 
 ```bash
-git clone [https://github.com/yourusername/loonix-tunes.git](https://github.com/citzeye/loonix-tunes.git)
+git clone [https://github.com/yourusername/loonix-tunes.git](https://github.com/citzeye/loonix-tunes-linux.git)
 cd loonix-tunes
 cargo build --release
 ```

@@ -1827,7 +1827,7 @@ impl MusicModel {
                 .build();
 
             if let Ok(c) = client {
-                let url = "https://api.github.com/repos/citzeye/loonix-tunes/releases/latest";
+                let url = "https://api.github.com/repos/citzeye/loonix-tunes-linux/releases/latest";
                 if let Ok(res) = c.get(url).send() {
                     if let Ok(json) = res.json::<serde_json::Value>() {
                         let latest = json["tag_name"].as_str().unwrap_or("").replace('v', "");

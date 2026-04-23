@@ -192,7 +192,7 @@ Flickable {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onClicked: Qt.openUrlExternally("https://github.com/citzeye/loonix-tunes/releases")
+                        onClicked: Qt.openUrlExternally("https://github.com/citzeye/loonix-tunes-linux/releases")
                     }
                 }
                 Item { Layout.fillWidth: true }
