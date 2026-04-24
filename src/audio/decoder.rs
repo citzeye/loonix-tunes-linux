@@ -389,11 +389,6 @@ fn decoder_loop(
 
                                 total_decoded_samples = exact_samples;
                                 control.seek_request.store(actual_ms, Ordering::SeqCst);
-
-                                eprintln!(
-                                    "[DECODER] VBR Seek Corrected! Landed exactly at {} ms",
-                                    actual_ms
-                                );
                             }
                         }
 

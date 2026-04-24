@@ -537,11 +537,6 @@ impl AudioOutput {
     }
 
     pub fn resume(&mut self) {
-        println!(
-            "[DEBUG] resume() called | is_running={} | samples_played={}",
-            self.is_running.load(Ordering::SeqCst),
-            self.samples_played.load(Ordering::SeqCst)
-        );
         self.paused.store(false, Ordering::SeqCst);
         self.is_running.store(true, Ordering::SeqCst);
     }

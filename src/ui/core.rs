@@ -1651,7 +1651,6 @@ impl MusicModel {
         self.eq_enabled = self.dsp.eq_enabled;
         self.eq_enabled_changed();
         self.eq_bands = self.dsp.sync_eq_bands();
-        eprintln!("[CORE] eq_bands synced: {} items", self.eq_bands.len());
         self.eq_bands_changed();
         self.fader_offset = self.dsp.fader_offset;
         self.fader_offset_changed();

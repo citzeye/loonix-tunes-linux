@@ -359,10 +359,6 @@ impl Engine {
                         if meta_dur > 0 {
                             self.metadata_duration_ms = meta_dur;
                             self.duration_mode = DurationMode::Decoder;
-                            println!(
-                                "[DURATION] Metadata→Decoder: meta={}ms, decoded_so_far={}ms",
-                                meta_dur, decoder_duration_ms
-                            );
                         }
                     }
 

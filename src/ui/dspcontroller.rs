@@ -319,7 +319,6 @@ impl DspController {
             let effective = (gain as f64 + self.fader_offset).clamp(-20.0, 20.0);
             list.push(QVariant::from(effective));
         }
-        eprintln!("[DSP] sync_eq_bands: {} items", list.len());
         list
     }
 
@@ -729,9 +728,14 @@ impl DspController {
     }
 
     pub fn compressor_indie_reset(&mut self) {
-        self.compressor_threshold = 1.0;
+        let threshold = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.compressor_threshold as f64)
+            .unwrap_or(-10.0); // Fallback - helps debug if snapshot isn't loaded
+
+        self.compressor_threshold = threshold;
         crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-            1.0_f32.to_bits(),
+            (threshold as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
         self.compressor_threshold_changed();

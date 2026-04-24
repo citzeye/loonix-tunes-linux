@@ -62,13 +62,6 @@ impl DspProcessor for Crystalizer {
         let amount = bits_to_f32(crystal_raw);
         let freq = bits_to_f32(get_crystal_freq_arc().load(Ordering::Relaxed));
 
-        // Log only when crystal amount changes
-        let last_raw = LAST_CRYSTAL_AMOUNT.load(Ordering::Relaxed);
-        if crystal_raw != last_raw {
-            LAST_CRYSTAL_AMOUNT.store(crystal_raw, Ordering::Relaxed);
-            eprintln!("[ENGINE] crystal amount changed → {}", amount);
-        }
-
         if !is_on || amount < 0.01 {
             output.copy_from_slice(input);
             return;
