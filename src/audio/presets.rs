@@ -42,7 +42,7 @@ pub struct FxPreset {
 pub const EQ_PRESETS: [EqPreset; 6] = [
     EqPreset {
         name: "LOONIX",
-        gains: [5.0, 8.0, -3.0, -3.0, 2.0, -3.0, -3.0, -2.0, 5.0, 0.0],
+        gains: [5.0, 8.0, -3.0, -3.0, 2.0, 2.0, -3.0, -2.0, 5.0, 0.0],
         preamp: 0.0,
         macro_val: 0.0,
     },

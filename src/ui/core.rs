@@ -226,6 +226,7 @@ pub struct MusicModel {
     pub toggle_bass_booster: qt_method!(fn(&mut self)),
     pub set_bass_gain: qt_method!(fn(&mut self, val: f64)),
     pub set_bass_cutoff: qt_method!(fn(&mut self, val: f64)),
+    pub set_bass_mode: qt_method!(fn(&mut self, mode: i32)),
     pub toggle_surround: qt_method!(fn(&mut self)),
     pub set_surround_width: qt_method!(fn(&mut self, val: f64)),
     pub toggle_crystalizer: qt_method!(fn(&mut self)),
