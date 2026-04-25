@@ -105,8 +105,8 @@ pub struct DspController {
     pub active_preset_index: qt_property!(i32; NOTIFY active_preset_index_changed),
     pub active_preset_index_changed: qt_signal!(),
 
-    pub user_preset_names: qt_property!(QVariantList; NOTIFY user_presets_changed),
-    pub user_presets_changed: qt_signal!(),
+    pub user_preset_names: qt_property!(QVariantList; NOTIFY user_preset_names_changed),
+    pub user_preset_names_changed: qt_signal!(),
 
     pub user_eq_names: [String; 6],
     pub user_eq_gains: [[f32; 10]; 6],
@@ -257,7 +257,7 @@ impl DspController {
             // Load user preset data from JSON
             self.user_eq_names = dsp_config.user_preset_names.clone();
             self.user_preset_names = self.get_user_preset_names_list();
-            self.user_presets_changed();
+            self.user_preset_names_changed();
             self.user_eq_gains = dsp_config.user_preset_gains;
             self.user_eq_macro = dsp_config.user_preset_macro;
             self.user_fx_enabled = dsp_config.user_fx_enabled;
@@ -427,7 +427,7 @@ impl DspController {
         self.normalizer_changed();
         // Presets
         self.active_preset_index_changed();
-        self.user_presets_changed();
+        self.user_preset_names_changed();
     }
 
     pub fn set_reverb_mode(&mut self, mode: i32) {
@@ -592,7 +592,7 @@ impl DspController {
         self.eq_bands_changed();
 
         self.user_preset_names = self.get_user_preset_names_list();
-        self.user_presets_changed();
+        self.user_preset_names_changed();
 
         self.active_preset_index = 0;
         self.active_preset_index_changed();
@@ -1403,7 +1403,7 @@ impl DspController {
                 self.user_eq_gains[preset as usize][i] = self.eq_bands_internal[i];
             }
             self.user_preset_names = self.get_user_preset_names_list();
-            self.user_presets_changed();
+            self.user_preset_names_changed();
 
             // This is explicit save action, so save_config is allowed.
             self.save_config();
@@ -1449,7 +1449,7 @@ impl DspController {
         self.user_fx_reverb_amount[slot] = self.reverb_amount;
 
         self.user_preset_names = self.get_user_preset_names_list();
-        self.user_presets_changed();
+        self.user_preset_names_changed();
 
         // Manual save allowed here
         self.save_config();

@@ -29,7 +29,7 @@ Popup {
             if (index < 0 || index >= 12) {
                 return;
             }
-            musicModel.load_preset(index);
+            dspModel.load_preset(index);
         }
 
         // EQ Section
@@ -103,66 +103,66 @@ RowLayout {
                         displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%"
                     }
 
-                    // Row 2: Sliders (tengah) - bound to musicModel.eq_bands via reactive property
+                    // Row 2: Sliders (tengah) - bound to dspModel.eq_bands via reactive property
                     EqSliderBox {
                         id: eqPreamp
                         controlValue: dspModel.get_preamp_gain()
-                        onSliderChanged: val => musicModel.set_preamp_gain(val)
+                        onSliderChanged: val => dspModel.set_preamp_gain(val)
                     }
                     EqSliderBox {
                         id: eq31
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[0] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(0, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[0] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(0, val)
                     }
                     EqSliderBox {
                         id: eq62
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[1] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(1, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[1] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(1, val)
                     }
                     EqSliderBox {
                         id: eq125
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[2] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(2, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[2] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(2, val)
                     }
                     EqSliderBox {
                         id: eq250
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[3] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(3, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[3] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(3, val)
                     }
                     EqSliderBox {
                         id: eq500
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[4] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(4, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[4] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(4, val)
                     }
                     EqSliderBox {
                         id: eq1k
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[5] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(5, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[5] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(5, val)
                     }
                     EqSliderBox {
                         id: eq2k
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[6] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(6, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[6] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(6, val)
                     }
                     EqSliderBox {
                         id: eq4k
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[7] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(7, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[7] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(7, val)
                     }
                     EqSliderBox {
                         id: eq8k
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[8] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(8, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[8] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(8, val)
                     }
                     EqSliderBox {
                         id: eq16k
-                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[9] : 0
-                        onSliderChanged: val => musicModel.set_eq_band(9, val)
+                        controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[9] : 0
+                        onSliderChanged: val => dspModel.set_eq_band(9, val)
                     }
                     EqSliderBox {
                         id: eqFader
-                        controlValue: musicModel.fader_offset
-                        onSliderChanged: val => musicModel.set_fader(val)
+                        controlValue: dspModel.fader_offset
+                        onSliderChanged: val => dspModel.set_fader(val)
                     }
 
                     // Row 3: Names (bawah)
@@ -237,27 +237,27 @@ RowLayout {
                     FxToggleBox {
                         id: compToggle
                         title: "COMPRESSOR"
-                        isOn: musicModel.compressor_active
-                        onToggled: musicModel.toggle_compressor()
+                        isOn: dspModel.compressor_active
+                        onToggled: dspModel.toggle_compressor()
                     }
 
                     FxSliderBox {
                         id: compSlider
-                        enabled: compToggle.isOn && musicModel.dsp_enabled
-                        controlValue: musicModel.compressor_threshold
+                        enabled: compToggle.isOn && dspModel.dsp_enabled
+                        controlValue: dspModel.compressor_threshold
                         sliderRange: "db"
-                        onSliderChanged: val => musicModel.set_compressor_threshold(val)
+                        onSliderChanged: val => dspModel.set_compressor_threshold(val)
                     }
                     FxValueBox {
-                        enabled: compToggle.isOn && musicModel.dsp_enabled
+                        enabled: compToggle.isOn && dspModel.dsp_enabled
                         sliderValue: compSlider.currentValue
                         showDbCompressor: true
                         linkSlider: compSlider
                     }
                     FxResetButton {
-                        enabled: compToggle.isOn && musicModel.dsp_enabled
+                        enabled: compToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_compressor()
+                        onResetNoArg: dspModel.reset_compressor()
                     }
                 }
 
@@ -269,27 +269,27 @@ RowLayout {
                     FxToggleBox {
                         id: surrToggle
                         title: "SURROUND"
-                        isOn: musicModel.surround_active
-                        onToggled: musicModel.toggle_surround()
+                        isOn: dspModel.surround_active
+                        onToggled: dspModel.toggle_surround()
                     }
 
                     FxSliderBox {
                         id: surrSlider
-                        enabled: surrToggle.isOn && musicModel.dsp_enabled
-                        controlValue: musicModel.surround_width / 2.0
+                        enabled: surrToggle.isOn && dspModel.dsp_enabled
+                        controlValue: dspModel.surround_width / 2.0
                         onSliderChanged: val => {
-                            musicModel.set_surround_width(val * 2.0);
+                            dspModel.set_surround_width(val * 2.0);
                         }
                     }
                     FxValueBox {
-                        enabled: surrToggle.isOn && musicModel.dsp_enabled
+                        enabled: surrToggle.isOn && dspModel.dsp_enabled
                         sliderValue: surrSlider.currentValue
                         linkSlider: surrSlider
                     }
                     FxResetButton {
-                        enabled: surrToggle.isOn && musicModel.dsp_enabled
+                        enabled: surrToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_surround()
+                        onResetNoArg: dspModel.reset_surround()
                     }
                 }
 
@@ -301,25 +301,25 @@ RowLayout {
                     FxToggleBox {
                         id: monoToggle
                         title: "MONO - STEREO"
-                        isOn: musicModel.mono_active
-                        onToggled: musicModel.toggle_stereo_width()
+                        isOn: dspModel.mono_active
+                        onToggled: dspModel.toggle_stereo_width()
                     }
 
                     FxSliderBox {
                         id: monoSlider
-                        enabled: monoToggle.isOn && musicModel.dsp_enabled
-                        controlValue: musicModel.mono_width
-                        onSliderChanged: val => musicModel.set_stereo_width_amount(val)
+                        enabled: monoToggle.isOn && dspModel.dsp_enabled
+                        controlValue: dspModel.mono_width
+                        onSliderChanged: val => dspModel.set_stereo_width_amount(val)
                     }
                     FxValueBox {
-                        enabled: monoToggle.isOn && musicModel.dsp_enabled
+                        enabled: monoToggle.isOn && dspModel.dsp_enabled
                         sliderValue: monoSlider.currentValue
                         linkSlider: monoSlider
                     }
                     FxResetButton {
-                        enabled: monoToggle.isOn && musicModel.dsp_enabled
+                        enabled: monoToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_stereo_width()
+                        onResetNoArg: dspModel.reset_stereo_width()
                     }
                 }
 
@@ -331,15 +331,15 @@ RowLayout {
                     FxToggleBox {
                         id: midToggle
                         title: "MIDDLE CLARITY"
-                        isOn: musicModel.middle_active
-                        onToggled: musicModel.toggle_middle_clarity()
+                        isOn: dspModel.middle_active
+                        onToggled: dspModel.toggle_middle_clarity()
                     }
 
                     FxSliderBox {
                         id: midSlider
                         enabled: midToggle.isOn
-                        controlValue: musicModel.middle_amount
-                        onSliderChanged: val => musicModel.set_middle_clarity_amount(val)
+                        controlValue: dspModel.middle_amount
+                        onSliderChanged: val => dspModel.set_middle_clarity_amount(val)
                     }
                     FxValueBox {
                         enabled: midToggle.isOn
@@ -349,7 +349,7 @@ RowLayout {
                     FxResetButton {
                         enabled: midToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_middle_clarity()
+                        onResetNoArg: dspModel.reset_middle_clarity()
                     }
                 }
 
@@ -361,15 +361,15 @@ RowLayout {
                     FxToggleBox {
                         id: stereoEnhToggle
                         title: "STEREO ENHANCER"
-                        isOn: musicModel.stereo_active
-                        onToggled: musicModel.toggle_stereo_enhance()
+                        isOn: dspModel.stereo_active
+                        onToggled: dspModel.toggle_stereo_enhance()
                     }
 
                     FxSliderBox {
                         id: stereoSlider
                         enabled: stereoEnhToggle.isOn
-                        controlValue: musicModel.stereo_amount
-                        onSliderChanged: val => musicModel.set_stereo_enhance_amount(val)
+                        controlValue: dspModel.stereo_amount
+                        onSliderChanged: val => dspModel.set_stereo_enhance_amount(val)
                     }
                     FxValueBox {
                         enabled: stereoEnhToggle.isOn
@@ -379,7 +379,7 @@ RowLayout {
                     FxResetButton {
                         enabled: stereoEnhToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_stereo_enhance()
+                        onResetNoArg: dspModel.reset_stereo_enhance()
                     }
                 }
 
@@ -391,15 +391,15 @@ RowLayout {
                     FxToggleBox {
                         id: crossfeedToggle
                         title: "CROSSFEED"
-                        isOn: musicModel.crossfeed_active
-                        onToggled: musicModel.toggle_crossfeed()
+                        isOn: dspModel.crossfeed_active
+                        onToggled: dspModel.toggle_crossfeed()
                     }
 
                     FxSliderBox {
                         id: crossfeedSlider
                         enabled: crossfeedToggle.isOn
-                        controlValue: musicModel.crossfeed_amount
-                        onSliderChanged: val => musicModel.set_crossfeed_amount(val)
+                        controlValue: dspModel.crossfeed_amount
+                        onSliderChanged: val => dspModel.set_crossfeed_amount(val)
                     }
                     FxValueBox {
                         enabled: crossfeedToggle.isOn
@@ -409,7 +409,7 @@ RowLayout {
                     FxResetButton {
                         enabled: crossfeedToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_crossfeed()
+                        onResetNoArg: dspModel.reset_crossfeed()
                     }
                 }
 
@@ -421,15 +421,15 @@ RowLayout {
                     FxToggleBox {
                         id: crystalToggle
                         title: "CRYSTALIZER"
-                        isOn: musicModel.crystal_active
-                        onToggled: musicModel.toggle_crystalizer()
+                        isOn: dspModel.crystal_active
+                        onToggled: dspModel.toggle_crystalizer()
                     }
 
                     FxSliderBox {
                         id: crystalAmtSlider
                         enabled: crystalToggle.isOn
-                        controlValue: musicModel.crystal_amount
-                        onSliderChanged: val => musicModel.set_crystalizer_amount(val)
+                        controlValue: dspModel.crystal_amount
+                        onSliderChanged: val => dspModel.set_crystalizer_amount(val)
                     }
                     FxValueBox {
                         enabled: crystalToggle.isOn
@@ -439,7 +439,7 @@ RowLayout {
                     FxResetButton {
                         enabled: crystalToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_crystalizer()
+                        onResetNoArg: dspModel.reset_crystalizer()
                     }
                 }
 
@@ -451,34 +451,34 @@ RowLayout {
                     FxToggleBox {
                         id: bassToggle
                         title: "BASS BOOSTER"
-                        isOn: musicModel.bass_active
-                        onToggled: musicModel.toggle_bass_booster()
+                        isOn: dspModel.bass_active
+                        onToggled: dspModel.toggle_bass_booster()
                     }
 
                     BassModeSelector {
                         id: bassModeSelector
-                        boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
+                        boxEnabled: bassToggle.isOn && dspModel.dsp_enabled
                         Layout.fillWidth: true
                     }
 
                     FxBassAmountBox {
                         id: bassGainBox
-                        boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
-                        currentValue: musicModel.bass_gain
-                        onValueChanged: val => musicModel.set_bass_gain(val)
+                        boxEnabled: bassToggle.isOn && dspModel.dsp_enabled
+                        currentValue: dspModel.bass_gain
+                        onValueChanged: val => dspModel.set_bass_gain(val)
 
                         Connections {
-                            target: musicModel
+                            target: dspModel
                             function onBass_gain_changed() {
-                                bassGainBox.currentValue = musicModel.bass_gain
+                                bassGainBox.currentValue = dspModel.bass_gain
                             }
                         }
                     }
 
                     FxResetButton {
-                        enabled: bassToggle.isOn && musicModel.dsp_enabled
+                        enabled: bassToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_bass()
+                        onResetNoArg: dspModel.reset_bass()
                     }
                 }
 
@@ -490,16 +490,16 @@ RowLayout {
                     FxToggleBox {
                         id: pitchToggle
                         title: "PITCH SHIFTER"
-                        isOn: musicModel.pitch_active
+                        isOn: dspModel.pitch_active
                         boxEnabled: true
-                        onToggled: musicModel.toggle_pitch()
+                        onToggled: dspModel.toggle_pitch()
                     }
 
                     FxPitchSliderBox {
                         id: pitchSlider
                         enabled: pitchToggle.isOn
-                        controlValue: musicModel.pitch_semitones
-                        onSliderChanged: val => musicModel.set_pitch_semitones(val)
+                        controlValue: dspModel.pitch_semitones
+                        onSliderChanged: val => dspModel.set_pitch_semitones(val)
                     }
                     FxValueBox {
                         enabled: pitchToggle.isOn
@@ -510,7 +510,7 @@ RowLayout {
                     FxResetButton {
                         enabled: pitchToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_pitch()
+                        onResetNoArg: dspModel.reset_pitch()
                     }
                 }
 
@@ -522,34 +522,34 @@ RowLayout {
                     FxToggleBox {
                         id: reverbToggle
                         title: "REVERB"
-                        isOn: musicModel.reverb_active
-                        onToggled: musicModel.toggle_reverb()
+                        isOn: dspModel.reverb_active
+                        onToggled: dspModel.toggle_reverb()
                     }
 
                     ReverbModeSelector {
                         id: reverbModeSelector
-                        boxEnabled: reverbToggle.isOn && musicModel.dsp_enabled
+                        boxEnabled: reverbToggle.isOn && dspModel.dsp_enabled
                         Layout.fillWidth: true
                     }
 
                     ReverbAmountBox {
                         id: reverbAmountEditor
-                        boxEnabled: reverbToggle.isOn && musicModel.dsp_enabled
-                        currentValue: musicModel.reverb_amount
-                        onValueChanged: val => musicModel.set_reverb_amount(Math.round(val))
+                        boxEnabled: reverbToggle.isOn && dspModel.dsp_enabled
+                        currentValue: dspModel.reverb_amount
+                        onValueChanged: val => dspModel.set_reverb_amount(Math.round(val))
 
                         Connections {
-                            target: musicModel
+                            target: dspModel
                             function onReverb_amount_changed() {
-                                reverbAmountEditor.currentValue = musicModel.reverb_amount
+                                reverbAmountEditor.currentValue = dspModel.reverb_amount
                             }
                         }
                     }
 
                     FxResetButton {
-                        enabled: reverbToggle.isOn && musicModel.dsp_enabled
+                        enabled: reverbToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_reverb()
+                        onResetNoArg: dspModel.reset_reverb()
                     }
                 }
             }
@@ -563,14 +563,14 @@ RowLayout {
         spacing: 3
 
         Repeater {
-            model: musicModel.get_eq_preset_count()
+            model: dspModel.get_eq_preset_count()
             delegate: Button {
                 id: defBtn
-                property bool isActive: musicModel.active_preset_index === index
+                property bool isActive: dspModel.active_preset_index === index
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: musicModel.get_eq_preset_name(index)
+                    text: dspModel.get_eq_preset_name(index)
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: defBtn.isActive ? theme.colormap.dsptextactive : (defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
@@ -600,11 +600,11 @@ RowLayout {
             model: 6
             delegate: Button {
                 id: pBtn
-                property bool isActive: musicModel.active_preset_index === index + 6
+                property bool isActive: dspModel.active_preset_index === index + 6
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: musicModel.user_preset_names[index]
+                    text: dspModel.user_preset_names[index]
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
@@ -637,21 +637,21 @@ RowLayout {
             Layout.preferredHeight: 20
 
             onClicked: {
-                musicModel.toggle_dsp()
+                dspModel.toggle_dsp()
             }
 
             background: Rectangle {
-                color: musicModel.dsp_enabled ? theme.colormap.dspgridbg : theme.colormap.dspgridbg
+                color: dspModel.dsp_enabled ? theme.colormap.dspgridbg : theme.colormap.dspgridbg
                 border.color: theme.colormap.dspborder
                 radius: 2
             }
 
             contentItem: Text {
-                text: musicModel.dsp_enabled ? "DSP ON" : "DSP OFF"
+                text: dspModel.dsp_enabled ? "DSP ON" : "DSP OFF"
                 font.family: kodeMono.name
                 font.pixelSize: 10
                 font.bold: true
-                color: musicModel.dsp_enabled ? theme.colormap.dsptext : theme.colormap.dsptexthover
+                color: dspModel.dsp_enabled ? theme.colormap.dsptext : theme.colormap.dsptexthover
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -664,7 +664,7 @@ RowLayout {
             Layout.preferredHeight: 20
 
             onClicked: {
-                musicModel.reset_all();
+                dspModel.reset_all();
             }
 
             background: Rectangle {
@@ -744,7 +744,7 @@ RowLayout {
 
             ComboBox {
                 id: slotSelector
-                model: musicModel.user_preset_names
+                model: dspModel.user_preset_names
                 currentIndex: -1
                 Layout.fillWidth: true
                 Layout.preferredHeight: 24
@@ -769,7 +769,7 @@ RowLayout {
                 // Selected text display
                 contentItem: Text {
                     leftPadding: 5
-                    text: slotSelector.currentIndex >= 0 ? musicModel.user_preset_names[slotSelector.currentIndex] : "Select slot..."
+                    text: slotSelector.currentIndex >= 0 ? dspModel.user_preset_names[slotSelector.currentIndex] : "Select slot..."
                     font.family: kodeMono.name
                     font.pixelSize: 12
                     color: theme.colormap.dsptext
@@ -832,7 +832,7 @@ RowLayout {
             }
 
             Connections {
-                target: musicModel
+                target: dspModel
                 function onUser_presets_changed() {
                     var oldIdx = slotSelector.currentIndex;
                     slotSelector.currentIndex = -1;
@@ -856,7 +856,7 @@ RowLayout {
                 leftPadding: 5
 
                 onAccepted: {
-                    var result = musicModel.save_user_preset(saveDialog.selectedSlot, presetName);
+                    var result = dspModel.save_user_preset(saveDialog.selectedSlot, presetName);
                     if (result >= 0) {
                         saveDialog.close();
                     }
@@ -912,7 +912,7 @@ RowLayout {
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     onClicked: {
-                        var result = musicModel.save_user_preset(saveDialog.selectedSlot, presetName);
+                        var result = dspModel.save_user_preset(saveDialog.selectedSlot, presetName);
                         if (result >= 0) {
                             saveDialog.close();
                         }
@@ -1232,7 +1232,7 @@ RowLayout {
     // Bass mode selector with state
     component BassModeSelector: Item {
         id: bassModeRoot
-        property int selectedMode: musicModel.bass_mode
+        property int selectedMode: dspModel.bass_mode
         property bool boxEnabled: true
 
         Layout.fillWidth: true
@@ -1246,22 +1246,22 @@ RowLayout {
             FxBassModeButton {
                 modeLabel: "Deep"
                 isActive: bassModeRoot.selectedMode === 0
-                onClicked: musicModel.set_bass_mode(0)
+                onClicked: dspModel.set_bass_mode(0)
             }
             FxBassModeButton {
                 modeLabel: "Soft"
                 isActive: bassModeRoot.selectedMode === 1
-                onClicked: musicModel.set_bass_mode(1)
+                onClicked: dspModel.set_bass_mode(1)
             }
             FxBassModeButton {
                 modeLabel: "Punch"
                 isActive: bassModeRoot.selectedMode === 2
-                onClicked: musicModel.set_bass_mode(2)
+                onClicked: dspModel.set_bass_mode(2)
             }
             FxBassModeButton {
                 modeLabel: "Warm"
                 isActive: bassModeRoot.selectedMode === 3
-                onClicked: musicModel.set_bass_mode(3)
+                onClicked: dspModel.set_bass_mode(3)
             }
         }
     }
@@ -1302,8 +1302,8 @@ RowLayout {
     // Reverb mode selector with state
     component ReverbModeSelector: Item {
         id: reverbModeRoot
-        property int selectedMode: musicModel && musicModel.reverb_mode !== undefined ? musicModel.reverb_mode : 0
-        property bool boxEnabled: musicModel.reverb_active
+        property int selectedMode: dspModel && dspModel.reverb_mode !== undefined ? dspModel.reverb_mode : 0
+        property bool boxEnabled: dspModel.reverb_active
 
         Layout.fillWidth: true
         Layout.preferredHeight: 20
@@ -1316,17 +1316,17 @@ RowLayout {
             FxReverbModeButton {
                 modeLabel: "Studio"
                 isActive: reverbModeRoot.selectedMode === 1
-                onClicked: musicModel.set_reverb_mode(1)
+                onClicked: dspModel.set_reverb_mode(1)
             }
             FxReverbModeButton {
                 modeLabel: "Stage"
                 isActive: reverbModeRoot.selectedMode === 2
-                onClicked: musicModel.set_reverb_mode(2)
+                onClicked: dspModel.set_reverb_mode(2)
             }
             FxReverbModeButton {
                 modeLabel: "Stadium"
                 isActive: reverbModeRoot.selectedMode === 3
-                onClicked: musicModel.set_reverb_mode(3)
+                onClicked: dspModel.set_reverb_mode(3)
             }
         }
     }
@@ -1774,7 +1774,7 @@ RowLayout {
                     radius: 1.5
                     // Murni pakai warna dspeqslider, opacity yang main untuk greyout
                     color: theme.colormap.dspeqslider
-                    opacity: musicModel.dsp_enabled ? 1.0 : 0.4
+                    opacity: dspModel.dsp_enabled ? 1.0 : 0.4
                 }
             }
             
@@ -1786,7 +1786,7 @@ RowLayout {
                 radius: 5
                 // Murni pakai warna dspeqhandle, tanpa ganti warna pas pressed
                 color: theme.colormap.dspeqhandle
-                opacity: musicModel.dsp_enabled ? 1.0 : 0.4
+                opacity: dspModel.dsp_enabled ? 1.0 : 0.4
             }
 
             MouseArea {
