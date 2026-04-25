@@ -13,7 +13,6 @@ pub fn is_pro_active() -> bool {
     get_pro_unlocked_arc().load(Ordering::Relaxed)
 }
 
-pub mod abrepeat;
 pub mod bassbooster;
 pub mod biquad;
 pub mod chain;

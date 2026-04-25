@@ -823,7 +823,8 @@ impl AudioOutput {
 
             if normalizer_enabled.load(Ordering::SeqCst) {
                 norm_input[..process_len].copy_from_slice(&processed_buffer[..process_len]);
-                if let Ok(mut norm) = normalizer.lock() {
+                // Use try_lock() to avoid blocking audio thread
+                if let Ok(mut norm) = normalizer.try_lock() {
                     norm.process(&norm_input[..process_len], &mut norm_output[..process_len]);
                     processed_buffer[..process_len].copy_from_slice(&norm_output[..process_len]);
                 }

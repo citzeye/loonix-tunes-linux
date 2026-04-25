@@ -16,3 +16,6 @@ pub use self::engine::{
 pub use self::library::Library;
 pub use self::scheduler::Scheduler;
 pub use self::seek::SeekController;
+
+// A-B Repeat (moved from audio/dsp/)
+pub mod abrepeat;

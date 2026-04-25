@@ -14,11 +14,13 @@ use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
 use crate::ui::reportbug::BugReportManager;
 use crate::ui::core::MusicModel;
+use crate::ui::DspController;
 use crate::ui::playerbridge::PlayerBridge;
 use crate::ui::theme::{CustomThemeListModel, ThemeManager};
 
 struct App {
     music_model: QObjectBox<MusicModel>,
+    dsp_model: QObjectBox<DspController>,
     theme: QObjectBox<ThemeManager>,
     custom_theme_list: QObjectBox<CustomThemeListModel>,
     popup: QObjectBox<PopupMenu>,
@@ -30,19 +32,24 @@ struct App {
 
 impl App {
     fn new() -> Self {
-        let music_model = QObjectBox::new(MusicModel::new());
+        let music_raw = MusicModel::new();
+        let ffmpeg = music_raw.get_ffmpeg();
+        let config = music_raw.get_shared_config();
+
+        let music_model = QObjectBox::new(music_raw);
+        let dsp_model = QObjectBox::new(DspController::new(ffmpeg, config.clone()));
         let theme = QObjectBox::new(ThemeManager::new());
 
-        if let Some(shared_config) = music_model.pinned().borrow().get_shared_config() {
+        if let Some(shared_config) = config {
             theme.pinned().borrow_mut().set_config(shared_config);
         }
 
-        // Create empty custom theme list - will be populated from QML via get_custom_themes()
         let custom_list = CustomThemeListModel::default();
         let custom_theme_list = QObjectBox::new(custom_list);
 
         Self {
             music_model,
+            dsp_model,
             theme,
             custom_theme_list,
             popup: QObjectBox::new(PopupMenu::default()),
@@ -55,23 +62,14 @@ impl App {
 }
 
 fn setup_env() {
-    // Basic environment untuk Qt
     std::env::set_var("RUST_LOG", "info");
     std::env::set_var("QT_QUICK_CONTROLS_STYLE", "Fusion");
 }
 
 fn main() {
-    // ==========================================
-    // 1. SMART ENVIRONMENT DETECTOR
-    // ==========================================
     if cfg!(debug_assertions) {
-        println!("========================================");
         println!("🛠️ LOONIX-TUNES [DEVELOPER MODE]");
-        println!("Menjalankan dari Cargo. Log diaktifkan.");
-        println!("========================================");
     } else {
-        // Mode ini jalan kalau lo pake 'cargo build --release' (Buat User)
-        // Di Windows, terminal hitam bakal hilang berkat windows_subsystem di atas.
         println!("🚀 LOONIX-TUNES [RELEASE MODE]");
     }
 
@@ -82,41 +80,30 @@ fn main() {
         }
     }
 
-    // Install panic hook to print backtrace
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Panic: {:?}", panic_info);
         eprintln!("Backtrace:\n{:?}", std::backtrace::Backtrace::capture());
     }));
 
     setup_env();
-
     init_resources_v4();
 
-    // ==========================================
-    // 2. BUAT APP - Semua object hidup dalam struct App
-    // App struct memastikan lifetime yang benar dan drop order deterministic
-    // ==========================================
     #[cfg(target_os = "linux")]
     crate::audio::wireless::startSystemCheck();
 
     let app = App::new();
-
-    // ==========================================
-    // 3. BUAT ENGINE & REGISTRASI
-    // ==========================================
     let mut engine = QmlEngine::new();
 
-    // Registrasi Type untuk QML
     qml_register_type::<MusicModel>(cstr!("Loonix"), 1, 0, cstr!("MusicModel"));
+    qml_register_type::<DspController>(cstr!("Loonix"), 1, 0, cstr!("DspController"));
     qml_register_type::<PopupMenu>(cstr!("Loonix"), 1, 0, cstr!("PopupMenu"));
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
     qml_register_type::<SysMediaManager>(cstr!("Loonix"), 1, 0, cstr!("SysMediaManager"));
     qml_register_type::<CustomThemeListModel>(cstr!("Loonix"), 1, 0, cstr!("CustomThemeListModel"));
     qml_register_type::<BugReportManager>(cstr!("Loonix"), 1, 0, cstr!("BugReportManager"));
 
-    // set_object_property() internally calls QQmlEngine::rootContext()->setContextProperty()
-    // Yang penting: App struct hidup selama main() scope
     engine.set_object_property("musicModel".into(), app.music_model.pinned());
+    engine.set_object_property("dspModel".into(), app.dsp_model.pinned());
     engine.set_object_property("theme".into(), app.theme.pinned());
     engine.set_object_property("customThemeList".into(), app.custom_theme_list.pinned());
     engine.set_object_property("popupMenu".into(), app.popup.pinned());
@@ -125,39 +112,19 @@ fn main() {
     engine.set_object_property("sysMedia".into(), app.sysmedia.pinned());
     engine.set_object_property("bugReport".into(), app.bug_report.pinned());
 
-    // Check for command line arguments (file paths)
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
-        // Store command line files for later processing
         let files: Vec<String> = args[1..].to_vec();
         crate::ui::core::set_command_line_files(files);
-        if cfg!(debug_assertions) {
-            println!(
-                "Stored {} file(s) from command line for processing",
-                args.len() - 1
-            );
-        }
     }
 
-    // ==========================================
-    // 4. LOAD UI & EXECUTE
-    // ==========================================
     engine.load_file("qrc:/qml/Ui.qml".into());
     engine.exec();
 
-    // ==========================================
-    // 5. EXPLICIT SHUTDOWN - CRITICAL FOR CLEAN EXIT
-    // ==========================================
-
-    // Stop system check threads first
     #[cfg(target_os = "linux")]
     {
         crate::audio::wireless::stop_system_check();
     }
-
-    // App struct will drop automatically here, in reverse field order
-    // Drop order: sysmedia -> bridge -> popup -> theme -> music_model
-    // This triggers all Drop implementations for clean shutdown
 
     println!("[MAIN] Clean shutdown complete");
 }

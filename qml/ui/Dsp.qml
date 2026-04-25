@@ -106,7 +106,7 @@ RowLayout {
                     // Row 2: Sliders (tengah) - bound to musicModel.eq_bands via reactive property
                     EqSliderBox {
                         id: eqPreamp
-                        controlValue: musicModel.get_preamp_gain()
+                        controlValue: dspModel.get_preamp_gain()
                         onSliderChanged: val => musicModel.set_preamp_gain(val)
                     }
                     EqSliderBox {

@@ -124,7 +124,7 @@ impl DspConfig {
         Ok(())
     }
 
-    fn dsp_path() -> Option<PathBuf> {
+    pub fn dsp_path() -> Option<PathBuf> {
         config_dir().map(|p| p.join("dsp.json"))
     }
 }
