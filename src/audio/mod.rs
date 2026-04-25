@@ -1,14 +1,10 @@
 /* --- loonixtunesv2/src/audio/mod.rs | Audio Module --- */
 
+// Audio IO submodules
+pub mod io;
+
 // Engine submodules
 pub mod engine;
-
-// Core audio functionality
-pub mod audiobus;
-pub mod audiooutput;
-pub mod buffer;
-pub mod decoder;
-pub mod resample;
 
 // DSP
 pub mod dsp;
@@ -22,17 +18,17 @@ pub mod scanner;
 // Config & state
 pub mod config;
 pub mod metadata;
-pub mod wireless;
-
-// UI components
-pub mod popup;
 
 // System Media Controls (MPRIS on Linux)
 #[cfg(target_os = "linux")]
 pub mod sysmedia;
+pub mod wireless;
 
 // Re-export key types
-pub use self::audiooutput::AudioOutput;
-pub use self::decoder::DecoderControl;
-pub use self::engine::{is_audio_file, AudioState, Engine, FfmpegEngine, MusicItem, OutputMode};
+pub use self::io::audiobus::AudioBus;
+pub use self::io::audiooutput::AudioOutput;
+pub use self::io::buffer::ringbuffer::RingBuffer;
+pub use self::io::decoder::DecoderControl;
+pub use self::io::resample::StereoResampler;
+pub use crate::audio::engine::{is_audio_file, AudioState, Engine, FfmpegEngine, MusicItem, OutputMode};
 pub use self::metadata::{read_track_metadata, TrackMetadata};

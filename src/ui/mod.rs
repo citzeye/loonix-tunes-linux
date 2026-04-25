@@ -1,16 +1,16 @@
 /* --- loonixtunesv2/src/ui/mod.rs | UI Module --- */
 
-pub mod core;
-pub mod dspcontroller;
-pub mod playerbridge;
-pub mod queue;
-pub mod theme;
-pub mod updater;
+pub mod components;
+pub mod bridge;
 pub mod reportbug;
+pub mod updater;
 
-pub use self::core::MusicModel;
-pub use self::dspcontroller::DspController;
-pub use self::playerbridge::PlayerBridge;
-pub use self::queue::QueueController;
-pub use self::theme::ThemeManager;
+pub use self::bridge::MusicModel;
+pub use self::bridge::DspController;
+pub use self::bridge::PlayerBridge;
+pub use self::bridge::QueueController;
+pub use self::components::ThemeManager;
+pub use self::components::CustomThemeListModel;
+pub use self::components::PopupMenu;
 pub use self::updater::UpdateChecker;
+pub use self::reportbug::BugReportManager;

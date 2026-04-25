@@ -1,7 +1,9 @@
 /* --- loonixtunesv2/src/audio/engine/engine.rs | Engine --- */
 
-use crate::audio::audiooutput::AudioOutput;
-use crate::audio::decoder::{DecoderControl, DecoderEvent, DecoderHandle};
+use crate::audio::io::audiooutput::OutputState;
+use crate::audio::io::decoder;
+use crate::audio::io::audiooutput::AudioOutput;
+use crate::audio::io::decoder::{DecoderControl, DecoderEvent, DecoderHandle};
 use crate::audio::dsp::DspSettings;
 use crate::audio::scanner;
 use ringbuf::traits::Split;
@@ -232,12 +234,12 @@ impl Engine {
         // 6. Spawn Decoder Thread
         let path_clone = path.clone();
         if let Some(producer) = self.producer.take() {
-            self.decoder_handle = Some(crate::audio::decoder::spawn_decoder_with_sample_rate(
-                path_clone,
-                producer,
-                control_for_decoder.clone(),
-                actual_sample_rate,
-            ));
+self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
+    path_clone,
+    producer,
+    control_for_decoder.clone(),
+    actual_sample_rate,
+));
         } else {
             eprintln!("[Engine] Failed to start playback: producer not available");
             return;
@@ -302,7 +304,7 @@ impl Engine {
                                 if let Some(ref mut audiooutput) = self.audiooutput {
                                     audiooutput.reset_samples_played(0);
                                     audiooutput.set_output_state(
-                                        crate::audio::audiooutput::OutputState::Running,
+                                         OutputState::Running,
                                     );
                                 }
                             }

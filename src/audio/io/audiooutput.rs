@@ -702,7 +702,7 @@ impl AudioOutput {
                 break;
             }
 
-            let current_detected = crate::audio::wireless::isBluetoothDetected();
+            let current_detected = crate::core::services::wireless::isBluetoothDetected();
             if current_detected != bluetooth_detected {
                 bluetooth_detected = current_detected;
                 is_bluetooth_detected.store(current_detected, Ordering::Relaxed);

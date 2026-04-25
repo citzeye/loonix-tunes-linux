@@ -10,13 +10,21 @@ pub mod audio;
 pub mod core;
 pub mod ui;
 
-use crate::audio::popup::PopupMenu;
-use crate::audio::sysmedia::SysMediaManager;
+use crate::audio::io::audiobus::AudioBus;
+use crate::audio::io::audiooutput::AudioOutput;
+use crate::audio::io::decoder::DecoderControl;
+use crate::audio::io::resample::StereoResampler;
+use crate::ui::bridge::MusicModel;
+use crate::ui::bridge::DspController;
+use crate::ui::bridge::PlayerBridge;
+use crate::ui::components::ThemeManager;
+use crate::ui::CustomThemeListModel;
+use crate::ui::PopupMenu;
+use crate::ui::bridge::QueueController;
 use crate::ui::reportbug::BugReportManager;
-use crate::ui::core::MusicModel;
-use crate::ui::DspController;
-use crate::ui::playerbridge::PlayerBridge;
-use crate::ui::theme::{CustomThemeListModel, ThemeManager};
+#[cfg(target_os = "linux")]
+use crate::core::services::SysMediaManager;
+use crate::audio::dsp::rack::DspRack;
 
 struct App {
     music_model: QObjectBox<MusicModel>,
@@ -89,7 +97,9 @@ fn main() {
     init_resources_v4();
 
     #[cfg(target_os = "linux")]
-    crate::audio::wireless::startSystemCheck();
+    {
+        crate::audio::wireless::startSystemCheck();
+    }
 
     let app = App::new();
     let mut engine = QmlEngine::new();
@@ -98,9 +108,11 @@ fn main() {
     qml_register_type::<DspController>(cstr!("Loonix"), 1, 0, cstr!("DspController"));
     qml_register_type::<PopupMenu>(cstr!("Loonix"), 1, 0, cstr!("PopupMenu"));
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
+    #[cfg(target_os = "linux")]
     qml_register_type::<SysMediaManager>(cstr!("Loonix"), 1, 0, cstr!("SysMediaManager"));
     qml_register_type::<CustomThemeListModel>(cstr!("Loonix"), 1, 0, cstr!("CustomThemeListModel"));
     qml_register_type::<BugReportManager>(cstr!("Loonix"), 1, 0, cstr!("BugReportManager"));
+    qml_register_type::<PlayerBridge>(cstr!("Loonix"), 1, 0, cstr!("PlayerBridge"));
 
     engine.set_object_property("musicModel".into(), app.music_model.pinned());
     engine.set_object_property("dspModel".into(), app.dsp_model.pinned());
@@ -115,7 +127,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
         let files: Vec<String> = args[1..].to_vec();
-        crate::ui::core::set_command_line_files(files);
+        crate::ui::bridge::core::set_command_line_files(files);
     }
 
     engine.load_file("qrc:/qml/Ui.qml".into());

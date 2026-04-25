@@ -1,5 +1,5 @@
 /* --- loonixtunesv2/src/audio/popup.rs | Popup --- */
-use crate::ui::theme::ThemeManager;
+use crate::ui::components::ThemeManager;
 use qmetaobject::*;
 
 #[derive(QObject, Default)]
@@ -141,3 +141,4 @@ impl PopupMenu {
         self.menu_items_changed();
     }
 }
+

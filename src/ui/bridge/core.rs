@@ -1,9 +1,9 @@
 /* --- loonixtunesv2/src/ui/core.rs | The Bridge (QML) --- */
-use crate::audio::audiooutput::AudioOutput;
+use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
-use crate::core::fileservice::get_file_service;
-use crate::core::library::LibraryManager;
-use crate::core::playback::PlaybackController;
+use crate::core::services::get_file_service;
+use crate::core::library::Library;
+use crate::core::services::PlaybackController;
 use crate::ui::QueueController;
 use dirs;
 use qmetaobject::prelude::*;
@@ -62,7 +62,7 @@ pub struct MusicModel {
     pub(crate) audio: Arc<Mutex<AudioState>>,
     pub(crate) output: AudioOutput,
     pub(crate) playback: PlaybackController,
-    pub(crate) library: LibraryManager,
+    pub(crate) library: Library,
     pub(crate) queue: QueueController,
 
     // --- State Properties ---
@@ -291,7 +291,7 @@ impl MusicModel {
         model.playback = PlaybackController::new(model.ffmpeg.clone(), model.audio.clone());
         model.playback.volume = model.volume;
         
-        model.library = LibraryManager::new();
+        model.library = crate::core::library::Library::new();
         model.library.load_folders(saved_config.custom_folders.clone(), saved_config.favorites.clone());
         model.scan_music();
 

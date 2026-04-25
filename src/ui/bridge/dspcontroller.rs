@@ -1,7 +1,8 @@
 /* --- loonixtunesv2/src/ui/dspcontroller.rs | State + Rules --- */
 
 use crate::audio::config::{AppConfig, DspConfig, EqPreset, FxPreset};
-use crate::core::dspconfig::DspConfigManager;
+// removed duplicate import
+use crate::core::config::DspConfigManager;
 use qmetaobject::prelude::*;
 use qmetaobject::{QObject, QString, QVariant, QVariantList};
 use std::sync::{Arc, Mutex};
@@ -212,7 +213,7 @@ impl DspController {
         controller.eq_bands_raw = [0.0; 10];
         controller.eq_bands = QVariantList::default();
         controller.ffmpeg = ffmpeg;
-        controller.config_manager = DspConfigManager::new(saved_config);
+        controller.config_manager = crate::core::config::DspConfigManager::new(saved_config);
         controller.eq_presets = AppConfig::get_eq_presets();
         controller.fx_presets = AppConfig::get_fx_presets();
 
@@ -316,8 +317,8 @@ impl DspController {
         self.config_manager.save_dsp_config(&state);
     }
 
-    pub fn get_state_view(&self) -> crate::core::dspconfig::DspStateView {
-        crate::core::dspconfig::DspStateView {
+    pub fn get_state_view(&self) -> crate::core::config::DspStateView {
+        crate::core::config::DspStateView {
             dsp_enabled: self.dsp_enabled,
             dsp_bands: self.eq_bands_internal,
             eq_enabled: self.eq_enabled,

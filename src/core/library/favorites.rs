@@ -67,3 +67,4 @@ impl Default for FavoritesManager {
         Self::new()
     }
 }
+pub type Favorites = FavoritesManager;
