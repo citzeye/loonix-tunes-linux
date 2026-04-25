@@ -833,7 +833,7 @@ RowLayout {
 
             Connections {
                 target: dspModel
-                function onUser_presets_changed() {
+                function onUser_preset_names_changed() {
                     var oldIdx = slotSelector.currentIndex;
                     slotSelector.currentIndex = -1;
                     slotSelector.currentIndex = oldIdx;
