@@ -1200,9 +1200,7 @@ impl DspController {
         crate::audio::dsp::get_dsp_bypass_arc()
             .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
         
-        // Store to Preamp Atomic (legacy, keep for compatibility)
-        crate::audio::dsp::preamp::get_preamp_enabled_arc()
-            .store(self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
+        // PREAMP SELALU ON - Core Chain, DO NOT store to preamp_enabled_arc
         
         eprintln!("[DSP] toggle_dsp AFTER - dsp_enabled: {}, dsp_bypass: {}", self.dsp_enabled, 
             crate::audio::dsp::get_dsp_bypass_arc().load(std::sync::atomic::Ordering::Relaxed));

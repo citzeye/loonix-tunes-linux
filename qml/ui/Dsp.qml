@@ -238,6 +238,7 @@ RowLayout {
                         id: compToggle
                         title: "COMPRESSOR"
                         isOn: dspModel.compressor_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_compressor()
                     }
 
@@ -270,6 +271,7 @@ RowLayout {
                         id: surrToggle
                         title: "SURROUND"
                         isOn: dspModel.surround_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_surround()
                     }
 
@@ -302,6 +304,7 @@ RowLayout {
                         id: monoToggle
                         title: "MONO - STEREO"
                         isOn: dspModel.mono_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_stereo_width()
                     }
 
@@ -332,22 +335,23 @@ RowLayout {
                         id: midToggle
                         title: "MIDDLE CLARITY"
                         isOn: dspModel.middle_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_middle_clarity()
                     }
 
                     FxSliderBox {
                         id: midSlider
-                        enabled: midToggle.isOn
+                        enabled: midToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.middle_amount
                         onSliderChanged: val => dspModel.set_middle_clarity_amount(val)
                     }
                     FxValueBox {
-                        enabled: midToggle.isOn
+                        enabled: midToggle.isOn && dspModel.dsp_enabled
                         sliderValue: midSlider.currentValue
                         linkSlider: midSlider
                     }
                     FxResetButton {
-                        enabled: midToggle.isOn
+                        enabled: midToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
                         onResetNoArg: dspModel.reset_middle_clarity()
                     }
@@ -362,22 +366,23 @@ RowLayout {
                         id: stereoEnhToggle
                         title: "STEREO ENHANCER"
                         isOn: dspModel.stereo_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_stereo_enhance()
                     }
 
                     FxSliderBox {
                         id: stereoSlider
-                        enabled: stereoEnhToggle.isOn
+                        enabled: stereoEnhToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.stereo_amount
                         onSliderChanged: val => dspModel.set_stereo_enhance_amount(val)
                     }
                     FxValueBox {
-                        enabled: stereoEnhToggle.isOn
+                        enabled: stereoEnhToggle.isOn && dspModel.dsp_enabled
                         sliderValue: stereoSlider.currentValue
                         linkSlider: stereoSlider
                     }
                     FxResetButton {
-                        enabled: stereoEnhToggle.isOn
+                        enabled: stereoEnhToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
                         onResetNoArg: dspModel.reset_stereo_enhance()
                     }
@@ -392,22 +397,23 @@ RowLayout {
                         id: crossfeedToggle
                         title: "CROSSFEED"
                         isOn: dspModel.crossfeed_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_crossfeed()
                     }
 
                     FxSliderBox {
                         id: crossfeedSlider
-                        enabled: crossfeedToggle.isOn
+                        enabled: crossfeedToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.crossfeed_amount
                         onSliderChanged: val => dspModel.set_crossfeed_amount(val)
                     }
                     FxValueBox {
-                        enabled: crossfeedToggle.isOn
+                        enabled: crossfeedToggle.isOn && dspModel.dsp_enabled
                         sliderValue: crossfeedSlider.currentValue
                         linkSlider: crossfeedSlider
                     }
                     FxResetButton {
-                        enabled: crossfeedToggle.isOn
+                        enabled: crossfeedToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
                         onResetNoArg: dspModel.reset_crossfeed()
                     }
@@ -422,22 +428,23 @@ RowLayout {
                         id: crystalToggle
                         title: "CRYSTALIZER"
                         isOn: dspModel.crystal_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_crystalizer()
                     }
 
                     FxSliderBox {
                         id: crystalAmtSlider
-                        enabled: crystalToggle.isOn
+                        enabled: crystalToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.crystal_amount
                         onSliderChanged: val => dspModel.set_crystalizer_amount(val)
                     }
                     FxValueBox {
-                        enabled: crystalToggle.isOn
+                        enabled: crystalToggle.isOn && dspModel.dsp_enabled
                         sliderValue: crystalAmtSlider.currentValue
                         linkSlider: crystalAmtSlider
                     }
                     FxResetButton {
-                        enabled: crystalToggle.isOn
+                        enabled: crystalToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
                         onResetNoArg: dspModel.reset_crystalizer()
                     }
@@ -452,6 +459,7 @@ RowLayout {
                         id: bassToggle
                         title: "BASS BOOSTER"
                         isOn: dspModel.bass_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_bass_booster()
                     }
 
@@ -491,24 +499,24 @@ RowLayout {
                         id: pitchToggle
                         title: "PITCH SHIFTER"
                         isOn: dspModel.pitch_active
-                        boxEnabled: true
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_pitch()
                     }
 
                     FxPitchSliderBox {
                         id: pitchSlider
-                        enabled: pitchToggle.isOn
+                        enabled: pitchToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.pitch_semitones
                         onSliderChanged: val => dspModel.set_pitch_semitones(val)
                     }
                     FxValueBox {
-                        enabled: pitchToggle.isOn
+                        enabled: pitchToggle.isOn && dspModel.dsp_enabled
                         sliderValue: pitchSlider.currentValue
                         showSemitones: true
                         linkSlider: pitchSlider
                     }
                     FxResetButton {
-                        enabled: pitchToggle.isOn
+                        enabled: pitchToggle.isOn && dspModel.dsp_enabled
                         useNoArgReset: true
                         onResetNoArg: dspModel.reset_pitch()
                     }
@@ -523,6 +531,7 @@ RowLayout {
                         id: reverbToggle
                         title: "REVERB"
                         isOn: dspModel.reverb_active
+                        boxEnabled: dspModel.dsp_enabled
                         onToggled: dspModel.toggle_reverb()
                     }
 
@@ -573,7 +582,7 @@ RowLayout {
                     text: dspModel.get_eq_preset_name(index)
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: defBtn.isActive ? theme.colormap.dsptextactive : (defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
+                    color: (defBtn.isActive && dspModel.dsp_enabled) ? theme.colormap.dsptextactive : (defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -581,7 +590,7 @@ RowLayout {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: defBtn.isActive ? theme.colormap.dsptextactive : theme.colormap.dspborder
+                    border.color: (defBtn.isActive && dspModel.dsp_enabled) ? theme.colormap.dsptextactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index);
@@ -607,7 +616,7 @@ RowLayout {
                     text: dspModel.user_preset_names && dspModel.user_preset_names[index] ? dspModel.user_preset_names[index] : ""
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
+                    color: (pBtn.isActive && dspModel.dsp_enabled) ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -615,7 +624,7 @@ RowLayout {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: pBtn.isActive ? theme.colormap.dsptextactive : theme.colormap.dspborder
+                    border.color: (pBtn.isActive && dspModel.dsp_enabled) ? theme.colormap.dsptextactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index + 6);
