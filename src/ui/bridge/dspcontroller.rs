@@ -836,6 +836,17 @@ impl DspController {
 
         self.active_preset_index = index;
         self.active_preset_index_changed();
+
+        // =====================================================
+        // AUTO-SAVE HANYA INDEX KE dsp.json (Hybrid Persistence)
+        // =====================================================
+        let mut dsp_config = crate::audio::config::DspConfig::load();
+        dsp_config.active_preset_index = index;
+        if let Err(e) = dsp_config.save() {
+            eprintln!("[DSP] Auto-save failed: {:?}", e);
+        } else {
+            eprintln!("[DSP] Auto-saved active_preset_index: {}", index);
+        }
     }
 
     pub fn set_active_preset_index(&mut self, index: i32) {
