@@ -1367,8 +1367,8 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
-        opacity: enabled ? 1.0 : 0.5
-
+        opacity: boxEnabled ? 1.0 : 0.5
+        
         state: "display"
 
         Text {
