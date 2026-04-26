@@ -1,18 +1,18 @@
 module ui
-Tab 1.0 Tab.qml
-TabMusic 1.0 TabMusic.qml
-TabFavorites 1.0 TabFavorites.qml
-TabQueue 1.0 TabQueue.qml
-TabCustom 1.0 TabCustom.qml
-TrackInfo 1.0 TrackInfo.qml
+Tab 1.0 tabs/Tab.qml
+TabMusic 1.0 tabs/TabMusic.qml
+TabFavorites 1.0 tabs/TabFavorites.qml
+TabQueue 1.0 tabs/TabQueue.qml
+TabCustom 1.0 tabs/TabCustom.qml
+TrackInfo 1.0 components/TrackInfo.qml
 TabContextMenu 1.0 contextmenu/TabContextMenu.qml
 PlaylistContextMenu 1.0 contextmenu/PlaylistContextMenu.qml
 AppearanceContextMenu 1.0 contextmenu/AppearanceContextMenu.qml
 Playlist 1.0 Playlist.qml
 Pref 1.0 Pref.qml
 Dsp 1.0 Dsp.qml
-ThemeSlider 1.0 ThemeSlider.qml
-RenameDialog 1.0 RenameDialog.qml
+ThemeSlider 1.0 components/ThemeSlider.qml
+RenameDialog 1.0 components/RenameDialog.qml
 PrefButton 1.0 pref/PrefButton.qml
 PrefDropdown 1.0 pref/PrefDropdown.qml
 PrefSlider 1.0 pref/PrefSlider.qml
