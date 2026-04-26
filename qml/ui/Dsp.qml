@@ -1020,6 +1020,7 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+        opacity: enabled ? 1.0 : 0.5
 
         onControlValueChanged: {
             if (sld && !sld.pressed) {
@@ -1211,6 +1212,7 @@ RowLayout {
         id: rootItem
         property string modeLabel: ""
         property bool isActive: false
+        property bool boxEnabled: true
         signal clicked
 
         Layout.fillWidth: true
@@ -1226,12 +1228,14 @@ RowLayout {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: buttonArea.containsMouse ? theme.colormap.dsptexthover : 
-                   (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext)
+            color: !rootItem.boxEnabled ? theme.colormap.dsptext + "66" :
+                   (buttonArea.containsMouse ? theme.colormap.dsptexthover : 
+                   (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext))
         }
 
         MouseArea {
             id: buttonArea
+            enabled: rootItem.boxEnabled
             anchors.fill: parent
             hoverEnabled: true
             onClicked: rootItem.clicked()
@@ -1255,21 +1259,25 @@ RowLayout {
             FxBassModeButton {
                 modeLabel: "Deep"
                 isActive: bassModeRoot.selectedMode === 0
+                boxEnabled: bassModeRoot.boxEnabled
                 onClicked: dspModel.set_bass_mode(0)
             }
             FxBassModeButton {
                 modeLabel: "Soft"
                 isActive: bassModeRoot.selectedMode === 1
+                boxEnabled: bassModeRoot.boxEnabled
                 onClicked: dspModel.set_bass_mode(1)
             }
             FxBassModeButton {
                 modeLabel: "Punch"
                 isActive: bassModeRoot.selectedMode === 2
+                boxEnabled: bassModeRoot.boxEnabled
                 onClicked: dspModel.set_bass_mode(2)
             }
             FxBassModeButton {
                 modeLabel: "Warm"
                 isActive: bassModeRoot.selectedMode === 3
+                boxEnabled: bassModeRoot.boxEnabled
                 onClicked: dspModel.set_bass_mode(3)
             }
         }
@@ -1280,6 +1288,7 @@ RowLayout {
         id: rootItem
         property string modeLabel: ""
         property bool isActive: false
+        property bool boxEnabled: true
         signal clicked
 
         Layout.fillWidth: true
@@ -1289,23 +1298,24 @@ RowLayout {
         antialiasing: false
 
         Text {
-        id: modeText
-        anchors.centerIn: parent
-        text: modeLabel
-        font.family: kodeMono.name
-        font.pixelSize: 11
-        font.bold: isActive
-        color: !rootItem.parent.parent.boxEnabled ? theme.colormap.dsptext + "66" : 
-               (buttonArea.containsMouse ? theme.colormap.dsptexthover : 
-               (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext))
-    }
+            id: modeText
+            anchors.centerIn: parent
+            text: modeLabel
+            font.family: kodeMono.name
+            font.pixelSize: 11
+            font.bold: isActive
+            color: !rootItem.boxEnabled ? theme.colormap.dsptext + "66" :
+                   (buttonArea.containsMouse ? theme.colormap.dsptexthover : 
+                   (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext))
+        }
 
-    MouseArea {
-        id: buttonArea
-        anchors.fill: parent
-        hoverEnabled: true
-        onClicked: rootItem.clicked()
-    }
+        MouseArea {
+            id: buttonArea
+            enabled: rootItem.boxEnabled
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: rootItem.clicked()
+        }
     }
 
     // Reverb mode selector with state
@@ -1325,16 +1335,19 @@ RowLayout {
             FxReverbModeButton {
                 modeLabel: "Studio"
                 isActive: reverbModeRoot.selectedMode === 1
+                boxEnabled: reverbModeRoot.boxEnabled
                 onClicked: dspModel.set_reverb_mode(1)
             }
             FxReverbModeButton {
                 modeLabel: "Stage"
                 isActive: reverbModeRoot.selectedMode === 2
+                boxEnabled: reverbModeRoot.boxEnabled
                 onClicked: dspModel.set_reverb_mode(2)
             }
             FxReverbModeButton {
                 modeLabel: "Stadium"
                 isActive: reverbModeRoot.selectedMode === 3
+                boxEnabled: reverbModeRoot.boxEnabled
                 onClicked: dspModel.set_reverb_mode(3)
             }
         }
@@ -1354,6 +1367,7 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+        opacity: enabled ? 1.0 : 0.5
 
         state: "display"
 
@@ -1432,6 +1446,7 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+        opacity: enabled ? 1.0 : 0.5
 
         state: "display"
 
@@ -1545,6 +1560,7 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+        opacity: enabled ? 1.0 : 0.5
 
         Text {
             id: displayText
@@ -1648,6 +1664,7 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+        opacity: enabled ? 1.0 : 0.5
 
         Slider {
             id: pitchSld
