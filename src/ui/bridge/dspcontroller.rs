@@ -255,6 +255,10 @@ impl DspController {
             // Flow B: Routine reload - dsp.json exists
             let dsp_config = DspConfig::load();
 
+            // Restore dsp_enabled state from JSON (default to true)
+            self.dsp_enabled = dsp_config.dsp_enabled;
+            self.dsp_changed();
+
             // Load user preset data from JSON
             self.user_eq_names = dsp_config.user_preset_names.clone();
             self.user_preset_names = self.get_user_preset_names_list();

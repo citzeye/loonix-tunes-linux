@@ -82,6 +82,8 @@ impl DspConfigManager {
     pub fn save_dsp_config(&mut self, state: &DspStateView) {
         // Save user presets to dsp.json
         let dsp_config = DspConfig {
+            version: "2.0".into(),
+            dsp_enabled: state.dsp_enabled,
             active_preset_index: state.active_preset_index,
             user_preset_names: state.user_eq_names.clone(),
             user_preset_gains: state.user_eq_gains,

@@ -35,6 +35,8 @@ pub fn config_dir() -> Option<PathBuf> {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DspConfig {
+    pub version: String,
+    pub dsp_enabled: bool,
     pub active_preset_index: i32,
     pub user_preset_names: [String; 6],
     pub user_preset_gains: [[f32; 10]; 6],
@@ -78,7 +80,9 @@ impl DspConfig {
 
     pub fn dsp_user_template() -> Self {
         Self {
-            active_preset_index: -1,
+            version: "2.0".into(),
+            dsp_enabled: true,
+            active_preset_index: 0,
             user_preset_names: [
                 "User 1".into(),
                 "User 2".into(),
@@ -91,21 +95,21 @@ impl DspConfig {
             user_preset_macro: [0.0; 6],
             user_fx_enabled: [false; 6],
             user_fx_bass_enabled: [false; 6],
-            user_fx_bass_gain: [0.0; 6],
-            user_fx_bass_cutoff: [0.0; 6],
+            user_fx_bass_gain: [6.0; 6],
+            user_fx_bass_cutoff: [180.0; 6],
             user_fx_bass_mode: [0; 6],
             user_fx_crystal_enabled: [false; 6],
             user_fx_crystal_amount: [0.0; 6],
             user_fx_surround_enabled: [false; 6],
-            user_fx_surround_width: [0.0; 6],
+            user_fx_surround_width: [1.8; 6],
             user_fx_mono_enabled: [false; 6],
-            user_fx_mono_width: [0.0; 6],
+            user_fx_mono_width: [1.0; 6],
             user_fx_stereo_enabled: [false; 6],
             user_fx_stereo_amount: [0.0; 6],
             user_fx_crossfeed_enabled: [false; 6],
             user_fx_crossfeed_amount: [0.0; 6],
             user_fx_compressor_enabled: [false; 6],
-            user_fx_compressor_threshold: [0.0; 6],
+            user_fx_compressor_threshold: [-14.0; 6],
             user_fx_reverb_enabled: [false; 6],
             user_fx_reverb_mode: [0; 6],
             user_fx_reverb_amount: [0; 6],
@@ -132,6 +136,8 @@ impl DspConfig {
 impl Default for DspConfig {
     fn default() -> Self {
         Self {
+            version: "2.0".into(),
+            dsp_enabled: true,
             active_preset_index: -1,
             user_preset_names: [
                 "User 1".into(),
@@ -158,8 +164,8 @@ impl Default for DspConfig {
             user_fx_stereo_amount: [0.0; 6],
             user_fx_crossfeed_enabled: [false; 6],
             user_fx_crossfeed_amount: [0.0; 6],
-            user_fx_compressor_enabled: [true; 6],
-            user_fx_compressor_threshold: [-6.0; 6],
+            user_fx_compressor_enabled: [false; 6],
+            user_fx_compressor_threshold: [-14.0; 6],
             user_fx_reverb_enabled: [false; 6],
             user_fx_reverb_mode: [0; 6],
             user_fx_reverb_amount: [0; 6],
