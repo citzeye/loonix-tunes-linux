@@ -55,6 +55,13 @@ impl DspRack {
     }
 
     pub fn process(&mut self, input: &[f32], output: &mut [f32]) {
+        // DSP BYPASS: If bypass is enabled (DSP OFF), skip ALL cosmetic processing
+        // The Cosmetics (Rack) are bypassed, but Core Chain (Preamp/Normalizer/Limiter) still run
+        if crate::audio::dsp::is_dsp_bypass() {
+            output[..input.len()].copy_from_slice(input);
+            return;
+        }
+
         if self.processors.is_empty() {
             output.copy_from_slice(input);
             return;

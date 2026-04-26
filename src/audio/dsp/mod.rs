@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
 static PRO_UNLOCKED: OnceLock<AtomicBool> = OnceLock::new();
+static DSP_BYPASS_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
 
 pub fn get_pro_unlocked_arc() -> &'static AtomicBool {
     PRO_UNLOCKED.get_or_init(|| AtomicBool::new(false))
@@ -11,6 +12,14 @@ pub fn get_pro_unlocked_arc() -> &'static AtomicBool {
 
 pub fn is_pro_active() -> bool {
     get_pro_unlocked_arc().load(Ordering::Relaxed)
+}
+
+pub fn get_dsp_bypass_arc() -> &'static AtomicBool {
+    DSP_BYPASS_ENABLED.get_or_init(|| AtomicBool::new(true))
+}
+
+pub fn is_dsp_bypass() -> bool {
+    get_dsp_bypass_arc().load(Ordering::Relaxed)
 }
 
 pub mod bassbooster;

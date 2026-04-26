@@ -263,6 +263,8 @@ impl DspController {
 
             // Set DSP enabled state AND store to Audio Engine (Atomic)
             self.dsp_enabled = true;
+            crate::audio::dsp::get_dsp_bypass_arc()
+                .store(false, std::sync::atomic::Ordering::Relaxed); // inverted: false = DSP ON
             crate::audio::dsp::preamp::get_preamp_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed);
             self.dsp_changed();
@@ -278,8 +280,10 @@ impl DspController {
 
             // Restore dsp_enabled state from JSON AND store to Audio Engine
             self.dsp_enabled = dsp_config.dsp_enabled;
+            crate::audio::dsp::get_dsp_bypass_arc()
+                .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed); // inverted
             crate::audio::dsp::preamp::get_preamp_enabled_arc()
-                .store(self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
+                .store(true, std::sync::atomic::Ordering::Relaxed); // Preamp always ON
             self.dsp_changed();
 
             // Load user preset data from JSON
@@ -1187,9 +1191,22 @@ impl DspController {
     // 1. MASTER & POWER CONTROLS
     // ==========================================
     pub fn toggle_dsp(&mut self) {
+        eprintln!("[DSP] toggle_dsp BEFORE - dsp_enabled: {}", self.dsp_enabled);
+        
         self.dsp_enabled = !self.dsp_enabled;
+        
+        // Store to DSP Module Atomic (for Rack bypass)
+        // INVERTED: dsp_bypass = true means DSP is OFF (bypass cosmetic chain)
+        crate::audio::dsp::get_dsp_bypass_arc()
+            .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
+        
+        // Store to Preamp Atomic (legacy, keep for compatibility)
         crate::audio::dsp::preamp::get_preamp_enabled_arc()
             .store(self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
+        
+        eprintln!("[DSP] toggle_dsp AFTER - dsp_enabled: {}, dsp_bypass: {}", self.dsp_enabled, 
+            crate::audio::dsp::get_dsp_bypass_arc().load(std::sync::atomic::Ordering::Relaxed));
+        
         self.dsp_changed();
     }
 
