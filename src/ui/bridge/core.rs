@@ -53,9 +53,14 @@ pub struct MusicModel {
     pub(crate) playback_playlist: Vec<MusicItem>,
     pub(crate) playback_index: i32,
     pub(crate) expanded_folders: HashSet<String>,
+    pub(crate) session_folders: Vec<String>, // Session-only folders (RAM only, not saved)
 
     pub current_folder_qml: qt_property!(QString; NOTIFY current_folder_changed),
     pub current_folder_changed: qt_signal!(),
+    
+    // Current tab root for clean slate logic
+    pub current_tab_root: qt_property!(QString; NOTIFY current_tab_root_changed),
+    pub current_tab_root_changed: qt_signal!(),
 
     // --- Controllers ---
     pub(crate) ffmpeg: Arc<Mutex<FfmpegEngine>>,
@@ -139,7 +144,7 @@ pub struct MusicModel {
     pub set_balance: qt_method!(fn(&mut self, balance: f64)),
     pub toggle_mute: qt_method!(fn(&mut self)),
     pub toggle_play: qt_method!(fn(&mut self)),
-    pub toggle_folder: qt_method!(fn(&mut self, folder_name: String)),
+    pub toggle_folder: qt_method!(fn(&mut self, index: i32)),
     pub load_track_info: qt_method!(fn(&mut self, path: String)),
     pub close_track_info: qt_method!(fn(&mut self)),
     pub update_tick: qt_method!(fn(&mut self)),
@@ -152,6 +157,7 @@ pub struct MusicModel {
     pub add_folder_tab: qt_method!(fn(&mut self, path: String)),
     pub add_song: qt_method!(fn(&mut self, path: String)),
     pub add_temporary_folder: qt_method!(fn(&mut self, path: String)),
+    pub add_folder_to_list: qt_method!(fn(&mut self, path: String)),
     pub remove_song: qt_method!(fn(&mut self, index: i32)),
     pub delete_item: qt_method!(fn(&mut self, path: String, is_folder: bool)),
     pub switch_to_folder: qt_method!(fn(&mut self, folder_path: String)),
@@ -293,6 +299,8 @@ impl MusicModel {
         
         model.library = crate::core::library::Library::new();
         model.library.load_folders(saved_config.custom_folders.clone(), saved_config.favorites.clone());
+        model.custom_folder_count = model.library.custom_folder_count;
+        model.custom_folders_changed();
         model.scan_music();
 
         model
@@ -310,7 +318,29 @@ impl MusicModel {
         self.current_folder_qml = QString::from("MUSIC");
         self.library.scan_music_folder(&music_dir);
         self.all_items = self.library.all_items.clone();
-        self.display_list = self.library.display_list.clone();
+        
+        // Add session folders to the display
+        for session_path in &self.session_folders {
+            let session_folder_path = Path::new(session_path);
+            if let Some(name) = session_folder_path.file_name() {
+                let session_item = MusicItem {
+                    name: name.to_string_lossy().to_string(),
+                    path: session_path.clone(),
+                    is_folder: true,
+                    parent_folder: None,
+                };
+                self.all_items.push(session_item);
+            }
+        }
+        
+        // Sort combined list
+        self.all_items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        });
+        
+        self.display_list = self.all_items.clone();
         self.begin_reset_model();
         self.end_reset_model();
         self.current_folder_changed();
@@ -329,6 +359,11 @@ impl MusicModel {
     }
 
     pub fn switch_to_folder(&mut self, folder_path: String) {
+        // Clean slate: clear display list and set root
+        self.display_list.clear();
+        self.current_tab_root = QString::from(folder_path.clone());
+        self.current_tab_root_changed();
+        
         self.library.switch_to_folder(&folder_path);
         self.current_folder_qml = QString::from(self.library.current_folder.clone());
         self.all_items = self.library.all_items.clone();
@@ -341,8 +376,22 @@ impl MusicModel {
     pub fn add_folder_tab(&mut self, path: String) {
         let clean = clean_qml_path(&path);
         self.library.add_folder(clean.clone());
+        let new_index = self.library.custom_folder_count - 1;
         self.custom_folder_count = self.library.custom_folder_count;
         self.custom_folders_changed();
+        
+        // Auto-lock new folder and save to config
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                if !cfg.locked_folders.contains(&new_index) {
+                    cfg.locked_folders.push(new_index);
+                    let _ = cfg.save();
+                }
+            }
+        }
+        self.folder_lock_version += 1;
+        self.folder_lock_changed();
+        
         self.save_custom_folders();
         self.switch_to_folder(clean);
     }
@@ -396,22 +445,40 @@ impl MusicModel {
         }
     }
 
-    pub fn toggle_folder(&mut self, folder_name: String) {
-        if self.expanded_folders.contains(&folder_name) {
-            self.expanded_folders.remove(&folder_name);
-            self.display_list.retain(|i| i.parent_folder.as_ref() != Some(&folder_name));
+    pub fn toggle_folder(&mut self, index: i32) {
+        let idx = index as usize;
+        if idx >= self.display_list.len() { return; }
+        
+        // 1. Ambil item secara utuh
+        let item = self.display_list[idx].clone();
+        if !item.is_folder { return; }
+        
+        // 2. Gunakan PATH asli sebagai ID unik, bukan nama.
+        let folder_path = item.path.clone();
+
+        if self.expanded_folders.contains(&folder_path) {
+            // COLLAPSE LOGIC
+            self.expanded_folders.remove(&folder_path);
+            // Hapus semua yang bapaknya adalah path ini
+            self.display_list.retain(|i| i.parent_folder.as_ref() != Some(&folder_path));
         } else {
-            self.expanded_folders.insert(folder_name.clone());
-            // Need a path to get contents. Assuming current_folder_path is the base
-            let base_path = Path::new(&self.library.current_folder_path);
-            let target_path = base_path.join(&folder_name);
+            // EXPAND LOGIC
+            self.expanded_folders.insert(folder_path.clone());
+            
+            // 3. SURGICAL POINT: Langsung pake folder_path (Absolute)
+            let target_path = Path::new(&folder_path);
             let contents = self.library.get_folder_contents(&target_path);
-            if let Some(pos) = self.display_list.iter().position(|i| i.name == folder_name) {
-                for (offset, item) in contents.into_iter().enumerate() {
-                    self.display_list.insert(pos + 1 + offset, item);
+            
+            if let Some(pos) = self.display_list.iter().position(|i| i.path == folder_path) {
+                for (offset, mut sub_item) in contents.into_iter().enumerate() {
+                    // 4. Paksa sub_item punya parent_folder yang tepat agar padding QML sinkron
+                    sub_item.parent_folder = Some(folder_path.clone());
+                    self.display_list.insert(pos + 1 + offset, sub_item);
                 }
             }
         }
+        
+        // 5. Paksa UI Gambar Ulang
         self.begin_reset_model();
         self.end_reset_model();
     }
@@ -445,6 +512,11 @@ impl MusicModel {
     }
 
     pub fn switch_to_favorites(&mut self) {
+        // Clean slate: clear display list and set root
+        self.display_list.clear();
+        self.current_tab_root = QString::from("FAVORITES");
+        self.current_tab_root_changed();
+        
         self.library.switch_to_favorites();
         self.current_folder_qml = QString::from("FAVORITES");
         self.all_items = self.library.all_items.clone();
@@ -454,7 +526,25 @@ impl MusicModel {
         self.current_folder_changed();
     }
 
-    pub fn switch_to_music(&mut self) { self.scan_music(); }
+    pub fn switch_to_music(&mut self) {
+        // Clean slate: clear display list and set root
+        self.display_list.clear();
+        self.current_tab_root = QString::from("MUSIC");
+        self.current_tab_root_changed();
+        
+        let home = match dirs::home_dir() {
+            Some(path) => path,
+            None => return,
+        };
+        let music_dir = home.join("Music");
+        self.current_folder_qml = QString::from("MUSIC");
+        self.library.scan_music_folder(&music_dir);
+        self.all_items = self.library.all_items.clone();
+        self.display_list = self.library.display_list.clone();
+        self.begin_reset_model();
+        self.end_reset_model();
+        self.current_folder_changed();
+    }
 
     fn save_favorites(&mut self) {
         if let Some(ref config) = &self.saved_config {
@@ -491,6 +581,11 @@ impl MusicModel {
     }
 
     pub fn switch_to_queue(&mut self) {
+        // Clean slate: clear display list and set root
+        self.display_list.clear();
+        self.current_tab_root = QString::from("QUEUE");
+        self.current_tab_root_changed();
+        
         self.current_folder_qml = QString::from("QUEUE");
         self.all_items = self.queue.get_all();
         self.display_list = self.all_items.clone();
@@ -763,11 +858,50 @@ impl MusicModel {
     }
 
     pub fn add_temporary_folder(&mut self, path: String) {
-        let folder_path = Path::new(&path);
+        let clean = clean_qml_path(&path);
+        
+        // Add to session folders if not already exists
+        if !self.session_folders.contains(&clean) {
+            self.session_folders.push(clean.clone());
+        }
+        
+        let folder_path = Path::new(&clean);
         if let Some(name) = folder_path.file_name() {
             self.all_items.push(MusicItem {
                 name: name.to_string_lossy().to_string(),
-                path,
+                path: clean,
+                is_folder: true,
+                parent_folder: None,
+            });
+            self.all_items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+            });
+            self.display_list = self.all_items.clone();
+            self.begin_reset_model();
+            self.end_reset_model();
+        }
+    }
+
+    pub fn add_folder_to_list(&mut self, path: String) {
+        let clean = clean_qml_path(&path);
+        
+        // Add to session folders if not already exists
+        if !self.session_folders.contains(&clean) {
+            self.session_folders.push(clean.clone());
+        }
+        
+        let folder_path = Path::new(&clean);
+        if let Some(name) = folder_path.file_name() {
+            // Check if already exists in all_items
+            if self.all_items.iter().any(|i| i.path == clean) {
+                return;
+            }
+            
+            self.all_items.push(MusicItem {
+                name: name.to_string_lossy().to_string(),
+                path: clean,
                 is_folder: true,
                 parent_folder: None,
             });
@@ -790,6 +924,11 @@ impl MusicModel {
     }
 
     pub fn switch_to_external_files(&mut self) {
+        // Clean slate: clear display list and set root
+        self.display_list.clear();
+        self.current_tab_root = QString::from("EXTERNAL_FILES");
+        self.current_tab_root_changed();
+        
         self.library.switch_to_external();
         self.current_folder_qml = QString::from("EXTERNAL_FILES");
         self.all_items = self.library.all_items.clone();
@@ -836,6 +975,7 @@ impl MusicModel {
                     let _ = cfg.save();
                 }
             }
+            self.folder_lock_version += 1;
             self.folder_lock_changed();
         }
     }

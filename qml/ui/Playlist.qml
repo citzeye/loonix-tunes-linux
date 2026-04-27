@@ -134,13 +134,23 @@ Rectangle {
           model.parent_folder !== null
         property bool isHovered: false
 
+        // Check if this item is at root level for the current tab
+        property bool isAtRootLevel: model.parent_folder === musicModel.current_tab_root || 
+                                   (model.parent_folder === '' && musicModel.current_tab_root !== '')
+
 
         // WRAPPER UNTUK PADDING DINAMIS
         Item {
           anchors.fill: parent
-          // 8px padding untuk item di dalam folder (bukan folder induk)
-          // Folder induk tetap di 0 (tidak ditambah/dikurang)
-          anchors.leftMargin: isPlayingNow ? 15 : isInFolder ? 15 : 0
+           anchors.leftMargin: {
+               // Jika dia item paling luar (gak punya parent_folder), 
+               // atau jika kita bukan di Tab Music, margin WAJIB 0.
+               if (model.parent_folder === "" || musicModel.current_tab_root !== "MUSIC") {
+                   return 0;
+               }
+               // Jika dia di Tab Music DAN dia punya parent (hasil expand), kasih 15.
+               return 15;
+           }
 
           
 
@@ -195,14 +205,14 @@ Rectangle {
           onEntered: parent.isHovered = true
           onExited: parent.isHovered = false
 
-           onClicked: function(mouse) {
-             if (mouse.button === Qt.LeftButton) {
-               if (model.is_folder) {
-                 musicModel.toggle_folder(model.path)
-               } else {
-                 musicModel.play_at(index)
-               }
-             } else if (mouse.button === Qt.RightButton) {
+            onClicked: function(mouse) {
+              if (mouse.button === Qt.LeftButton) {
+                if (model.is_folder) {
+                  musicModel.toggle_folder(index)
+                } else {
+                  musicModel.play_at(index)
+                }
+              } else if (mouse.button === Qt.RightButton) {
                parent.isHovered = false
                root.popupMenuVisible = false
                root.tabContextMenuVisible = false

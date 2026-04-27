@@ -3,6 +3,9 @@ use crate::audio::presets::{EQ_PRESETS, FX_PRESETS};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static IS_INITIALIZING: AtomicBool = AtomicBool::new(true);
 
 const CONFIG_APP_NAME: &str = "loonix-tunes";
 
@@ -205,6 +208,8 @@ impl Default for DspConfig {
 pub struct AppConfig {
     pub volume: f64,
     pub balance: f64,
+    #[serde(default)]
+    pub theme: String,
     pub shuffle: bool,
     pub loop_playlist: bool,
     #[serde(default)]
@@ -252,6 +257,7 @@ impl Default for AppConfig {
         Self {
             volume: 0.2,
             balance: 0.0,
+            theme: "Default".into(),
             shuffle: false,
             loop_playlist: false,
             custom_folders: vec![],
@@ -273,6 +279,10 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
+    pub fn set_initializing(val: bool) {
+        IS_INITIALIZING.store(val, Ordering::SeqCst);
+    }
+
     pub fn load() -> Self {
         match Self::load_user_config() {
             Ok(cfg) => cfg,
@@ -293,6 +303,10 @@ impl AppConfig {
     }
 
     pub fn save(&self) -> Result<(), ConfigError> {
+        if IS_INITIALIZING.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+
         let path = Self::config_path().ok_or(ConfigError::IoError("Invalid path".into()))?;
 
         if let Some(parent) = path.parent() {

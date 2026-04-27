@@ -1198,7 +1198,10 @@ impl DspController {
         crate::audio::dsp::get_dsp_bypass_arc()
             .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
         
-        // PREAMP SELALU ON - Core Chain, DO NOT store to preamp_enabled_arc
+        // Push to FfmpegEngine for real-time audio processing
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            ff.set_dsp_enabled(self.dsp_enabled);
+        }
         
         self.dsp_changed();
     }

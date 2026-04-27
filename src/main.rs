@@ -63,6 +63,8 @@ impl App {
         let custom_list = CustomThemeListModel::default();
         let custom_theme_list = QObjectBox::new(custom_list);
 
+        crate::audio::config::AppConfig::set_initializing(false);
+
         Self {
             music_model,
             dsp_model,
