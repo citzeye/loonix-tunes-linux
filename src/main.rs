@@ -39,7 +39,7 @@ impl App {
         let config = music_raw.get_shared_config();
 
         let music_model = QObjectBox::new(music_raw);
-        let dsp_model = QObjectBox::new(DspController::new(ffmpeg, config.clone()));
+        let dsp_model = QObjectBox::new(DspController::new(ffmpeg));
 
         // Initialize DSP config (load dsp.json or create fresh)
         if let Some(ref shared_config) = config {

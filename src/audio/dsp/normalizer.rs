@@ -82,12 +82,8 @@ impl AudioNormalizer {
         }
     }
 
-    /// Set the target gain (from scanner). The normalizer will smoothly
-    /// transition to this value over the configured smoothing period.
     pub fn set_fixed_gain(&mut self, gain: f32) {
-        self.fixed_gain = gain.clamp(0.01, 128.0);
-        // On track change, snap current_gain to old fixed_gain is already there.
-        // The smoothing will ramp from current_gain -> new fixed_gain.
+        self.fixed_gain = gain.clamp(0.01, 3.98);
     }
 
     pub fn get_fixed_gain(&self) -> f32 {
@@ -98,7 +94,6 @@ impl AudioNormalizer {
         self.current_gain
     }
 
-    /// Force snap to fixed_gain immediately (no smoothing).
     pub fn snap_to_target(&mut self) {
         self.current_gain = self.fixed_gain;
     }
@@ -112,16 +107,9 @@ impl DspProcessor for AudioNormalizer {
             output.copy_from_slice(input);
             return;
         }
-
-        // Read smoothing factor from shared atomic (lock-free)
         let smoothing = get_smoothing_value();
-
-        // Read gain from shared atomic (set by UI/scanner)
-        let target_gain = get_gain_value();
-
-        // Update fixed_gain from atomic
+        let target_gain = get_gain_value().clamp(0.01, 3.98);
         self.fixed_gain = target_gain;
-
         let target = self.fixed_gain;
         for i in 0..input.len() {
             self.current_gain += (target - self.current_gain) * smoothing;
@@ -130,7 +118,6 @@ impl DspProcessor for AudioNormalizer {
     }
 
     fn reset(&mut self) {
-        // On reset (e.g. seek), snap to target to avoid ramping artifacts
         self.current_gain = self.fixed_gain;
     }
 
@@ -143,8 +130,6 @@ impl DspProcessor for AudioNormalizer {
     }
 }
 
-/// Soft limiter/clipper using tanh saturation.
-/// Smoothly saturates signal near +/-0.99 to prevent digital clipping.
 #[inline(always)]
 fn soft_clip(sample: f32) -> f32 {
     (0.99 * sample.tanh()).clamp(-0.99, 0.99)

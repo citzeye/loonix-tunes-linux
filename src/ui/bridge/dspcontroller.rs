@@ -211,7 +211,6 @@ pub struct DspController {
 impl DspController {
     pub fn new(
         ffmpeg: Arc<Mutex<crate::audio::engine::FfmpegEngine>>,
-        saved_config: Option<Arc<Mutex<AppConfig>>>,
     ) -> Self {
         let mut controller = Self::default();
         controller.eq_bands_raw = [0.0; 10];
@@ -257,7 +256,9 @@ impl DspController {
             let mut new_config = DspConfig::dsp_user_template();
             new_config.active_preset_index = 0;
             new_config.dsp_enabled = true;
-            let save_result = new_config.save();
+            if let Err(save_err) = new_config.save() {
+                eprintln!("Error saving dsp config: {:?}", save_err);
+            }
             // eprintln!("[DSP] Flow A: save_result: {:?}", save_result);
 
             // Initialize user preset names
@@ -268,7 +269,7 @@ impl DspController {
             // Set DSP enabled state AND store to Audio Engine (Atomic)
             self.dsp_enabled = true;
             crate::audio::dsp::get_dsp_bypass_arc()
-                .store(false, std::sync::atomic::Ordering::Relaxed); // inverted: false = DSP ON
+                .store(false, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::preamp::get_preamp_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed);
             self.dsp_changed();
@@ -285,7 +286,7 @@ impl DspController {
             // Restore dsp_enabled state from JSON AND store to Audio Engine
             self.dsp_enabled = dsp_config.dsp_enabled;
             crate::audio::dsp::get_dsp_bypass_arc()
-                .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed); // inverted
+                .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::eqpreamp::get_preamp_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed); // Preamp always ON
             // Convert dB from config to Linear for engine
@@ -859,7 +860,7 @@ impl DspController {
         let mut dsp_config = crate::audio::config::DspConfig::load();
         dsp_config.active_preset_index = index;
         if let Err(e) = dsp_config.save() {
-            // eprintln!("[DSP] Auto-save failed: {:?}", e);
+            eprintln!("Error saving dsp config: {:?}", e);
         } else {
             // eprintln!("[DSP] Auto-saved active_preset_index: {}", index);
         }
@@ -1380,7 +1381,7 @@ impl DspController {
     }
 
     pub fn set_surround_width(&mut self, val: f64) {
-        let actual_width = val.clamp(0.0, 1.0);
+        let actual_width = val * 2.0;
         self.surround_width = actual_width;
         crate::audio::dsp::surround::get_surround_width_arc()
             .store((actual_width as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);

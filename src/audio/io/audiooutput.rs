@@ -118,8 +118,6 @@ pub struct AudioOutput {
     old_track_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
     normalizer_enabled: Arc<AtomicBool>,
     normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
-    norm_input: Vec<f32>,
-    norm_output: Vec<f32>,
     selected_device_index: Arc<Mutex<Option<usize>>>,
     is_bluetooth_detected: Arc<AtomicBool>,
     switching: Arc<AtomicBool>,
@@ -178,8 +176,6 @@ impl AudioOutput {
              normalizer: Arc::new(Mutex::new(
                  crate::audio::dsp::normalizer::AudioNormalizer::new(true, -14.0),
              )),
-             norm_input: vec![0.0f32; 16384],
-             norm_output: vec![0.0f32; 16384],
              selected_device_index: Arc::new(Mutex::new(None)),
              is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
              switching: Arc::new(AtomicBool::new(false)),
@@ -598,10 +594,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
 
     fn audio_thread_loop(rx: mpsc::Receiver<AudioCommand>) {
         let _ = set_current_thread_priority(ThreadPriority::Max);
-
-        let mut current_handle: Option<pa_simple::Simple> = None;
-        #[allow(unused_assignments)]
-        let mut current_flush: Option<Arc<AtomicBool>> = None;
+        let current_handle: Option<pa_simple::Simple> = None;
 
         loop {
             match rx.recv() {
@@ -630,39 +623,29 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     reconnecting,
                     reconnect_attempts,
                 }) => {
-                    current_handle = Some(handle);
-                    current_flush = Some(flush_req);
-
-                    if let (Some(h), Some(flush_flag)) =
-                        (current_handle.take(), current_flush.take())
-                    {
-                        Self::push_loop_owned(
-                             h,
-                             consumer,
-                             should_stop,
-                             seek_mode,
-                             paused,
-                             flush_flag,
-                             seek_fade_remaining,
-                             volume_bits,
-                             balance_bits,
-                             mode,
-                             dsp_chain,
-                             dsp_enabled,
-                             normalizer_enabled,
-                             normalizer,
-                             samples_played,
-                             empty_callback_count,
-                             output_state,
-                             decoder_eof,
-                             is_bluetooth_detected,
-                             reconnecting,
-                             reconnect_attempts,
-                         );
-                    }
-
-                    current_handle = None;
-                    current_flush = None;
+                    Self::push_loop_owned(
+                        handle,
+                        consumer,
+                        should_stop,
+                        seek_mode,
+                        paused,
+                        flush_req,
+                        seek_fade_remaining,
+                        volume_bits,
+                        balance_bits,
+                        mode,
+                        dsp_chain,
+                        dsp_enabled,
+                        normalizer_enabled,
+                        normalizer,
+                        samples_played,
+                        empty_callback_count,
+                        output_state,
+                        decoder_eof,
+                        is_bluetooth_detected,
+                        reconnecting,
+                        reconnect_attempts,
+                    );
                 }
                 Ok(AudioCommand::Stop) => {}
                 Ok(AudioCommand::Flush) => {
@@ -682,8 +665,9 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                 }
 
                 Ok(AudioCommand::ReconnectDevice { device_name, retry_count }) => {
-                    println!("Reconnecting device {:?}, attempt: {}", device_name, retry_count);
-                    // Nanti logic reconnect lu taruh sini
+                    if let Err(e) = Self::reconnect_device(device_name.as_deref(), 48000, retry_count) {
+                        eprintln!("[AudioOutput] Reconnect gagal: {}", e);
+                    }
                 }
 
                 Err(_) => break,
@@ -724,7 +708,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
         let mut norm_input = vec![0.0f32; samples_per_write];
         let mut norm_output = vec![0.0f32; samples_per_write];
 
-        let mut bluetooth_detected = is_bluetooth_detected.load(Ordering::Relaxed);
+        let bluetooth_detected = is_bluetooth_detected.load(Ordering::Relaxed);
 
         const MAX_RECONNECT_ATTEMPTS: u32 = 3;
 
@@ -737,9 +721,8 @@ reconnecting: Arc::new(AtomicBool::new(false)),
 
             let current_detected = crate::core::services::wireless::isBluetoothDetected();
             if current_detected != bluetooth_detected {
-                bluetooth_detected = current_detected;
                 is_bluetooth_detected.store(current_detected, Ordering::Relaxed);
-                eprintln!("[AudioOutput] Device change detected, reconnecting...");
+                eprintln!("[AudioOutput] Device berubah. Bluetooth: {}. Reconnecting...", current_detected);
                 break;
             }
 
@@ -854,10 +837,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                 processed_buffer[..process_len].copy_from_slice(&read_buffer[..process_len]);
             }
 
+
             if normalizer_enabled.load(Ordering::SeqCst) {
-                norm_input[..process_len].copy_from_slice(&processed_buffer[..process_len]);
-                // Use try_lock() to avoid blocking audio thread
                 if let Ok(mut norm) = normalizer.try_lock() {
+                    norm_input[..process_len].copy_from_slice(&processed_buffer[..process_len]);
                     norm.process(&norm_input[..process_len], &mut norm_output[..process_len]);
                     processed_buffer[..process_len].copy_from_slice(&norm_output[..process_len]);
                 }

@@ -45,7 +45,7 @@ impl SurroundProcessor {
         let dt = 1.0 / sample_rate;
         let hp_coeff = rc / (rc + dt);
         Self {
-            current_width: 0.0,
+            current_width: 1.0,
             current_bass_safe: 1.0,
             hp_prev_in: 0.0,
             hp_prev_out: 0.0,
@@ -65,53 +65,39 @@ impl DspProcessor for SurroundProcessor {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         let is_on = get_surround_enabled_arc().load(Ordering::Relaxed);
         let target_width = bits_to_f32(get_surround_width_arc().load(Ordering::Relaxed));
-        let bass_safe = bits_to_f32(get_surround_bass_safe_arc().load(Ordering::Relaxed));
+        let bass_safe_val = bits_to_f32(get_surround_bass_safe_arc().load(Ordering::Relaxed));
 
-        // Bypass if off or target_width = 0.5 (Normal Stereo in 0-1 range)
+        self.current_width = target_width * 2.0;
+        self.current_bass_safe = bass_safe_val;
+
         if !is_on || (target_width - 0.5).abs() < 0.01 {
             output.copy_from_slice(input);
             return;
         }
 
-        // Scale from 0-1 to actual width (0-2 range for DSP)
-        let actual_width = target_width * 2.0;
-
-        // Lazy Update: Update bass_safe target
-        if (self.current_bass_safe - bass_safe).abs() > 0.01 {
-            self.current_bass_safe = bass_safe;
-        }
-
-        // Use target directly (no smoothing for responsiveness)
-        let actual_width = target_width * 2.0;
-        self.current_width = actual_width;
-
         let len = input.len();
-
         for i in (0..len).step_by(2) {
             if i + 1 >= len {
                 output[i] = input[i];
                 break;
             }
+
             let left_in = input[i];
             let right_in = input[i + 1];
 
-            // Mid/Side processing
             let mid = (left_in + right_in) * 0.5;
             let side = (left_in - right_in) * 0.5;
 
-            // Apply bass safe: only widen mid-high freqs if enabled
             let side_filtered = if self.current_bass_safe > 0.5 {
                 self.high_pass(side)
             } else {
                 side
             };
 
-            // Widen stereo image
             let widened_side = side_filtered * self.current_width;
 
-            // Recombine
-            output[i] = mid + widened_side;
-            output[i + 1] = mid - widened_side;
+            output[i] = (mid + widened_side).clamp(-1.0, 1.0);
+            output[i + 1] = (mid - widened_side).clamp(-1.0, 1.0);
         }
     }
 

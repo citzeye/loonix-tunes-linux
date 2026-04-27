@@ -6,6 +6,6 @@ pub use self::metadata::TrackMetadata;
 pub use self::scanner::Scanner;
 
 mod favorites;
-mod library;
+pub mod library;
 mod metadata;
 mod scanner;

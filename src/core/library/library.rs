@@ -1,184 +1,140 @@
-/* --- loonixtunesv2/src/core/library/library.rs | library --- */
-
+/* --- loonixtunesv2/src/audio/engine/library.rs | library --- */
+use crate::audio::config::AppConfig;
 use crate::audio::engine::{is_audio_file, MusicItem};
-use qmetaobject::QString;
-use std::collections::{HashMap, HashSet};
-use std::fs;
 use std::path::Path;
+use std::thread;
 
-/// Manages library data used by the UI.
-#[derive(Default)]
-pub struct LibraryManager {
-    // Mapping from folder name to its items
-    pub folders: HashMap<String, Vec<MusicItem>>, // cached folder contents
-    pub all_items: Vec<MusicItem>,               // items for the current view
-    pub display_list: Vec<MusicItem>,            // items presented to QML
-    pub expanded_folders: HashSet<String>,
-    pub custom_folders: Vec<(String, String)>, // (name, path)
-    pub favorites: Vec<(String, String)>,
-    pub external_files: Vec<MusicItem>,
-
+#[derive(Clone)]
+pub struct Library {
+    pub items: Vec<MusicItem>,
+    pub folders: Vec<String>,
     pub current_folder: String,
-    pub current_folder_path: String,
-    pub custom_folder_count: i32,
-    pub favorites_count: i32,
-    pub external_files_count: i32,
-
-    pub library_metadata: HashMap<String, crate::core::library::metadata::TrackMetadata>,
+    pub all_items: Vec<MusicItem>,
+    pub display_list: Vec<MusicItem>,
+    pub custom_folders: Vec<(String, String)>,
+    pub custom_folder_count: usize,
+    pub favorites: Vec<MusicItem>,
+    pub favorites_count: usize,
+    pub external_files: Vec<MusicItem>,
+    pub external_files_count: usize,
 }
 
-/// Public alias used throughout the codebase.
-pub type Library = LibraryManager;
+impl Default for Library {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-impl LibraryManager {
-    /// Create a new manager (default implementation).
+impl Library {
     pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Load saved custom folders and favorites from the config.
-    pub fn load_folders(&mut self, custom_folders: Vec<(String, String)>, favorites: Vec<(String, String)>) {
-        self.custom_folders = custom_folders;
-        self.custom_folder_count = self.custom_folders.len() as i32;
-        self.favorites = favorites;
-        self.favorites_count = self.favorites.len() as i32;
-    }
-
-    /// Scan the user's Music directory and populate the library.
-    pub fn scan_music_folder(&mut self, music_dir: &Path) {
-        // Re‑use the engine library scanner for simplicity.
-        let mut engine_lib = crate::audio::engine::Library::new();
-        engine_lib.scan_music();
-        self.all_items = engine_lib.items.clone();
-        self.display_list = self.all_items.clone();
-        self.current_folder.clear();
-        self.current_folder_path.clear();
-    }
-
-    /// Scan an arbitrary directory selected by the user.
-    pub fn scan_custom_directory(&mut self, dir: &Path) {
-        let mut engine_lib = crate::audio::engine::Library::new();
-        engine_lib.scan_custom_directory(dir);
-        self.all_items = engine_lib.items.clone();
-        self.display_list = self.all_items.clone();
-        self.current_folder = dir.to_string_lossy().to_string();
-        self.current_folder_path = self.current_folder.clone();
-    }
-
-    /// Switch view to a custom folder.
-    pub fn switch_to_folder(&mut self, folder_path: &str) {
-        // Find the folder name corresponding to the path.
-        let name_opt = self
-            .custom_folders
-            .iter()
-            .find(|(_, p)| p == folder_path)
-            .map(|(n, _)| n.clone());
-        if let Some(name) = name_opt {
-            // Load folder contents lazily if not cached.
-            if !self.folders.contains_key(&name) {
-                let path = Path::new(folder_path);
-                let mut items = Vec::new();
-                if let Ok(entries) = fs::read_dir(path) {
-                    for entry in entries.flatten() {
-                        let p = entry.path();
-                        if is_audio_file(&p) {
-                            if let Some(fname) = p.file_name() {
-                                items.push(MusicItem {
-                                    name: fname.to_string_lossy().to_string(),
-                                    path: p.to_string_lossy().to_string(),
-                                    is_folder: false,
-                                    parent_folder: Some(name.clone()),
-                                });
-                            }
-                        }
-                    }
-                }
-                items.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-                self.folders.insert(name.clone(), items);
-            }
-            self.all_items = self.folders.get(&name).cloned().unwrap_or_default();
-            self.display_list = self.all_items.clone();
-            self.current_folder = name;
-            self.current_folder_path = folder_path.to_string();
+        Self {
+            items: Vec::new(),
+            folders: Vec::new(),
+            current_folder: String::new(),
+            all_items: Vec::new(),
+            display_list: Vec::new(),
+            custom_folders: Vec::new(),
+            custom_folder_count: 0,
+            favorites: Vec::new(),
+            favorites_count: 0,
+            external_files: Vec::new(),
+            external_files_count: 0,
         }
     }
 
-    /// Add a new custom folder tab.
+    pub fn load_folders(&mut self, folders: Vec<(String, String)>) {
+        self.custom_folders = folders;
+        self.custom_folder_count = self.custom_folders.len();
+    }
+
     pub fn add_folder(&mut self, path: String) {
         let name = Path::new(&path)
             .file_name()
-            .map(|n| n.to_string_lossy().to_string().to_uppercase())
-            .unwrap_or_else(|| path.clone());
-        self.custom_folders.push((name.clone(), path.clone()));
-        self.custom_folder_count = self.custom_folders.len() as i32;
-        self.folders.remove(&name);
-    }
-
-    pub fn get_folder_name(&self, index: i32) -> QString {
-        self.custom_folders
-            .get(index as usize)
-            .map(|(n, _)| QString::from(n.clone()))
-            .unwrap_or_default()
-    }
-
-    pub fn get_folder_path(&self, index: i32) -> QString {
-        self.custom_folders
-            .get(index as usize)
-            .map(|(_, p)| QString::from(p.clone()))
-            .unwrap_or_default()
-    }
-
-    pub fn remove_folder(&mut self, index: i32) {
-        if let Some((name, _)) = self.custom_folders.get(index as usize).cloned() {
-            self.folders.remove(&name);
-        }
-        self.custom_folders.remove(index as usize);
-        self.custom_folder_count = self.custom_folders.len() as i32;
-    }
-
-    /// Return items contained in the given folder (used for expand/collapse).
-    pub fn get_folder_contents(&self, target_path: &Path) -> Vec<MusicItem> {
-        let folder_name = target_path
-            .file_name()
             .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-        if let Some(cached) = self.folders.get(&folder_name) {
-            return cached.clone();
+            .unwrap_or_else(|| path.clone());
+        self.custom_folders.push((name, path));
+        self.custom_folder_count = self.custom_folders.len();
+    }
+
+    pub fn remove_folder(&mut self, index: usize) {
+        if index < self.custom_folders.len() {
+            self.custom_folders.remove(index);
+            self.custom_folder_count = self.custom_folders.len();
         }
-        // Fallback: read directory on the fly.
-        let mut items = Vec::new();
-        if let Ok(entries) = fs::read_dir(target_path) {
+    }
+
+    pub fn get_folder_name(&self, index: usize) -> String {
+        self.custom_folders.get(index).map(|f| f.0.clone()).unwrap_or_default()
+    }
+
+    pub fn get_folder_path(&self, index: usize) -> String {
+        self.custom_folders.get(index).map(|f| f.1.clone()).unwrap_or_default()
+    }
+
+    pub fn scan_music_folder(&mut self, dir: &Path) {
+        self.all_items.clear();
+        self.display_list.clear();
+
+        if let Ok(entries) = std::fs::read_dir(dir) {
             for entry in entries.flatten() {
-                let p = entry.path();
-                if is_audio_file(&p) {
-                    if let Some(fname) = p.file_name() {
-                        items.push(MusicItem {
-                            name: fname.to_string_lossy().to_string(),
-                            path: p.to_string_lossy().to_string(),
-                            is_folder: false,
-                            parent_folder: Some(folder_name.clone()),
-                        });
-                    }
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
+
+                if path.is_dir() {
+                    self.all_items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: true,
+                        parent_folder: None,
+                    });
+                } else if is_audio_file(&path) {
+                    self.all_items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: false,
+                        parent_folder: None,
+                    });
                 }
             }
         }
-        items.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-        items
+        
+        self.all_items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        });
+        
+        self.display_list = self.all_items.clone();
     }
 
-    // ---------- Favorites ---------------------------------------------------
+    pub fn switch_to_folder(&mut self, folder_path: &str) {
+        self.current_folder = folder_path.to_string();
+        self.scan_music_folder(Path::new(folder_path));
+    }
+
+    pub fn get_folder_contents(&mut self, target_path: &str) {
+        self.switch_to_folder(target_path);
+    }
+
     pub fn add_favorite(&mut self, path: String, name: String) {
-        self.favorites.push((name, path));
-        self.favorites_count = self.favorites.len() as i32;
+        if !self.is_favorite(&path) {
+            self.favorites.push(MusicItem {
+                name,
+                path,
+                is_folder: false,
+                parent_folder: None,
+            });
+            self.favorites_count = self.favorites.len();
+        }
     }
 
     pub fn remove_favorite(&mut self, path: &str) {
-        self.favorites.retain(|(_, p)| p != path);
-        self.favorites_count = self.favorites.len() as i32;
+        self.favorites.retain(|item| item.path != path);
+        self.favorites_count = self.favorites.len();
     }
 
     pub fn is_favorite(&self, path: &str) -> bool {
-        self.favorites.iter().any(|(_, p)| p == path)
+        self.favorites.iter().any(|item| item.path == path)
     }
 
     pub fn toggle_favorite(&mut self, path: String, name: String) {
@@ -190,50 +146,165 @@ impl LibraryManager {
     }
 
     pub fn switch_to_favorites(&mut self) {
-        let items: Vec<MusicItem> = self
-            .favorites
-            .iter()
-            .map(|(name, path)| MusicItem {
-                name: name.clone(),
-                path: path.clone(),
-                is_folder: false,
-                parent_folder: None,
-            })
-            .collect();
-        self.all_items = items.clone();
-        self.display_list = items;
-        self.current_folder = "FAVORITES".into();
-        self.current_folder_path.clear();
+        self.display_list = self.favorites.clone();
+        self.current_folder = "Favorites".to_string();
     }
 
-    // ---------- Config persistence -----------------------------------------
-    pub fn save_config(&self, cfg: &mut crate::audio::config::AppConfig) {
-        cfg.custom_folders = self.custom_folders.clone();
-        cfg.favorites = self.favorites.clone();
-    }
-
-    // ---------- External files --------------------------------------------
     pub fn add_external_file(&mut self, path: String) {
-        if let Some(fname) = Path::new(&path).file_name() {
+        let name = Path::new(&path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.clone());
+
+        if !self.external_files.iter().any(|i| i.path == path) {
             self.external_files.push(MusicItem {
-                name: fname.to_string_lossy().to_string(),
+                name,
                 path,
                 is_folder: false,
                 parent_folder: None,
             });
-            self.external_files_count = self.external_files.len() as i32;
+            self.external_files_count = self.external_files.len();
         }
     }
 
     pub fn switch_to_external(&mut self) {
-        self.all_items = self.external_files.clone();
-        self.display_list = self.all_items.clone();
-        self.current_folder = "EXTERNAL_FILES".into();
-        self.current_folder_path.clear();
+        self.display_list = self.external_files.clone();
+        self.current_folder = "External Files".to_string();
     }
 
     pub fn clear_external_files(&mut self) {
         self.external_files.clear();
         self.external_files_count = 0;
     }
+
+    pub fn save_config(&self, cfg: &mut AppConfig) {
+        cfg.custom_folders = self.custom_folders.clone();
+    }
+
+    pub fn scan_music_async<F>(callback: F)
+    where
+        F: FnOnce(Vec<MusicItem>) + Send + 'static,
+    {
+        thread::spawn(move || {
+            let music_dir = get_music_directory();
+
+            let mut items = Vec::new();
+            scan_directory_sync(&music_dir, &mut items);
+
+            items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+            });
+
+            callback(items);
+        });
+    }
+
+    pub fn scan_music(&mut self) {
+        let music_dir = get_music_directory();
+
+        self.current_folder = String::new();
+        self.items.clear();
+        self.folders.clear();
+
+        self.scan_directory(&music_dir);
+
+        self.items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        });
+    }
+
+    pub fn scan_directory(&mut self, dir: &Path) {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
+
+                if path.is_dir() {
+                    self.items.push(MusicItem {
+                        name: name.clone(),
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: true,
+                        parent_folder: None,
+                    });
+                } else if is_audio_file(&path) {
+                    self.items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: false,
+                        parent_folder: None,
+                    });
+                }
+            }
+        }
+    }
+
+    pub fn scan_custom_directory(&mut self, dir: &Path) {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
+
+                if is_audio_file(&path) {
+                    self.items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: false,
+                        parent_folder: None,
+                    });
+                }
+            }
+        }
+
+        self.items
+            .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    }
+
+    pub fn get_sorted_items(&self) -> Vec<MusicItem> {
+        let mut items = self.items.clone();
+        items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        });
+        items
+    }
+}
+
+fn scan_directory_sync(dir: &Path, items: &mut Vec<MusicItem>) {
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+
+            if path.is_dir() {
+                items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: true,
+                    parent_folder: None,
+                });
+            } else if is_audio_file(&path) {
+                items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: false,
+                    parent_folder: None,
+                });
+            }
+        }
+    }
+}
+
+fn get_music_directory() -> std::path::PathBuf {
+    if let Some(audio_dir) = dirs::audio_dir() {
+        return audio_dir;
+    }
+    if let Some(home) = dirs::home_dir() {
+        return home.join("Music");
+    }
+    std::path::PathBuf::from(".")
 }

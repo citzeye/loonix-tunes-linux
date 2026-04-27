@@ -2,7 +2,7 @@
 use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
 use crate::core::services::get_file_service;
-use crate::core::library::Library;
+use crate::core::library::library::Library;
 use crate::core::services::PlaybackController;
 use crate::ui::QueueController;
 use dirs;
@@ -298,8 +298,8 @@ impl MusicModel {
         model.playback.volume = model.volume;
         
         model.library = crate::core::library::Library::new();
-        model.library.load_folders(saved_config.custom_folders.clone(), saved_config.favorites.clone());
-        model.custom_folder_count = model.library.custom_folder_count;
+        model.library.load_folders(saved_config.custom_folders.clone());
+        model.custom_folder_count = model.library.custom_folder_count as i32;
         model.custom_folders_changed();
         model.scan_music();
 
@@ -377,14 +377,14 @@ impl MusicModel {
         let clean = clean_qml_path(&path);
         self.library.add_folder(clean.clone());
         let new_index = self.library.custom_folder_count - 1;
-        self.custom_folder_count = self.library.custom_folder_count;
+        self.custom_folder_count = self.library.custom_folder_count as i32;
         self.custom_folders_changed();
         
         // Auto-lock new folder and save to config
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
-                if !cfg.locked_folders.contains(&new_index) {
-                    cfg.locked_folders.push(new_index);
+                if !cfg.locked_folders.contains(&(new_index as i32)) {
+                    cfg.locked_folders.push(new_index as i32);
                     let _ = cfg.save();
                 }
             }
@@ -397,15 +397,15 @@ impl MusicModel {
     }
 
     pub fn get_custom_folder_name(&self, index: i32) -> QString {
-        self.library.get_folder_name(index)
+        self.library.get_folder_name(index as usize).into()
     }
 
     pub fn get_custom_folder_path(&self, index: i32) -> QString {
-        self.library.get_folder_path(index)
+        self.library.get_folder_path(index as usize).into()
     }
 
     pub fn get_current_rename_name(&self, index: i32) -> QString {
-        self.library.get_folder_name(index)
+        self.library.get_folder_name(index as usize).into()
     }
 
     pub fn rename_folder(&mut self, index: i32, new_name: String) {
@@ -421,12 +421,12 @@ impl MusicModel {
     }
 
     pub fn get_custom_folder_count(&self) -> i32 { 
-        self.library.custom_folder_count 
+        self.library.custom_folder_count as i32
     }
 
     pub fn remove_custom_folder(&mut self, index: i32) {
-        self.library.remove_folder(index);
-        self.custom_folder_count = self.library.custom_folder_count;
+        self.library.remove_folder(index as usize);
+        self.custom_folder_count = self.library.custom_folder_count as i32;
         self.custom_folders_changed();
         self.save_custom_folders();
     }
@@ -459,25 +459,20 @@ impl MusicModel {
         if self.expanded_folders.contains(&folder_path) {
             // COLLAPSE LOGIC
             self.expanded_folders.remove(&folder_path);
-            // Hapus semua yang bapaknya adalah path ini
             self.display_list.retain(|i| i.parent_folder.as_ref() != Some(&folder_path));
         } else {
             // EXPAND LOGIC
             self.expanded_folders.insert(folder_path.clone());
-            
-            // 3. SURGICAL POINT: Langsung pake folder_path (Absolute)
-            let target_path = Path::new(&folder_path);
-            let contents = self.library.get_folder_contents(&target_path);
+            self.library.get_folder_contents(&folder_path);
+            let contents = self.library.display_list.clone();
             
             if let Some(pos) = self.display_list.iter().position(|i| i.path == folder_path) {
                 for (offset, mut sub_item) in contents.into_iter().enumerate() {
-                    // 4. Paksa sub_item punya parent_folder yang tepat agar padding QML sinkron
                     sub_item.parent_folder = Some(folder_path.clone());
                     self.display_list.insert(pos + 1 + offset, sub_item);
                 }
             }
         }
-        
         // 5. Paksa UI Gambar Ulang
         self.begin_reset_model();
         self.end_reset_model();
@@ -488,14 +483,14 @@ impl MusicModel {
     // ==========================================
     pub fn add_favorite(&mut self, path: String, name: String) {
         self.library.add_favorite(path, name);
-        self.favorites_count = self.library.favorites_count;
+        self.favorites_count = self.library.favorites_count as i32;
         self.favorites_changed();
         self.save_favorites();
     }
 
     pub fn remove_favorite(&mut self, path: String) {
         self.library.remove_favorite(&path);
-        self.favorites_count = self.library.favorites_count;
+        self.favorites_count = self.library.favorites_count as i32;
         self.favorites_changed();
         self.save_favorites();
     }
@@ -506,7 +501,7 @@ impl MusicModel {
 
     pub fn toggle_favorite(&mut self, path: String, name: String) {
         self.library.toggle_favorite(path, name);
-        self.favorites_count = self.library.favorites_count;
+        self.favorites_count = self.library.favorites_count as i32;
         self.favorites_changed();
         self.save_favorites();
     }
@@ -918,7 +913,7 @@ impl MusicModel {
 
     pub fn add_external_file(&mut self, path: String) {
         self.library.add_external_file(path);
-        self.external_files_count = self.library.external_files_count;
+        self.external_files_count = self.library.external_files_count as i32;
         self.external_files_changed();
         self.switch_to_external_files();
     }
@@ -940,7 +935,7 @@ impl MusicModel {
 
     pub fn clear_external_files(&mut self) {
         self.library.clear_external_files();
-        self.external_files_count = self.library.external_files_count;
+        self.external_files_count = self.library.external_files_count as i32;
         self.external_files_changed();
         self.scan_music();
     }
