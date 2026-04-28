@@ -8,7 +8,6 @@ static CRYSTAL_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
 static CRYSTAL_AMOUNT: OnceLock<AtomicU32> = OnceLock::new();
 static CRYSTAL_FREQ: OnceLock<AtomicU32> = OnceLock::new();
 static CRYSTAL_MAGIC_MODE: OnceLock<AtomicBool> = OnceLock::new();
-static LAST_CRYSTAL_AMOUNT: AtomicU32 = AtomicU32::new(0);
 
 pub fn get_crystal_enabled_arc() -> &'static AtomicBool {
     CRYSTAL_ENABLED.get_or_init(|| AtomicBool::new(false))

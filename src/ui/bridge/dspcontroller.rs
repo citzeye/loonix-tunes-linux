@@ -11,7 +11,6 @@ use std::sync::{Arc, Mutex};
 enum PresetSource {
     Factory(usize),
     User(usize),
-    Preserve,
 }
 
 #[derive(QObject, Default)]
@@ -831,7 +830,6 @@ impl DspController {
                     arc[i].store(effective.to_bits(), std::sync::atomic::Ordering::Relaxed);
                 }
             }
-            PresetSource::Preserve => {}
         }
 
         self.eq_bands = self.sync_eq_bands();
