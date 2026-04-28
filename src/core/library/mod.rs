@@ -7,5 +7,5 @@ pub use self::scanner::Scanner;
 
 mod favorites;
 pub mod library;
-mod metadata;
-mod scanner;
+pub mod metadata;
+pub mod scanner;

@@ -5,7 +5,7 @@ use crate::audio::io::decoder;
 use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::io::decoder::{DecoderControl, DecoderEvent, DecoderHandle};
 use crate::audio::dsp::DspSettings;
-use crate::audio::scanner;
+use crate::core::library::scanner;
 use ringbuf::traits::Split;
 use ringbuf::{HeapProd, HeapRb};
 use serde::{Deserialize, Serialize};

@@ -102,7 +102,7 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        crate::audio::wireless::startSystemCheck();
+        crate::core::services::wireless::startSystemCheck();
     }
 
     let app = App::new();
@@ -139,7 +139,7 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        crate::audio::wireless::stop_system_check();
+        crate::core::services::wireless::stop_system_check();
     }
 
     println!("[MAIN] Clean shutdown complete");

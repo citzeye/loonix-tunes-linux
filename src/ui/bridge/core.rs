@@ -4,6 +4,7 @@ use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
 use crate::core::services::get_file_service;
 use crate::core::library::library::Library;
 use crate::core::services::PlaybackController;
+use crate::core::library::metadata::read_track_metadata;
 use crate::ui::QueueController;
 use dirs;
 use qmetaobject::prelude::*;
@@ -792,7 +793,7 @@ impl MusicModel {
     }
 
     pub fn load_track_info(&mut self, path: String) {
-        let meta = crate::audio::metadata::read_track_metadata(&path);
+        let meta = crate::core::library::metadata::read_track_metadata(&path);
         self.track_info_title = meta.title.into();
         self.track_info_artist = meta.artist.into();
         self.track_info_album = meta.album.into();

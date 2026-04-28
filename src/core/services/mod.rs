@@ -12,6 +12,6 @@ pub use self::wireless::WirelessManager;
 mod fileservice;
 mod playback;
 #[cfg(target_os = "linux")]
-mod sysmedia;
+pub mod sysmedia;
 #[cfg(target_os = "linux")]
 pub mod wireless;
