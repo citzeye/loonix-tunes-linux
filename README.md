@@ -41,3 +41,10 @@ If you prefer to compile Loonix-Tunes yourself, ensure you have the Rust toolcha
 git clone [https://github.com/citzeye/loonix-tunes-linux.git](https://github.com/citzeye/loonix-tunes-linux.git)
 cd loonix-tunes-linux
 cargo build --release
+```
+
+🤝 Issues, and feature requests are welcome! Feel free to check the issues page.
+
+Created with ❤️ by citzeye
+
+
