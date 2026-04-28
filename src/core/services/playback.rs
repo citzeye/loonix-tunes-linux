@@ -269,7 +269,17 @@ impl PlaybackController {
     }
 
     pub fn toggle_abrepeat(&mut self) {
-        let current_position = self.position as f64 / 1000.0;
-        self.abrepeat.toggle(current_position);
+        // Get position directly from engine (most accurate)
+        let current_position = if let Ok(ff) = self.ffmpeg.lock() {
+            ff.get_position_immut()
+        } else {
+            0.0
+        };
+        // Toggle on the shared abrepeat instance in FfmpegEngine
+        if let Ok(ff) = self.ffmpeg.lock() {
+            if let Ok(mut ab) = ff.abrepeat.lock() {
+                ab.toggle(current_position);
+            }
+        }
     }
 }

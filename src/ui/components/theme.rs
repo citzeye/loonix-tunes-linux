@@ -11,7 +11,6 @@ use std::sync::{Arc, Mutex};
 
 use crate::audio::config::{AppConfig, ConfigError};
 
-const ROLE_ID: i32 = 256;
 const ROLE_NAME: i32 = 257;
 const ROLE_COLORS: i32 = 258;
 

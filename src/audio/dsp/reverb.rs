@@ -224,62 +224,6 @@ impl Reverb {
             current_mode: ReverbMode::Off,
         }
     }
-
-    fn update_params(&mut self, mode: ReverbMode, amount: f32) {
-        let mode_idx = match mode {
-            ReverbMode::Studio => 0,
-            ReverbMode::Stage => 1,
-            ReverbMode::Stadium => 2,
-            ReverbMode::Off => return,
-        };
-
-        let base = BASE_PARAMS[mode_idx];
-        let room = base.room_size * SCALE_ROOM + OFFSET_ROOM;
-        let damp = base.damping * SCALE_DAMP;
-        let _wet = base.wet * SCALE_WET * (amount / 100.0);
-
-        for i in 0..4 {
-            self.comb_l[i].set_feedback_and_damp(room, damp);
-            self.comb_r[i].set_feedback_and_damp(room - self.stereo_spread / 100.0 * 0.28, damp);
-        }
-
-        self.predelay_size = (base.predelay_ms * self.sample_rate / 1000.0) as usize;
-        self.predelay_size = self.predelay_size.min(4096);
-
-        self.allpass_l[0].feedback = INITIAL_REVERB;
-        self.allpass_r[0].feedback = INITIAL_REVERB - self.stereo_spread / 200.0;
-        self.allpass_l[1].feedback = INITIAL_REVERB;
-        self.allpass_r[1].feedback = INITIAL_REVERB - self.stereo_spread / 200.0;
-    }
-
-    #[inline(always)]
-    fn process_stereo(&mut self, input_l: f32, input_r: f32, wet: f32, _width: f32) -> (f32, f32) {
-        // 🔥 TRUE STEREO: Each channel has its own predelay buffer
-        self.predelay_l[self.predelay_idx] = input_l * FIXED_GAIN;
-
-        let _delayed_l = self.predelay_l[(self.predelay_idx + 4096 - self.predelay_size) % 4096];
-        self.predelay_idx = (self.predelay_idx + 1) % 4096;
-
-        let mut out_l = 0.0f32;
-        let mut out_r = 0.0f32;
-
-        // 🔥 TRUE STEREO: Left processes left, Right processes right
-        for i in 0..4 {
-            out_l += self.comb_l[i].process(input_l);
-            out_r += self.comb_r[i].process(input_r);
-        }
-
-        out_l = self.allpass_l[0].process(out_l);
-        out_r = self.allpass_r[0].process(out_r);
-        out_l = self.allpass_l[1].process(out_l);
-        out_r = self.allpass_r[1].process(out_r);
-
-        // Simple wet/dry mix
-        let left = input_l + out_l * wet;
-        let right = input_r + out_r * wet;
-
-        (left, right)
-    }
 }
 
 impl DspProcessor for Reverb {

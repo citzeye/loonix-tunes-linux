@@ -40,6 +40,7 @@ pub enum AudioCommand {
         is_bluetooth_detected: Arc<AtomicBool>,
         reconnecting: Arc<AtomicBool>,
         reconnect_attempts: Arc<AtomicU32>,
+        abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
     },
     Stop,
     Flush,
@@ -126,6 +127,7 @@ pub struct AudioOutput {
     available_devices: Arc<Mutex<Vec<AudioDevice>>>,
     output_state: Arc<AtomicU32>,
     decoder_eof: Arc<AtomicBool>,
+    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
 }
 
 impl Default for AudioOutput {
@@ -183,6 +185,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
              available_devices: Arc::new(Mutex::new(Vec::new())),
              output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
              decoder_eof: Arc::new(AtomicBool::new(false)),
+             abrepeat: Arc::new(Mutex::new(crate::audio::engine::abrepeat::ABRepeat::default())),
          }
     }
 
@@ -492,6 +495,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     is_bluetooth_detected: self.is_bluetooth_detected.clone(),
                     reconnecting: self.reconnecting.clone(),
                     reconnect_attempts: self.reconnect_attempts.clone(),
+                    abrepeat: self.abrepeat.clone(),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
@@ -620,6 +624,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     is_bluetooth_detected,
                     reconnecting,
                     reconnect_attempts,
+                    abrepeat,
                 }) => {
                     Self::push_loop_owned(
                         handle,
@@ -643,6 +648,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                         is_bluetooth_detected,
                         reconnecting,
                         reconnect_attempts,
+                        abrepeat,
                     );
                 }
                 Ok(AudioCommand::Stop) => {}
@@ -713,6 +719,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
         is_bluetooth_detected: Arc<AtomicBool>,
         reconnecting: Arc<AtomicBool>,
         reconnect_attempts: Arc<AtomicU32>,
+        abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
     ) {
         let channels = 2;
         let frames_per_write = 1024usize;
@@ -841,6 +848,17 @@ reconnecting: Arc::new(AtomicBool::new(false)),
             reconnect_attempts.store(0, Ordering::Relaxed);
 
             samples_played.fetch_add(samples_read as u64, Ordering::SeqCst);
+
+            // Check A-B Repeat loop
+            let current_pos_secs = (samples_played.load(Ordering::SeqCst) as f64) / (48000.0 * 2.0);
+            if let Ok(ab) = abrepeat.lock() {
+                if let Some(seek_to) = ab.check_loop(current_pos_secs) {
+                    // Trigger seek to point A
+                    let _seek_ms = (seek_to * 1000.0) as u32;
+                    // We can't seek directly here, need to communicate with decoder
+                    // For now, just drop to decoder loop handling
+                }
+            }
 
             let process_len = samples_read.min(read_buffer.len());
             if dsp_enabled.load(Ordering::SeqCst) {

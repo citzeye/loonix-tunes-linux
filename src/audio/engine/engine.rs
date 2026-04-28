@@ -10,7 +10,7 @@ use ringbuf::traits::Split;
 use ringbuf::{HeapProd, HeapRb};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
-use std::sync::{mpsc, Arc};
+use std::sync::{mpsc, Arc, Mutex};
 
 /* ------------------------------------------------ */
 /* OUTPUT MODE                                      */
@@ -193,9 +193,14 @@ impl Engine {
     /* START AUDIO                                      */
     /* ------------------------------------------------ */
 
-    pub fn start_audiooutput(&mut self, path: String) {
+    pub fn start_audiooutput(&mut self, path: String, abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>) {
         // State transition: Stopped -> Loading
         self.playback_state = PlaybackState::Loading;
+
+        // Reset A-B Repeat on new track
+        if let Ok(mut ab) = abrepeat.lock() {
+            ab.reset();
+        }
 
         // 1. Setup Ring Buffer - 120ms for low latency
         let sample_rate = 48000; // frames per second
@@ -239,6 +244,7 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
     producer,
     control_for_decoder.clone(),
     actual_sample_rate,
+    abrepeat.clone(),
 ));
         } else {
             eprintln!("[Engine] Failed to start playback: producer not available");
@@ -770,6 +776,7 @@ pub struct FfmpegEngine {
     current_path: Option<String>,
     is_finished: bool,
     scan_params: scanner::ScanParams,
+    pub abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
 }
 
 impl FfmpegEngine {
@@ -780,6 +787,7 @@ impl FfmpegEngine {
             current_path: None,
             is_finished: false,
             scan_params: scanner::ScanParams::default(),
+            abrepeat: Arc::new(Mutex::new(crate::audio::engine::abrepeat::ABRepeat::default())),
         }
     }
 
@@ -815,7 +823,7 @@ impl FfmpegEngine {
 
             engine.set_normalizer_gain(1.0);
 
-            engine.start_audiooutput(path.to_string());
+            engine.start_audiooutput(path.to_string(), self.abrepeat.clone());
 
             engine.playback_state = PlaybackState::Paused;
 
@@ -944,6 +952,19 @@ impl FfmpegEngine {
     pub fn get_duration(&self) -> f64 {
         if let Some(ref engine) = self.engine {
             engine.get_duration()
+        } else {
+            0.0
+        }
+    }
+
+    /// Get position without requiring &mut self (reads from samples_played)
+    pub fn get_position_immut(&self) -> f64 {
+        if let Some(ref engine) = self.engine {
+            if engine.sample_rate == 0 {
+                return 0.0;
+            }
+            // samples_played / sample_rate = seconds
+            engine.samples_played as f64 / (engine.sample_rate as f64 * engine.channels as f64)
         } else {
             0.0
         }

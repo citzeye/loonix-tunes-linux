@@ -693,6 +693,24 @@ impl MusicModel {
 
     pub fn toggle_abrepeat(&mut self) {
         self.playback.toggle_abrepeat();
+        self.sync_abrepeat();
+    }
+
+    pub fn sync_abrepeat(&mut self) {
+        if let Ok(ff) = self.ffmpeg.lock() {
+            if let Ok(ab) = ff.abrepeat.lock() {
+                self.ab_state = match ab.state() {
+                    crate::audio::engine::abrepeat::ABRepeatState::Off => 0,
+                    crate::audio::engine::abrepeat::ABRepeatState::ASet => 1,
+                    crate::audio::engine::abrepeat::ABRepeatState::Active => 2,
+                };
+                self.ab_point_a = (ab.point_a() * 1000.0) as i32;
+                self.ab_point_b = (ab.point_b() * 1000.0) as i32;
+                self.ab_state_changed();
+                self.ab_point_a_changed();
+                self.ab_point_b_changed();
+            }
+        }
     }
 
     pub fn seek_to(&mut self, pos: i32) {

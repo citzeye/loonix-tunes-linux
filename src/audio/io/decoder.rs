@@ -126,8 +126,9 @@ pub fn spawn_decoder(
     path: String,
     producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
+    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
 ) -> DecoderHandle {
-    spawn_decoder_with_sample_rate(path, producer, control, 48000)
+    spawn_decoder_with_sample_rate(path, producer, control, 48000, abrepeat)
 }
 
 pub fn spawn_decoder_with_sample_rate(
@@ -135,11 +136,12 @@ pub fn spawn_decoder_with_sample_rate(
     producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
     output_sample_rate: u32,
+    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
 ) -> DecoderHandle {
     let control_clone = control.clone();
     let thread_handle = std::thread::Builder::new()
         .name("decoder".to_string())
-        .spawn(move || decoder_loop(path, producer, control_clone, output_sample_rate))
+        .spawn(move || decoder_loop(path, producer, control_clone, output_sample_rate, abrepeat))
         .ok();
 
     DecoderHandle {
@@ -153,6 +155,7 @@ fn decoder_loop(
     mut producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
     output_sample_rate: u32,
+    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
 ) {
     loop {
         if control.should_stop.load(Ordering::SeqCst) {
@@ -320,6 +323,17 @@ fn decoder_loop(
                     .store(total_decoded_samples, Ordering::SeqCst);
                 last_reported_samples = total_decoded_samples;
             }
+
+            // Check A-B Repeat
+            let current_pos_secs = total_decoded_samples as f64 / (output_sample_rate as f64 * 2.0);
+            if let Ok(ab) = abrepeat.lock() {
+                if let Some(seek_to) = ab.check_loop(current_pos_secs) {
+                    let seek_ms = (seek_to * 1000.0) as i64;
+                    control.is_seeking.store(true, Ordering::Release);
+                    control.seek_request.store(seek_ms as u64, Ordering::Relaxed);
+                }
+            }
+            
 
             let seek_state = control.seeking_state.load(Ordering::SeqCst);
 
