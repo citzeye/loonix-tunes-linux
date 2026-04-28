@@ -138,7 +138,7 @@ pub struct MusicModel {
     pub play_previous: qt_method!(fn(&mut self)),
     pub toggle_shuffle: qt_method!(fn(&mut self)),
     pub toggle_repeat: qt_method!(fn(&mut self)),
-    pub toggle_abrepeat: qt_method!(fn(&mut self)),
+    pub toggle_abloop: qt_method!(fn(&mut self)),
     pub seek_to: qt_method!(fn(&mut self, position: i32)),
     pub format_time: qt_method!(fn(&self, ms: i32) -> QString),
     pub set_volume: qt_method!(fn(&mut self, vol: f64)),
@@ -691,18 +691,18 @@ impl MusicModel {
         self.loop_changed();
     }
 
-    pub fn toggle_abrepeat(&mut self) {
-        self.playback.toggle_abrepeat();
-        self.sync_abrepeat();
+    pub fn toggle_abloop(&mut self) {
+        self.playback.toggle_ab_loop();
+        self.sync_abloop();
     }
 
-    pub fn sync_abrepeat(&mut self) {
+    pub fn sync_abloop(&mut self) {
         if let Ok(ff) = self.ffmpeg.lock() {
-            if let Ok(ab) = ff.abrepeat.lock() {
+            if let Ok(ab) = ff.ab_loop.lock() {
                 self.ab_state = match ab.state() {
-                    crate::audio::engine::abrepeat::ABRepeatState::Off => 0,
-                    crate::audio::engine::abrepeat::ABRepeatState::ASet => 1,
-                    crate::audio::engine::abrepeat::ABRepeatState::Active => 2,
+                    crate::audio::engine::abloop::ABLoopState::Off => 0,
+                    crate::audio::engine::abloop::ABLoopState::ASet => 1,
+                    crate::audio::engine::abloop::ABLoopState::Active => 2,
                 };
                 self.ab_point_a = (ab.point_a() * 1000.0) as i32;
                 self.ab_point_b = (ab.point_b() * 1000.0) as i32;
@@ -760,19 +760,31 @@ impl MusicModel {
         } else { false };
         if should_next { self.play_next(); }
         if self.tick_counter % 100 == 0 { self.save_state(); }
+        // Sync ABLoop state every tick to ensure UI is always updated
+        self.sync_abloop();
     }
 
     pub fn start_update_loop(&mut self) {
-        if let Some(ref config) = &self.saved_config {
+        // Extract path first to avoid borrow conflict
+        let last_path = if let Some(ref config) = &self.saved_config {
             if let Ok(cfg) = config.lock() {
-                let path = cfg.last_track_path.clone();
-                if let Some(pos) = self.display_list.iter().position(|i| i.path == path) {
-                    self.current_index = pos as i32;
-                    self.current_title = QString::from(self.display_list[pos].name.clone());
-                    if let Ok(mut ff) = self.ffmpeg.lock() { ff.load(&path); }
-                    self.current_index_changed();
-                    self.title_changed();
-                }
+                Some(cfg.last_track_path.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        if let Some(path) = last_path {
+            if let Some(pos) = self.display_list.iter().position(|i| i.path == path) {
+                self.current_index = pos as i32;
+                self.current_title = QString::from(self.display_list[pos].name.clone());
+                if let Ok(mut ff) = self.ffmpeg.lock() { ff.load(&path); }
+                self.current_index_changed();
+                self.title_changed();
+                // Sync ABLoop state after track change (reset in load())
+                self.sync_abloop();
             }
         }
     }

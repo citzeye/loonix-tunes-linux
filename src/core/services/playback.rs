@@ -1,6 +1,5 @@
 /* --- loonixtunesv2/src/core/services/playback.rs | playback --- */
 
-use crate::audio::engine::abrepeat::ABRepeat;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};
 use qmetaobject::QString;
 use std::sync::{Arc, Mutex};
@@ -21,7 +20,6 @@ pub struct PlaybackController {
     pub shuffle_queue: Vec<i32>,
     pub queue_index: usize,
 
-    pub abrepeat: ABRepeat,
     pub tick_counter: u32,
 }
 
@@ -40,7 +38,6 @@ impl Default for PlaybackController {
             loop_active: false,
             shuffle_queue: Vec::new(),
             queue_index: 0,
-            abrepeat: ABRepeat::default(),
             tick_counter: 0,
         }
     }
@@ -61,7 +58,6 @@ impl PlaybackController {
             loop_active: false,
             shuffle_queue: Vec::new(),
             queue_index: 0,
-            abrepeat: ABRepeat::default(),
             tick_counter: 0,
         }
     }
@@ -268,16 +264,16 @@ impl PlaybackController {
         Some((prev_idx, display_list[prev_idx].clone()))
     }
 
-    pub fn toggle_abrepeat(&mut self) {
+    pub fn toggle_ab_loop(&mut self) {
         // Get position directly from engine (most accurate)
         let current_position = if let Ok(ff) = self.ffmpeg.lock() {
             ff.get_position_immut()
         } else {
             0.0
         };
-        // Toggle on the shared abrepeat instance in FfmpegEngine
+        // Toggle on the shared ab_loop instance in FfmpegEngine
         if let Ok(ff) = self.ffmpeg.lock() {
-            if let Ok(mut ab) = ff.abrepeat.lock() {
+            if let Ok(mut ab) = ff.ab_loop.lock() {
                 ab.toggle(current_position);
             }
         }

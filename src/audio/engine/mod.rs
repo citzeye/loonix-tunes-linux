@@ -1,6 +1,6 @@
 /* --- loonixtunesv2/src/audio/engine/mod.rs | mod --- */
 
-// Re-export all engine modules
+pub mod abloop;
 pub mod clock;
 pub mod engine;
 pub mod scheduler;
@@ -14,6 +14,3 @@ pub use self::engine::{
 };
 pub use self::scheduler::Scheduler;
 pub use self::seek::SeekController;
-
-// A-B Repeat (moved from audio/dsp/)
-pub mod abrepeat;

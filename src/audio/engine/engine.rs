@@ -193,12 +193,12 @@ impl Engine {
     /* START AUDIO                                      */
     /* ------------------------------------------------ */
 
-    pub fn start_audiooutput(&mut self, path: String, abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>) {
+    pub fn start_audiooutput(&mut self, path: String, ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>) {
         // State transition: Stopped -> Loading
         self.playback_state = PlaybackState::Loading;
 
-        // Reset A-B Repeat on new track
-        if let Ok(mut ab) = abrepeat.lock() {
+        // Reset A-B Loop on new track
+        if let Ok(mut ab) = ab_loop.lock() {
             ab.reset();
         }
 
@@ -244,7 +244,7 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
     producer,
     control_for_decoder.clone(),
     actual_sample_rate,
-    abrepeat.clone(),
+    ab_loop.clone(),
 ));
         } else {
             eprintln!("[Engine] Failed to start playback: producer not available");
@@ -776,7 +776,7 @@ pub struct FfmpegEngine {
     current_path: Option<String>,
     is_finished: bool,
     scan_params: scanner::ScanParams,
-    pub abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
+    pub ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
 }
 
 impl FfmpegEngine {
@@ -787,7 +787,7 @@ impl FfmpegEngine {
             current_path: None,
             is_finished: false,
             scan_params: scanner::ScanParams::default(),
-            abrepeat: Arc::new(Mutex::new(crate::audio::engine::abrepeat::ABRepeat::default())),
+            ab_loop: Arc::new(Mutex::new(crate::audio::engine::abloop::ABLoop::default())),
         }
     }
 
@@ -823,7 +823,7 @@ impl FfmpegEngine {
 
             engine.set_normalizer_gain(1.0);
 
-            engine.start_audiooutput(path.to_string(), self.abrepeat.clone());
+            engine.start_audiooutput(path.to_string(), self.ab_loop.clone());
 
             engine.playback_state = PlaybackState::Paused;
 

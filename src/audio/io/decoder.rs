@@ -126,9 +126,9 @@ pub fn spawn_decoder(
     path: String,
     producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
-    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
+    ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
 ) -> DecoderHandle {
-    spawn_decoder_with_sample_rate(path, producer, control, 48000, abrepeat)
+    spawn_decoder_with_sample_rate(path, producer, control, 48000, ab_loop)
 }
 
 pub fn spawn_decoder_with_sample_rate(
@@ -136,12 +136,12 @@ pub fn spawn_decoder_with_sample_rate(
     producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
     output_sample_rate: u32,
-    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
+    ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
 ) -> DecoderHandle {
     let control_clone = control.clone();
     let thread_handle = std::thread::Builder::new()
         .name("decoder".to_string())
-        .spawn(move || decoder_loop(path, producer, control_clone, output_sample_rate, abrepeat))
+        .spawn(move || decoder_loop(path, producer, control_clone, output_sample_rate, ab_loop))
         .ok();
 
     DecoderHandle {
@@ -155,7 +155,7 @@ fn decoder_loop(
     mut producer: HeapProd<f32>,
     control: Arc<DecoderControl>,
     output_sample_rate: u32,
-    abrepeat: Arc<Mutex<crate::audio::engine::abrepeat::ABRepeat>>,
+    ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
 ) {
     loop {
         if control.should_stop.load(Ordering::SeqCst) {
@@ -252,6 +252,7 @@ fn decoder_loop(
         let mut total_decoded_samples: u64 = 0;
         let mut eof_reached = false;
         let mut last_reported_samples: u64 = 0;
+        let mut ab_loop_armed = true;
 
         // PRE-BUFFER: Fill ring buffer before signaling play
         // This ensures audio thread has data ready when is_playing = true
@@ -324,13 +325,23 @@ fn decoder_loop(
                 last_reported_samples = total_decoded_samples;
             }
 
-            // Check A-B Repeat
+            // Check A-B Loop
             let current_pos_secs = total_decoded_samples as f64 / (output_sample_rate as f64 * 2.0);
-            if let Ok(ab) = abrepeat.lock() {
-                if let Some(seek_to) = ab.check_loop(current_pos_secs) {
-                    let seek_ms = (seek_to * 1000.0) as i64;
-                    control.is_seeking.store(true, Ordering::Release);
-                    control.seek_request.store(seek_ms as u64, Ordering::Relaxed);
+            if let Ok(ab) = ab_loop.lock() {
+                match ab.state() {
+                    crate::audio::engine::abloop::ABLoopState::Active => {
+                        if current_pos_secs >= ab.point_b() && ab_loop_armed {
+                            if let Some(seek_to) = ab.check_loop(current_pos_secs) {
+                                let seek_ms = (seek_to * 1000.0) as i64;
+                                control.is_seeking.store(true, Ordering::Release);
+                                control.seek_request.store(seek_ms as u64, Ordering::Relaxed);
+                                ab_loop_armed = false;
+                            }
+                        }
+                    }
+                    _ => {
+                        ab_loop_armed = true;
+                    }
                 }
             }
             
@@ -444,6 +455,9 @@ fn decoder_loop(
                     .seeking_state
                     .store(SEEK_STATE_READY, Ordering::SeqCst);
 
+                // Reset AB loop armed flag when seek completes
+                ab_loop_armed = true;
+
                 // TIDAK PERNAH turunkan is_seeking di sini!
                 // Decoder hanya worker - ENGINE yang decide kapan audio boleh resume
                 // Engine.on_buffer_ready() akan:
@@ -550,6 +564,18 @@ fn decoder_loop(
             }
 
             if eof_reached {
+                // Check if AB Loop is active; if yes, don't send EndOfTrack and continue looping
+                let ab_loop_active = if let Ok(ab) = ab_loop.lock() {
+                    ab.state() == crate::audio::engine::abloop::ABLoopState::Active
+                } else {
+                    false
+                };
+                if ab_loop_active {
+                    eprintln!("[DECODER] EOF reached but AB Loop is active, continuing loop");
+                    eof_reached = false;
+                    continue;
+                }
+
                 let actual_output_samples = total_decoded_samples;
 
                 println!(
