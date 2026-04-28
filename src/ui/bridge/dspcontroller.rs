@@ -1336,8 +1336,10 @@ impl DspController {
     }
 
     pub fn set_bass_mode(&mut self, mode: i32) {
-        self.bass_mode = mode;
-        self.apply_bass_mode(mode);
+        let clamped = mode.clamp(0, 3);
+        self.bass_mode = clamped;
+        self.apply_bass_mode(clamped);
+        self.bass_mode_changed();
     }
 
     pub fn toggle_crystalizer(&mut self) {
