@@ -1,6 +1,6 @@
 /* --- loonixtunesv2/src/ui/bridge/core.rs | core --- */
 use crate::audio::io::audiooutput::AudioOutput;
-use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
+use crate::audio::engine::{FfmpegEngine, MusicItem};
 use crate::core::services::get_file_service;
 use crate::core::library::library::Library;
 use crate::core::services::PlaybackController;
@@ -64,7 +64,6 @@ pub struct MusicModel {
 
     // --- Controllers ---
     pub(crate) ffmpeg: Arc<Mutex<FfmpegEngine>>,
-    pub(crate) audio: Arc<Mutex<AudioState>>,
     pub(crate) output: AudioOutput,
     pub(crate) playback: PlaybackController,
     pub(crate) library: Library,
@@ -276,7 +275,6 @@ impl MusicModel {
 
         let mut model = Self {
             ffmpeg: ffmpeg.clone(),
-            audio: Arc::new(Mutex::new(AudioState::default())),
             output: AudioOutput::default(),
             volume: saved_config.volume as f64,
             current_index: -1,
@@ -294,7 +292,7 @@ impl MusicModel {
             ff.set_volume(model.volume as f32);
         }
 
-        model.playback = PlaybackController::new(model.ffmpeg.clone(), model.audio.clone());
+        model.playback = PlaybackController::new(model.ffmpeg.clone());
         model.playback.volume = model.volume;
         
         model.library = crate::core::library::Library::new();

@@ -1,12 +1,11 @@
 /* --- loonixtunesv2/src/core/services/playback.rs | playback --- */
 
-use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};
+use crate::audio::engine::{FfmpegEngine, MusicItem, PlaybackState};
 use qmetaobject::QString;
 use std::sync::{Arc, Mutex};
 
 pub struct PlaybackController {
     pub(crate) ffmpeg: Arc<Mutex<FfmpegEngine>>,
-    pub(crate) audio: Arc<Mutex<AudioState>>,
 
     pub current_title: QString,
     pub current_index: i32,
@@ -27,7 +26,6 @@ impl Default for PlaybackController {
     fn default() -> Self {
         Self {
             ffmpeg: Arc::new(Mutex::new(FfmpegEngine::new())),
-            audio: Arc::new(Mutex::new(AudioState::default())),
             current_title: QString::default(),
             current_index: -1,
             position: 0,
@@ -44,10 +42,9 @@ impl Default for PlaybackController {
 }
 
 impl PlaybackController {
-    pub fn new(ffmpeg: Arc<Mutex<FfmpegEngine>>, audio: Arc<Mutex<AudioState>>) -> Self {
+    pub fn new(ffmpeg: Arc<Mutex<FfmpegEngine>>) -> Self {
         Self {
             ffmpeg,
-            audio,
             current_title: QString::default(),
             current_index: -1,
             position: 0,
