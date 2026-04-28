@@ -4,7 +4,6 @@ use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
 use crate::core::services::get_file_service;
 use crate::core::library::library::Library;
 use crate::core::services::PlaybackController;
-use crate::core::library::metadata::read_track_metadata;
 use crate::ui::QueueController;
 use dirs;
 use qmetaobject::prelude::*;
@@ -802,10 +801,30 @@ impl MusicModel {
         self.track_info_title = meta.title.into();
         self.track_info_artist = meta.artist.into();
         self.track_info_album = meta.album.into();
+        self.track_info_year = meta.year.into();
+        self.track_info_genre = meta.genre.into();
+        self.track_info_duration = self.format_time((meta.duration_sec * 1000.0) as i32);
+        self.track_info_bitrate = format!("{} kbps", meta.bitrate_kbps).into();
+        self.track_info_sample_rate = format!("{} Hz", meta.sample_rate).into();
+        self.track_info_channels = format!("{}", meta.channels).into();
+        self.track_info_codec = meta.codec.into();
+        self.track_info_file_size = Self::format_file_size(meta.file_size_bytes);
         self.track_info_file_path = path.into();
         self.track_info_visible = true;
         self.track_info_visible_changed();
         self.track_info_changed();
+    }
+
+    fn format_file_size(bytes: u64) -> QString {
+        const KB: u64 = 1024;
+        const MB: u64 = KB * 1024;
+        if bytes >= MB {
+            format!("{:.1} MB", bytes as f64 / MB as f64).into()
+        } else if bytes >= KB {
+            format!("{:.1} KB", bytes as f64 / KB as f64).into()
+        } else {
+            format!("{} B", bytes).into()
+        }
     }
 
     pub fn close_track_info(&mut self) {
