@@ -1,9 +1,9 @@
 /* --- loonixtunesv2/src/audio/dsp/rack.rs | rack --- */
 
 use crate::audio::dsp::{
-    AudioNormalizer, BassBooster, Compressor, Crossfeed, Crystalizer, DspProcessor, DspSettings,
-    EqPreamp, EqProcessor, Limiter, MiddleClarity, PitchShifter, Reverb, StereoEnhance,
-    StereoWidth, SurroundProcessor,
+    BassBooster, Compressor, Crossfeed, Crystalizer, DspProcessor, DspSettings,
+    EqPreamp, EqProcessor, MiddleClarity, PitchShifter, Reverb, StereoEnhance,
+    MonoStereo, SurroundProcessor,
 };
 
 pub struct DspRack {
@@ -36,22 +36,25 @@ impl DspRack {
         // karena tipe Vec sudah didefinisikan di atas.
 
         processors.push(Box::new(EqPreamp::new()));
-        processors.push(Box::new(AudioNormalizer::new(true, -14.0)));
-
         processors.push(Box::new(EqProcessor::new()));
         processors.push(Box::new(Compressor::new()));
         processors.push(Box::new(BassBooster::new()));
         processors.push(Box::new(Reverb::new()));
         processors.push(Box::new(StereoEnhance::new()));
-        processors.push(Box::new(Crystalizer::new(48000.0)));
+        processors.push(Box::new(Crystalizer::new()));
         processors.push(Box::new(SurroundProcessor::new()));
-        processors.push(Box::new(StereoWidth::new()));
+        processors.push(Box::new(MonoStereo::new()));
         processors.push(Box::new(PitchShifter::new()));
         processors.push(Box::new(MiddleClarity::new()));
         processors.push(Box::new(Crossfeed::new()));
-        processors.push(Box::new(Limiter::new()));
 
         processors
+    }
+
+    pub fn set_sample_rate(&mut self, rate: f32) {
+        for processor in self.processors.iter_mut() {
+            processor.set_sample_rate(rate);
+        }
     }
 
     pub fn process(&mut self, input: &[f32], output: &mut [f32]) {

@@ -1,15 +1,16 @@
 /* --- loonixtunesv2/src/audio/engine/engine.rs | engine --- */
 
+use crate::audio::engine::clock::AudioClock;
+use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::io::audiooutput::OutputState;
 use crate::audio::io::decoder;
-use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::io::decoder::{DecoderControl, DecoderEvent, DecoderHandle};
 use crate::audio::dsp::DspSettings;
 use crate::core::library::scanner;
 use ringbuf::traits::Split;
 use ringbuf::{HeapProd, HeapRb};
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 
 /* ------------------------------------------------ */
@@ -152,6 +153,9 @@ pub struct Engine {
 
     // Decoder EOF flag - set on EndOfTrack, cleared when buffer drains
     decoder_eof: bool,
+
+    // SSoT: AudioClock for all timing (synced with AudioOutput samples)
+    audio_clock: AudioClock,
 }
 
 /* ------------------------------------------------ */
@@ -186,6 +190,7 @@ impl Engine {
             event_rx: None,
             end_of_track: false,
             decoder_eof: false,
+            audio_clock: AudioClock::new(48000, 2),
         }
     }
 
@@ -193,14 +198,27 @@ impl Engine {
     /* START AUDIO                                      */
     /* ------------------------------------------------ */
 
-    pub fn start_audiooutput(&mut self, path: String, ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>) {
+    pub fn start_audiooutput(
+        &mut self,
+        path: String,
+        ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
+        ab_loop_a: Arc<AtomicU64>,
+        ab_loop_b: Arc<AtomicU64>,
+        ab_loop_active: Arc<AtomicBool>,
+        ab_loop_seek_sample: Arc<AtomicU64>,
+    ) {
         // State transition: Stopped -> Loading
         self.playback_state = PlaybackState::Loading;
 
-        // Reset A-B Loop on new track
+        // Reset A-B Loop on new track — MUST sync atomics to prevent ghost loops
         if let Ok(mut ab) = ab_loop.lock() {
             ab.reset();
         }
+        // Push reset state to atomics so AudioOutput sees clean state
+        ab_loop_active.store(false, Ordering::SeqCst);
+        ab_loop_a.store(0, Ordering::SeqCst);
+        ab_loop_b.store(0, Ordering::SeqCst);
+        ab_loop_seek_sample.store(0, Ordering::SeqCst);
 
         // 1. Setup Ring Buffer - 120ms for low latency
         let sample_rate = 48000; // frames per second
@@ -219,7 +237,12 @@ impl Engine {
         let (tx, rx) = mpsc::channel();
 
         // 3. Setup Decoder Control
-        let control = Arc::new(DecoderControl::new());
+        // Shared atomic: unifies AudioOutput's seek_mode and Decoder's is_seeking
+        let seek_is_seeking = Arc::new(AtomicBool::new(false));
+        let control = Arc::new(DecoderControl::new(
+            ab_loop_seek_sample.clone(),
+            seek_is_seeking.clone(),
+        ));
         let control_for_decoder = control.clone();
         control.set_event_sender(tx); // Connect sender to decoder
         self.decoder_control = Some(control);
@@ -235,6 +258,10 @@ impl Engine {
         self.duration_mode = DurationMode::Metadata;
         self.metadata_duration_ms = 0;
         self.decoder_total_samples = 0;
+
+        // SSoT: Reset AudioClock
+        self.audio_clock = AudioClock::new(actual_sample_rate, self.channels);
+        self.audio_clock.reset();
 
         // 6. Spawn Decoder Thread
         let path_clone = path.clone();
@@ -261,6 +288,13 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
             // Chain already built at startup - no need to rebuild on track change
             audiooutput.reset_dsp();
             audiooutput.reset_samples_played(0);
+            // Unify seek_mode with decoder's is_seeking (shared atomic)
+            audiooutput.set_seek_mode_arc(seek_is_seeking.clone());
+            // Set AB loop atomics on AudioOutput
+            audiooutput.stream_ab_loop_a = ab_loop_a.clone();
+            audiooutput.stream_ab_loop_b = ab_loop_b.clone();
+            audiooutput.stream_ab_loop_active = ab_loop_active.clone();
+            audiooutput.stream_ab_loop_seek_sample = ab_loop_seek_sample.clone();
             // clear_old=true: fresh track start, don't crossfade from old track's buffer
             audiooutput.start(cons, true, buffer_size);
         } else {
@@ -276,6 +310,13 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
 
             audiooutput.update_dsp(&self.dsp_settings);
             audiooutput.reset_dsp();
+            // Unify seek_mode with decoder's is_seeking (shared atomic)
+            audiooutput.set_seek_mode_arc(seek_is_seeking.clone());
+            // Set AB loop atomics on AudioOutput
+            audiooutput.stream_ab_loop_a = ab_loop_a.clone();
+            audiooutput.stream_ab_loop_b = ab_loop_b.clone();
+            audiooutput.stream_ab_loop_active = ab_loop_active.clone();
+            audiooutput.stream_ab_loop_seek_sample = ab_loop_seek_sample.clone();
             audiooutput.reset_samples_played(0);
             audiooutput.start(cons, true, buffer_size);
             self.audiooutput = Some(audiooutput);
@@ -306,7 +347,7 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
                         match current {
                             PlaybackState::Priming => {
                                 self.playback_state = PlaybackState::Playing;
-                                self.samples_played = 0;
+                                self.audio_clock.reset();
                                 if let Some(ref mut audiooutput) = self.audiooutput {
                                     audiooutput.reset_samples_played(0);
                                     audiooutput.set_output_state(
@@ -343,9 +384,9 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
         }
 
         if let Some(ref mut audiooutput) = self.audiooutput {
-            self.samples_played = audiooutput.get_samples_played();
-            // Note: seek_mode is handled exclusively by on_buffer_ready()
-            // No duplicate logic here to avoid race condition
+            let live_samples = audiooutput.get_samples_played();
+            self.samples_played = live_samples;
+            self.audio_clock.sync_from_absolute(live_samples);
         }
 
         // Progressive duration update from decoder output samples
@@ -563,16 +604,16 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
     /* ------------------------------------------------ */
 
     pub fn get_position(&self) -> f64 {
-        // SELALU hitung dari master clock: samples_played / sample_rate = seconds
+        // SSoT: Use AudioClock for ALL time calculations
         if self.sample_rate == 0 {
             return 0.0;
         }
-        // Guard: don't return garbage if audio output not initialized
         if self.audiooutput.is_none() {
             return 0.0;
         }
-        // samples_played / sample_rate = seconds
-        self.samples_played as f64 / (self.sample_rate as f64 * self.channels as f64)
+        // AudioClock is synced by update_tick() every frame
+        // Formula: Samples / (Rate * Channels) = Seconds (single authority: clock.rs)
+        self.audio_clock.get_position_seconds()
     }
 
     pub fn get_duration(&self) -> f64 {
@@ -599,22 +640,9 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
         (duration_ms * self.sample_rate * self.channels as u64) / 1000
     }
 
-    // Single source of truth: callback-based position from audio clock
+    // SSoT: callback-based position from AudioClock
     pub fn get_position_ms(&mut self) -> u64 {
-        if self.playback_state == PlaybackState::Playing
-            || self.playback_state == PlaybackState::Paused
-        {
-            if let Some(ref mut audiooutput) = self.audiooutput {
-                let samples = audiooutput.get_samples_played();
-                if self.sample_rate > 0 {
-                    return ((samples as f64 * 1000.0)
-                        / (self.sample_rate as f64 * self.channels as f64))
-                        as u64;
-                }
-            }
-        }
-        ((self.samples_played as f64 * 1000.0) / (self.sample_rate as f64 * self.channels as f64))
-            as u64
+        self.audio_clock.get_position_ms()
     }
 
     pub fn get_duration_ms(&self) -> u64 {
@@ -688,6 +716,7 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
 
         // STEP 2: Set samples_played EXACT - single source of truth
         self.samples_played = exact_samples;
+        self.audio_clock.sync_from_absolute(exact_samples);
 
         // Also update audiooutput's sample counter for consistent UI
         if let Some(ref mut audiooutput) = self.audiooutput {
@@ -697,6 +726,7 @@ self.decoder_handle = Some(decoder::spawn_decoder_with_sample_rate(
         // STEP 3: Reset ALL DSP effects (EQ, compressor, etc.)
         if let Some(ref mut audiooutput) = self.audiooutput {
             audiooutput.reset_dsp();
+            audiooutput.set_output_state(OutputState::Running);
         }
 
         // STEP 4: Audio - set_seek_mode(false) - izinkan audio thread baca buffer
@@ -777,6 +807,12 @@ pub struct FfmpegEngine {
     is_finished: bool,
     scan_params: scanner::ScanParams,
     pub ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
+    // Atomics for lock-free access from audio callback
+    ab_loop_a: Arc<AtomicU64>,
+    ab_loop_b: Arc<AtomicU64>,
+    ab_loop_active: Arc<AtomicBool>,
+    // AB loop seek sample (set by audio callback, checked by decoder)
+    ab_loop_seek_sample: Arc<AtomicU64>,
 }
 
 impl FfmpegEngine {
@@ -788,6 +824,10 @@ impl FfmpegEngine {
             is_finished: false,
             scan_params: scanner::ScanParams::default(),
             ab_loop: Arc::new(Mutex::new(crate::audio::engine::abloop::ABLoop::default())),
+            ab_loop_a: Arc::new(AtomicU64::new(0)),
+            ab_loop_b: Arc::new(AtomicU64::new(0)),
+            ab_loop_active: Arc::new(AtomicBool::new(false)),
+            ab_loop_seek_sample: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -823,11 +863,19 @@ impl FfmpegEngine {
 
             engine.set_normalizer_gain(1.0);
 
-            engine.start_audiooutput(path.to_string(), self.ab_loop.clone());
+            engine.start_audiooutput(
+                path.to_string(),
+                self.ab_loop.clone(),
+                self.ab_loop_a.clone(),
+                self.ab_loop_b.clone(),
+                self.ab_loop_active.clone(),
+                self.ab_loop_seek_sample.clone(),
+            );
 
             engine.playback_state = PlaybackState::Paused;
 
             if let Some(ref mut audiooutput) = engine.audiooutput {
+                audiooutput.reset_ab_loop();
                 audiooutput.pause();
             }
 
@@ -957,20 +1005,50 @@ impl FfmpegEngine {
         }
     }
 
-    /// Get position without requiring &mut self (reads from samples_played)
+    /// Sync AB loop Mutex<ABLoop> values to atomics for lock-free audio callback access
+    /// Uses dynamic sample rate from Engine
+    fn sync_ab_loop_atomics(&self) {
+        let sample_rate = self.engine.as_ref().map_or(48000, |e| e.sample_rate);
+        if sample_rate == 0 {
+            return;
+        }
+        let channels = self.engine.as_ref().map_or(2, |e| e.channels);
+        if channels == 0 {
+            return;
+        }
+        if let Ok(ab) = self.ab_loop.lock() {
+            let is_active = ab.state() == crate::audio::engine::abloop::ABLoopState::Active;
+            self.ab_loop_active.store(is_active, Ordering::Relaxed);
+            if is_active {
+                let a_sec = ab.point_a();
+                let b_sec = ab.point_b();
+                let a_samples = (a_sec * sample_rate as f64 * channels as f64) as u64;
+                let b_samples = (b_sec * sample_rate as f64 * channels as f64) as u64;
+                self.ab_loop_a.store(a_samples, Ordering::Relaxed);
+                self.ab_loop_b.store(b_samples, Ordering::Relaxed);
+            } else {
+                self.ab_loop_a.store(0, Ordering::Relaxed);
+                self.ab_loop_b.store(0, Ordering::Relaxed);
+            }
+        }
+    }
+
+    /// Get position without requiring &mut self (reads from AudioClock)
     pub fn get_position_immut(&self) -> f64 {
         if let Some(ref engine) = self.engine {
             if engine.sample_rate == 0 {
                 return 0.0;
             }
-            // samples_played / sample_rate = seconds
-            engine.samples_played as f64 / (engine.sample_rate as f64 * engine.channels as f64)
+            engine.audio_clock.get_position_seconds()
         } else {
             0.0
         }
     }
 
     pub fn update_tick(&mut self) {
+        // Sync AB loop from Mutex-guarded ABLoop to atomics each tick
+        self.sync_ab_loop_atomics();
+
         if let Some(engine) = &mut self.engine {
             engine.update_tick();
 

@@ -52,6 +52,12 @@ impl DspChain {
         let guard = self.chain.load();
         guard.is_empty()
     }
+
+    /// Update sample rate for all processors in the chain
+    pub fn set_sample_rate(&self, rate: f32) {
+        let guard = self.chain.load();
+        guard.set_sample_rate(rate);
+    }
 }
 
 impl Clone for DspChain {
@@ -131,6 +137,15 @@ impl DspChainInner {
         // SAFETY: exclusive access via Guard
         let processors = unsafe { &*self.processors.get() };
         processors.is_empty()
+    }
+
+    /// Update sample rate for all processors in the chain
+    pub fn set_sample_rate(&self, rate: f32) {
+        // SAFETY: exclusive access via Guard
+        let processors = unsafe { &mut *self.processors.get() };
+        for processor in processors.iter_mut() {
+            processor.set_sample_rate(rate);
+        }
     }
 }
 

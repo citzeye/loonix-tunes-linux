@@ -39,7 +39,7 @@ pub mod rack;
 pub mod reverb;
 pub mod rubberbandffi;
 pub mod stereoenhance;
-pub mod stereowidth;
+pub mod monostereo;
 pub mod surround;
 
 pub use self::chain::DspChain;
@@ -49,7 +49,9 @@ pub use self::rack::DspRack;
 pub use self::bassbooster::{
     get_bass_enabled_arc, get_bass_freq_arc, get_bass_gain_arc, get_bass_q_arc, BassBooster,
 };
-pub use self::compressor::{get_compressor_enabled_arc, get_compressor_threshold_arc, get_compressor_makeup_arc, Compressor};
+pub use self::compressor::{
+    get_compressor_enabled_arc, get_compressor_makeup_arc, get_compressor_threshold_arc, Compressor,
+};
 pub use self::crossfeed::{get_crossfeed_amount_arc, get_crossfeed_enabled_arc, Crossfeed};
 pub use self::crystalizer::{
     get_crystal_amount_arc, get_crystal_enabled_arc, get_crystal_freq_arc, Crystalizer,
@@ -67,12 +69,13 @@ pub use self::reverb::{
     get_reverb_room_size_arc, Reverb,
 };
 pub use self::stereoenhance::{get_stereo_amount_arc, get_stereo_enabled_arc, StereoEnhance};
-pub use self::stereowidth::{get_mono_enabled_arc, get_mono_width_arc, StereoWidth};
+pub use self::monostereo::{get_mono_enabled_arc, get_mono_width_arc, MonoStereo};
 pub use self::surround::{get_surround_enabled_arc, get_surround_width_arc, SurroundProcessor};
 
 pub trait DspProcessor: Send + Sync {
     fn process(&mut self, input: &[f32], output: &mut [f32]);
     fn reset(&mut self);
+    fn set_sample_rate(&mut self, _sample_rate: f32) {}
     fn as_any(&mut self) -> &mut dyn std::any::Any;
     fn as_any_ref(&self) -> &dyn std::any::Any;
 }

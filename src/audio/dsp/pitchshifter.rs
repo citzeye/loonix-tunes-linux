@@ -5,6 +5,7 @@ use crate::audio::dsp::rubberbandffi::{
     RB_OPTION_PITCH_HIGH_QUALITY, RB_OPTION_PROCESS_REALTIME,
 };
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;
 
@@ -32,19 +33,27 @@ pub struct PitchShifter {
     r_out: Vec<f32>,
     l_out_ptr: Vec<*mut f32>,
     channels: usize,
+    sample_rate: u32,
 }
 
 unsafe impl Send for PitchShifter {}
 unsafe impl Sync for PitchShifter {}
 
 impl PitchShifter {
-    pub fn new() -> Self {
+    fn recreate_handle(&mut self, rate: u32) {
+        if !self.handle.is_null() {
+            unsafe { rubberband_delete(self.handle) };
+        }
         let options =
             RB_OPTION_PROCESS_REALTIME | RB_OPTION_PITCH_HIGH_QUALITY | RB_OPTION_FORMANT_PRESERVED;
-        let handle = unsafe { rubberband_new(48000, 2, options, 1.0, 1.0) };
+        self.handle = unsafe { rubberband_new(rate, 2, options, 1.0, 1.0) };
+        self.sample_rate = rate;
+        self.out_fifo.clear();
+    }
 
-        Self {
-            handle,
+    pub fn new() -> Self {
+        let mut s = Self {
+            handle: std::ptr::null_mut(),
             out_fifo: Vec::with_capacity(16384),
             l_in: Vec::with_capacity(4096),
             r_in: Vec::with_capacity(4096),
@@ -52,7 +61,10 @@ impl PitchShifter {
             r_out: Vec::with_capacity(4096),
             l_out_ptr: vec![std::ptr::null_mut(); 2],
             channels: 2,
-        }
+            sample_rate: 48000,
+        };
+        s.recreate_handle(48000);
+        s
     }
 }
 
@@ -63,6 +75,14 @@ impl Drop for PitchShifter {
 }
 
 impl DspProcessor for PitchShifter {
+    fn set_sample_rate(&mut self, rate: f32) {
+        let new_rate = rate as u32;
+        let current_rate = samplerate::get_rate_u32();
+        if new_rate > 0 && new_rate != current_rate {
+            self.recreate_handle(new_rate);
+        }
+    }
+
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         let is_on = get_pitch_enabled_arc().load(Ordering::Relaxed);
         let ratio = bits_to_f32(get_pitch_ratio_arc().load(Ordering::Relaxed));
@@ -76,6 +96,13 @@ impl DspProcessor for PitchShifter {
             output.copy_from_slice(input);
             self.out_fifo.clear();
             return;
+        }
+
+        // Check if sample rate changed
+        let rate_changed = samplerate::consume_rate_changed();
+        if rate_changed {
+            let new_rate = samplerate::get_rate_u32();
+            self.recreate_handle(new_rate);
         }
 
         let frames = input.len() / self.channels;

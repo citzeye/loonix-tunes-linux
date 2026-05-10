@@ -79,6 +79,8 @@ fn setup_env() {
 }
 
 fn main() {
+    crate::audio::samplerate::init_sample_rate();
+
     if cfg!(debug_assertions) {
         println!("🛠️ LOONIX-TUNES [DEVELOPER MODE]");
     } else {

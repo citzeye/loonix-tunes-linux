@@ -2,6 +2,7 @@
 
 use crate::audio::dsp::biquad::BiquadLowShelf;
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;
 
@@ -41,7 +42,6 @@ pub struct BassBooster {
     current_q: f32,
     left_filter: BiquadLowShelf,
     right_filter: BiquadLowShelf,
-    sample_rate: f32,
 }
 
 impl BassBooster {
@@ -52,15 +52,14 @@ impl BassBooster {
             current_q: 0.0,
             left_filter: BiquadLowShelf::new(),
             right_filter: BiquadLowShelf::new(),
-            sample_rate: 48000.0,
         }
     }
 
-    fn update_filters(&mut self, freq: f32, q: f32, gain: f32) {
+    fn update_filters(&mut self, rate: f32, freq: f32, q: f32, gain: f32) {
         self.left_filter
-            .update_coefficients(self.sample_rate, freq, gain, q);
+            .update_coefficients(rate, freq, gain, q);
         self.right_filter
-            .update_coefficients(self.sample_rate, freq, gain, q);
+            .update_coefficients(rate, freq, gain, q);
     }
 }
 
@@ -71,20 +70,29 @@ impl DspProcessor for BassBooster {
         let freq = bits_to_f32(get_bass_freq_arc().load(Ordering::Relaxed));
         let q = bits_to_f32(get_bass_q_arc().load(Ordering::Relaxed));
 
+        // 1. Check if sample rate changed from outside
+        let rate_changed = samplerate::consume_rate_changed();
+
         if !is_on || gain < 0.1 {
             output.copy_from_slice(input);
             return;
         }
 
-        // Lazy Update: Recalculate filter only when slider moves
-        if (self.current_gain - gain).abs() > 0.01
+        // 2. Recalculate coefficients ONLY if rate changed OR sliders moved
+        if rate_changed
+            || (self.current_gain - gain).abs() > 0.01
             || (self.current_freq - freq).abs() > 0.5
             || (self.current_q - q).abs() > 0.01
         {
             self.current_gain = gain;
             self.current_freq = freq;
             self.current_q = q;
-            self.update_filters(freq, q, gain);
+
+            // Get the latest f32 rate (safe and instant from AtomicU32)
+            let current_rate = samplerate::get_rate();
+
+            // Recalculate Biquad with new rate!
+            self.update_filters(current_rate, freq, q, gain);
         }
 
         let len = input.len();
@@ -94,11 +102,10 @@ impl DspProcessor for BassBooster {
                 output[i] = input[i];
                 break;
             }
-            let left = input[i];
-            let right = input[i + 1];
 
-            output[i] = self.left_filter.process_sample(left);
-            output[i + 1] = self.right_filter.process_sample(right);
+            // Apply low shelf filter directly - biquad already applies the gain
+            output[i] = self.left_filter.process_sample(input[i]);
+            output[i + 1] = self.right_filter.process_sample(input[i + 1]);
         }
     }
 

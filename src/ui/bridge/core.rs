@@ -750,16 +750,30 @@ impl MusicModel {
         self.tick_counter += 1;
         let should_next = if let Ok(mut ff) = self.ffmpeg.lock() {
             ff.update_tick();
+
             let pos = (ff.get_position() * 1000.0) as i32;
             if pos != self.position { self.position = pos; self.position_changed(); }
+
             let dur = (ff.get_duration() * 1000.0) as i32;
             if dur != self.duration { self.duration = dur; self.duration_changed(); }
+
+            if let Ok(ab) = ff.ab_loop.lock() {
+                self.ab_state = match ab.state() {
+                    crate::audio::engine::abloop::ABLoopState::Off => 0,
+                    crate::audio::engine::abloop::ABLoopState::ASet => 1,
+                    crate::audio::engine::abloop::ABLoopState::Active => 2,
+                };
+                self.ab_point_a = (ab.point_a() * 1000.0) as i32;
+                self.ab_point_b = (ab.point_b() * 1000.0) as i32;
+                self.ab_state_changed();
+                self.ab_point_a_changed();
+                self.ab_point_b_changed();
+            }
+
             ff.take_finished()
         } else { false };
         if should_next { self.play_next(); }
         if self.tick_counter % 100 == 0 { self.save_state(); }
-        // Sync ABLoop state every tick to ensure UI is always updated
-        self.sync_abloop();
     }
 
     pub fn start_update_loop(&mut self) {
@@ -907,8 +921,8 @@ impl MusicModel {
     pub fn add_temporary_folder(&mut self, path: String) {
         let clean = clean_qml_path(&path);
         
-        // Add to session folders if not already exists
-        if !self.session_folders.contains(&clean) {
+        // Add to session folders if not already exists (max 32 to prevent unbounded growth)
+        if !self.session_folders.contains(&clean) && self.session_folders.len() < 32 {
             self.session_folders.push(clean.clone());
         }
         
@@ -934,8 +948,8 @@ impl MusicModel {
     pub fn add_folder_to_list(&mut self, path: String) {
         let clean = clean_qml_path(&path);
         
-        // Add to session folders if not already exists
-        if !self.session_folders.contains(&clean) {
+        // Add to session folders if not already exists (max 32 to prevent unbounded growth)
+        if !self.session_folders.contains(&clean) && self.session_folders.len() < 32 {
             self.session_folders.push(clean.clone());
         }
         

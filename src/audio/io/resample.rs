@@ -5,8 +5,11 @@ use ringbuf::HeapProd;
 use soxr::{format::Interleaved, Soxr};
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 pub type StereoResampler = Soxr<Interleaved<f32, 2>>;
+
+const MAX_OUTPUT_FRAMES: usize = 8192;
 
 pub fn create_resampler(input_rate: f64, output_rate: f64) -> Option<StereoResampler> {
     match Soxr::new(input_rate, output_rate) {
@@ -37,9 +40,11 @@ pub fn process_frame(
         unsafe { std::slice::from_raw_parts(input_flat.as_ptr() as *const [f32; 2], input_frames) };
 
     let max_output_frames = ((input_frames as f64 * 1.5) as usize) + 32;
-    let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; max_output_frames];
+    let capped = max_output_frames.min(MAX_OUTPUT_FRAMES);
+    let mut output_stereo = Vec::with_capacity(MAX_OUTPUT_FRAMES);
+    output_stereo.resize(capped, [0.0; 2]);
 
-    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo) {
+    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo[..capped]) {
         if processed.output_frames > 0 {
             push_output(
                 &output_stereo,
@@ -71,9 +76,11 @@ pub fn process_frame_buffered(
         unsafe { std::slice::from_raw_parts(input_flat.as_ptr() as *const [f32; 2], input_frames) };
 
     let max_output_frames = ((input_frames as f64 * 1.5) as usize) + 32;
-    let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; max_output_frames];
+    let capped = max_output_frames.min(MAX_OUTPUT_FRAMES);
+    let mut output_stereo = Vec::with_capacity(MAX_OUTPUT_FRAMES);
+    output_stereo.resize(capped, [0.0; 2]);
 
-    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo) {
+    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo[..capped]) {
         if processed.output_frames > 0 {
             let output_flat = &output_stereo[..processed.output_frames];
             let flat_len = output_flat.len() * 2;
@@ -96,7 +103,8 @@ pub fn drain(
     total_decoded_samples: &mut u64,
     should_stop: &AtomicBool,
 ) {
-    let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; 4096];
+    let mut output_stereo = Vec::with_capacity(4096);
+    output_stereo.resize(4096, [0.0; 2]);
 
     loop {
         let output_frames = match resampler.drain(&mut output_stereo) {
@@ -141,7 +149,9 @@ fn push_output(
                 pushed += n;
                 *total_decoded_samples += n as u64;
             }
-            _ => std::thread::yield_now(),
+            _ => {
+                std::thread::sleep(Duration::from_micros(500));
+            }
         }
     }
 }

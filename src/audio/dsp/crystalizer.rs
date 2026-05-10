@@ -1,6 +1,7 @@
 /* --- loonixtunesv2/src/audio/dsp/crystalizer.rs | crystalizer --- */
 
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;
 
@@ -33,7 +34,6 @@ fn bits_to_f32(bits: u32) -> f32 {
 pub struct Crystalizer {
     current_amount: f32,
     current_freq: f32,
-    sample_rate: f32,
     last_x_left: f32,
     last_y_left: f32,
     last_x_right: f32,
@@ -41,11 +41,10 @@ pub struct Crystalizer {
 }
 
 impl Crystalizer {
-    pub fn new(sample_rate: f32) -> Self {
+    pub fn new() -> Self {
         Self {
             current_amount: 0.0,
             current_freq: 4000.0,
-            sample_rate,
             last_x_left: 0.0,
             last_y_left: 0.0,
             last_x_right: 0.0,
@@ -66,6 +65,15 @@ impl DspProcessor for Crystalizer {
             return;
         }
 
+        // Check if sample rate changed
+        let rate_changed = samplerate::consume_rate_changed();
+        let rate = if rate_changed {
+            samplerate::get_rate()
+        } else {
+            // Use current rate for alpha calculation
+            samplerate::get_rate()
+        };
+
         if (self.current_freq - freq).abs() > 1.0 {
             self.current_freq = freq;
         }
@@ -77,7 +85,7 @@ impl DspProcessor for Crystalizer {
 
         // Fixed alpha formula: alpha = fs / (fs + 2*PI*fc)
         let two_pi = 2.0 * std::f32::consts::PI;
-        let alpha = self.sample_rate / (self.sample_rate + two_pi * self.current_freq);
+        let alpha = rate / (rate + two_pi * self.current_freq);
 
         for i in (0..len).step_by(2) {
             if i + 1 >= len {
@@ -99,6 +107,7 @@ impl DspProcessor for Crystalizer {
             let crystal_l = (hp_l * drive).tanh() * self.current_amount;
             let crystal_r = (hp_r * drive).tanh() * self.current_amount;
 
+            // Blend crystal effect with dry signal
             output[i] = left_in + crystal_l;
             output[i + 1] = right_in + crystal_r;
         }

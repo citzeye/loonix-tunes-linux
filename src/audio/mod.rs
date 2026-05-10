@@ -6,6 +6,9 @@ pub mod io;
 // Engine submodules
 pub mod engine;
 
+// Sample Rate Manager
+pub mod samplerate;
+
 // DSP
 pub mod dsp;
 

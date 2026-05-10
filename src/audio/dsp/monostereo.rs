@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/stereowidth.rs | stereowidth --- */
+/* --- loonixtunesv2/src/audio/dsp/monostereo.rs | monostereo --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -19,15 +19,15 @@ fn bits_to_f32(bits: u32) -> f32 {
     f32::from_bits(bits)
 }
 
-pub struct StereoWidth {}
+pub struct MonoStereo {}
 
-impl StereoWidth {
+impl MonoStereo {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl DspProcessor for StereoWidth {
+impl DspProcessor for MonoStereo {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         let is_on = get_mono_enabled_arc().load(Ordering::Relaxed);
         let width = bits_to_f32(get_mono_width_arc().load(Ordering::Relaxed));

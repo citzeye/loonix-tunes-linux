@@ -1,6 +1,7 @@
 /* --- loonixtunesv2/src/audio/dsp/eq.rs | eq --- */
 
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, OnceLock};
 
@@ -168,7 +169,6 @@ pub struct EqProcessor {
     gains: [f32; 10],
     target_gains: [f32; 10],
     q_factors: [f32; 10],
-    sample_rate: f32,
     is_flat: bool,
 }
 
@@ -190,7 +190,6 @@ impl EqProcessor {
             gains: [0.0; 10],
             target_gains: [0.0; 10],
             q_factors,
-            sample_rate: 48000.0,
             is_flat: true,
         };
 
@@ -219,13 +218,14 @@ impl EqProcessor {
         let q = self.q_factors[index];
         let gain = self.gains[index];
         let filter = &mut self.filters[index];
+        let rate = samplerate::get_rate();
 
         if index <= 1 {
-            filter.coeffs.set_lowshelf(freq, q, gain, self.sample_rate);
+            filter.coeffs.set_lowshelf(freq, q, gain, rate);
         } else if index >= 8 {
-            filter.coeffs.set_highshelf(freq, q, gain, self.sample_rate);
+            filter.coeffs.set_highshelf(freq, q, gain, rate);
         } else {
-            filter.coeffs.set_peak(freq, q, gain, self.sample_rate);
+            filter.coeffs.set_peak(freq, q, gain, rate);
         }
     }
 
@@ -257,7 +257,14 @@ impl DspProcessor for EqProcessor {
 
         let preamp_linear = 10.0f32.powf(preamp_db / 20.0);
 
-        self.sync_from_atomics();
+        // Check if sample rate changed
+        let rate_changed = samplerate::consume_rate_changed();
+        if rate_changed {
+            // Recalculate all filters with new rate
+            self.update_all_filters();
+        } else {
+            self.sync_from_atomics();
+        }
 
         if !enabled || (self.is_flat && preamp_db.abs() < 0.1) {
             output.copy_from_slice(input);

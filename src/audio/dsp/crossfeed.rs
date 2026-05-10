@@ -51,7 +51,6 @@ impl DspProcessor for Crossfeed {
 
         let delay_samples = 14;
         let filter_coeff = 0.15;
-        let gain_reduction = 1.0 - (amount * 0.15);
 
         for i in (0..input.len()).step_by(2) {
             let in_l = input[i];
@@ -67,8 +66,11 @@ impl DspProcessor for Crossfeed {
             self.lp_l += filter_coeff * (delayed_l - self.lp_l);
             self.lp_r += filter_coeff * (delayed_r - self.lp_r);
 
-            output[i] = (in_l + (self.lp_r * amount * 0.8)) * gain_reduction;
-            output[i + 1] = (in_r + (self.lp_l * amount * 0.8)) * gain_reduction;
+            // Blend crossfeed with dry signal
+            let crossfeed_l = self.lp_r * amount;
+            let crossfeed_r = self.lp_l * amount;
+            output[i] = in_l + crossfeed_l;
+            output[i + 1] = in_r + crossfeed_r;
 
             self.write_pos = (self.write_pos + 1) % 32;
         }

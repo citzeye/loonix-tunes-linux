@@ -1,6 +1,7 @@
 /* --- loonixtunesv2/src/audio/dsp/limiter.rs | limiter --- */
 
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
@@ -22,20 +23,36 @@ pub struct Limiter {
 
 impl Limiter {
     pub fn new() -> Self {
-        let sample_rate = 48000.0;
-        let attack_ms = 2.0;
-        let release_ms = 50.0;
-
         Self {
             threshold_lin: 10.0_f32.powf(-0.5 / 20.0),
             envelope: 0.0,
-            attack_coeff: (-1.0_f32 / (attack_ms * 0.001 * sample_rate)).exp(),
-            release_coeff: (-1.0_f32 / (release_ms * 0.001 * sample_rate)).exp(),
+            attack_coeff: 0.0,
+            release_coeff: 0.0,
         }
+    }
+
+    pub fn set_sample_rate(&mut self, rate: f32) {
+        if rate <= 0.0 {
+            return;
+        }
+        let attack_ms = 2.0;
+        let release_ms = 50.0;
+        self.attack_coeff = (-1.0_f32 / (attack_ms * 0.001 * rate)).exp();
+        self.release_coeff = (-1.0_f32 / (release_ms * 0.001 * rate)).exp();
     }
 }
 
 impl DspProcessor for Limiter {
+    fn set_sample_rate(&mut self, rate: f32) {
+        if rate <= 0.0 {
+            return;
+        }
+        let attack_ms = 2.0;
+        let release_ms = 50.0;
+        self.attack_coeff = (-1.0_f32 / (attack_ms * 0.001 * rate)).exp();
+        self.release_coeff = (-1.0_f32 / (release_ms * 0.001 * rate)).exp();
+    }
+
     #[inline(always)]
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         // Check enabled state from atomic (set by UI toggle)
@@ -43,6 +60,13 @@ impl DspProcessor for Limiter {
         if !enabled {
             output.copy_from_slice(input);
             return;
+        }
+
+        // Check if sample rate changed
+        let rate_changed = samplerate::consume_rate_changed();
+        if rate_changed {
+            let rate = samplerate::get_rate();
+            self.set_sample_rate(rate);
         }
 
         let safe_len = input.len() - (input.len() % 2);

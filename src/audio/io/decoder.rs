@@ -7,6 +7,7 @@ use ffmpeg_next as ffmpeg;
 use ffmpeg_next::sys as ff;
 use ffmpeg_next::Rescale;
 
+use ringbuf::traits::Observer;
 use ringbuf::HeapProd;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
@@ -53,7 +54,6 @@ impl Drop for DecoderHandle {
 pub struct DecoderControl {
     pub should_stop: AtomicBool,
     pub seek_request: AtomicU64,
-    pub is_seeking: AtomicBool,
     pub seeking_state: AtomicU8,
     pub buffer_ready: AtomicBool,
     pub min_buffer_samples: AtomicU64,
@@ -62,14 +62,20 @@ pub struct DecoderControl {
     pub loop_callback: Arc<Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
     pub duration_callback: Arc<Mutex<Option<Box<dyn Fn(u64) + Send + Sync>>>>,
     pub output_samples: AtomicU64,
+    /// Unified seek atomic shared with AudioOutput (lock-free)
+    pub seek_is_seeking: Arc<AtomicBool>,
+    /// AB loop seek sample set by audio callback, consumed by decoder
+    pub ab_loop_seek_sample: Arc<AtomicU64>,
 }
 
 impl DecoderControl {
-    pub fn new() -> Self {
+    pub fn new(
+        ab_loop_seek_sample: Arc<AtomicU64>,
+        seek_is_seeking: Arc<AtomicBool>,
+    ) -> Self {
         Self {
             should_stop: AtomicBool::new(false),
             seek_request: AtomicU64::new(0),
-            is_seeking: AtomicBool::new(false),
             seeking_state: AtomicU8::new(SEEK_STATE_IDLE),
             buffer_ready: AtomicBool::new(false),
             min_buffer_samples: AtomicU64::new(8192 * 2),
@@ -78,6 +84,8 @@ impl DecoderControl {
             loop_callback: Arc::new(Mutex::new(None)),
             duration_callback: Arc::new(Mutex::new(None)),
             output_samples: AtomicU64::new(0),
+            seek_is_seeking,
+            ab_loop_seek_sample,
         }
     }
 
@@ -89,13 +97,13 @@ impl DecoderControl {
 
     pub fn request_seek(&self, position_ms: u64) {
         self.seek_request.store(position_ms, Ordering::SeqCst);
-        self.is_seeking.store(true, Ordering::SeqCst);
+        self.seek_is_seeking.store(true, Ordering::SeqCst);
         self.seeking_state.store(SEEK_STATE_IDLE, Ordering::SeqCst);
     }
 
     pub fn clear_seek(&self) {
         self.seek_request.store(0, Ordering::SeqCst);
-        self.is_seeking.store(false, Ordering::SeqCst);
+        self.seek_is_seeking.store(false, Ordering::SeqCst);
         self.seeking_state.store(SEEK_STATE_IDLE, Ordering::SeqCst);
         self.buffer_ready.store(false, Ordering::SeqCst);
     }
@@ -252,20 +260,30 @@ fn decoder_loop(
         let mut total_decoded_samples: u64 = 0;
         let mut eof_reached = false;
         let mut last_reported_samples: u64 = 0;
-        let mut ab_loop_armed = true;
-
         // PRE-BUFFER: Fill ring buffer before signaling play
         // This ensures audio thread has data ready when is_playing = true
         {
             let min_buffer = control.min_buffer_samples.load(Ordering::SeqCst);
             let mut buffered: u64 = 0;
+            let mut prebuffer_packets = 0;
+            const MAX_PREBUFFER_PACKETS: u64 = 10000;
 
             while buffered < min_buffer {
                 if control.should_stop.load(Ordering::SeqCst) {
                     return;
                 }
 
-                if control.is_seeking.load(Ordering::Acquire) {
+                if control.seek_is_seeking.load(Ordering::Acquire) {
+                    break;
+                }
+
+                // GUARD: Stop pre-buffering if ring buffer is nearly full
+                if producer.vacant_len() < 1024 {
+                    break;
+                }
+
+                prebuffer_packets += 1;
+                if prebuffer_packets > MAX_PREBUFFER_PACKETS {
                     break;
                 }
 
@@ -282,7 +300,7 @@ fn decoder_loop(
                         if control.should_stop.load(Ordering::SeqCst) {
                             return;
                         }
-                        if control.is_seeking.load(Ordering::Acquire) {
+                        if control.seek_is_seeking.load(Ordering::Acquire) {
                             break;
                         }
                         if format_converter.run(&frame, &mut interleaved_frame).is_ok() {
@@ -303,7 +321,7 @@ fn decoder_loop(
                 }
             }
 
-            if !control.is_seeking.load(Ordering::Acquire)
+            if !control.seek_is_seeking.load(Ordering::Acquire)
                 && !control.should_stop.load(Ordering::SeqCst)
             {
                 control
@@ -325,30 +343,20 @@ fn decoder_loop(
                 last_reported_samples = total_decoded_samples;
             }
 
-            // Check A-B Loop
-            let current_pos_secs = total_decoded_samples as f64 / (output_sample_rate as f64 * 2.0);
-            if let Ok(ab) = ab_loop.lock() {
-                match ab.state() {
-                    crate::audio::engine::abloop::ABLoopState::Active => {
-                        if current_pos_secs >= ab.point_b() && ab_loop_armed {
-                            if let Some(seek_to) = ab.check_loop(current_pos_secs) {
-                                let seek_ms = (seek_to * 1000.0) as i64;
-                                control.is_seeking.store(true, Ordering::Release);
-                                control.seek_request.store(seek_ms as u64, Ordering::Relaxed);
-                                ab_loop_armed = false;
-                            }
-                        }
-                    }
-                    _ => {
-                        ab_loop_armed = true;
-                    }
-                }
+            // Check A-B Loop via atomic (lock-free, set by audio callback)
+            // Audio callback detects when samples_played >= ab_loop_b and sets
+            // ab_loop_seek_sample = ab_loop_a. Decoder consumes it via swap(0).
+            let seek_sample = control.ab_loop_seek_sample.swap(0, Ordering::AcqRel);
+            if seek_sample > 0 {
+                let seek_ms = (seek_sample * 1000) / (output_sample_rate as u64 * 2);
+                control.seek_request.store(seek_ms, Ordering::Relaxed);
+                control.seek_is_seeking.store(true, Ordering::Release);
+                control.seeking_state.store(SEEK_STATE_IDLE, Ordering::SeqCst);
             }
-            
 
             let seek_state = control.seeking_state.load(Ordering::SeqCst);
 
-            if control.is_seeking.load(Ordering::Acquire) && seek_state == SEEK_STATE_IDLE {
+            if control.seek_is_seeking.load(Ordering::Acquire) && seek_state == SEEK_STATE_IDLE {
                 let target_ms = control.seek_request.load(Ordering::Relaxed);
 
                 control
@@ -455,8 +463,7 @@ fn decoder_loop(
                     .seeking_state
                     .store(SEEK_STATE_READY, Ordering::SeqCst);
 
-                // Reset AB loop armed flag when seek completes
-                ab_loop_armed = true;
+                // AB loop re-armed by audio callback via ab_loop_seek_sample atomic
 
                 // TIDAK PERNAH turunkan is_seeking di sini!
                 // Decoder hanya worker - ENGINE yang decide kapan audio boleh resume
@@ -471,7 +478,13 @@ fn decoder_loop(
             }
 
             // Safety check: Jika masih dalam proses decoding/buffering untuk seek, skip loop utama
-            if control.is_seeking.load(Ordering::SeqCst) {
+            if control.seek_is_seeking.load(Ordering::SeqCst) {
+                continue;
+            }
+
+            // GUARD: Ring buffer nearly full — skip decode to avoid overflow
+            if producer.vacant_len() < 1024 {
+                std::thread::sleep(std::time::Duration::from_micros(500));
                 continue;
             }
 

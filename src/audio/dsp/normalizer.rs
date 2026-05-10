@@ -15,7 +15,7 @@ pub fn get_enabled_arc() -> Arc<AtomicBool> {
 
 fn get_smoothing_arc() -> Arc<AtomicU32> {
     NORMALIZER_SMOOTHING
-        .get_or_init(|| Arc::new(AtomicU32::new(0.002_f32.to_bits())))
+        .get_or_init(|| Arc::new(AtomicU32::new(0.0015_f32.to_bits())))
         .clone()
 }
 
@@ -118,7 +118,7 @@ impl DspProcessor for AudioNormalizer {
     }
 
     fn reset(&mut self) {
-        self.current_gain = self.fixed_gain;
+        self.current_gain = 1.0;
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {

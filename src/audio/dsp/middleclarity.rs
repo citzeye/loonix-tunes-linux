@@ -1,6 +1,7 @@
 /* --- loonixtunesv2/src/audio/dsp/middleclarity.rs | middleclarity --- */
 
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate; // Import sample rate module
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;
 
@@ -29,7 +30,6 @@ pub struct MiddleClarity {
     x2: f32,
     y1: f32,
     y2: f32,
-    sample_rate: f32,
     corner_freq: f32,
     q_factor: f32,
 }
@@ -46,16 +46,19 @@ impl MiddleClarity {
             x2: 0.0,
             y1: 0.0,
             y2: 0.0,
-            sample_rate: 48000.0,
             corner_freq: 3200.0,
             q_factor: 0.707,
         }
     }
 
-    fn update_coefficients(&mut self, amount: f32) {
+    pub fn set_sample_rate(&mut self, _rate: f32) {
+        // Rate is managed globally by samplerate module
+    }
+
+    fn update_coefficients(&mut self, amount: f32, rate: f32) {
         let gain_db = amount * 4.0;
         let a = 10.0_f32.powf(gain_db / 40.0);
-        let w0 = 2.0 * std::f32::consts::PI * self.corner_freq / self.sample_rate;
+        let w0 = 2.0 * std::f32::consts::PI * self.corner_freq / rate;
         let cos_w0 = w0.cos();
         let sin_w0 = w0.sin();
         let alpha = sin_w0 / (2.0 * self.q_factor);
@@ -90,7 +93,17 @@ impl DspProcessor for MiddleClarity {
             return;
         }
 
-        self.update_coefficients(amount);
+        // Check if sample rate changed
+        let rate_changed = samplerate::consume_rate_changed();
+        let rate = samplerate::get_rate();
+
+        if rate_changed {
+            // Recalculate coefficients with new sample rate
+            self.update_coefficients(amount, rate);
+        } else {
+            // Still update coefficients for amount changes
+            self.update_coefficients(amount, rate);
+        }
 
         let len = input.len();
         for i in 0..len {
@@ -104,7 +117,8 @@ impl DspProcessor for MiddleClarity {
             self.y2 = self.y1;
             self.y1 = y;
 
-            output[i] = y;
+            // Blend processed signal with dry
+            output[i] = x + (y - x) * amount;
         }
     }
 

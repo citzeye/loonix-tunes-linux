@@ -48,6 +48,13 @@ impl AudioClock {
         self.samples_played = (position_ms * self.sample_rate as u64 * self.channels as u64) / 1000;
     }
 
+    pub fn sync_from_absolute(&mut self, total_samples: u64) {
+        if self.sample_rate > 0 {
+            self.samples_played = total_samples;
+            self.position_ms = (total_samples * 1000) / (self.sample_rate as u64 * self.channels as u64);
+        }
+    }
+
     pub fn get_position_ms(&self) -> u64 {
         self.position_ms
     }

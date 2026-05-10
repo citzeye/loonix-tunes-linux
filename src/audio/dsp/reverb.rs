@@ -90,7 +90,6 @@ const SCALE_WET: f32 = 3.0;
 const SCALE_DAMP: f32 = 0.4;
 const SCALE_ROOM: f32 = 0.28;
 const OFFSET_ROOM: f32 = 0.7;
-const INITIAL_REVERB: f32 = 0.5;
 
 struct CombFilter {
     buffer: Vec<f32>,

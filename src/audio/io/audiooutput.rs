@@ -1,6 +1,7 @@
 /* --- loonixtunesv2/src/audio/io/audiooutput.rs | audiooutput --- */
 #[allow(non_snake_case)]
 use crate::audio::dsp::{DspChain, DspProcessor};
+use crate::audio::dsp::limiter::Limiter;
 use crate::audio::engine::OutputMode;
 use libpulse_binding::def::BufferAttr;
 use libpulse_binding::sample::{Format, Spec};
@@ -32,6 +33,7 @@ pub enum AudioCommand {
         dsp_enabled: Arc<AtomicBool>,
         normalizer_enabled: Arc<AtomicBool>,
         normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
+        limiter: Arc<Mutex<Limiter>>,
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
         device_name: Option<String>,
@@ -40,6 +42,10 @@ pub enum AudioCommand {
         is_bluetooth_detected: Arc<AtomicBool>,
         reconnecting: Arc<AtomicBool>,
         reconnect_attempts: Arc<AtomicU32>,
+        ab_loop_a: Arc<AtomicU64>,
+        ab_loop_b: Arc<AtomicU64>,
+        ab_loop_active: Arc<AtomicBool>,
+        ab_loop_seek_sample: Arc<AtomicU64>,
     },
     Stop,
     Flush,
@@ -117,6 +123,7 @@ pub struct AudioOutput {
     old_track_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
     normalizer_enabled: Arc<AtomicBool>,
     normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
+    limiter: Arc<Mutex<Limiter>>,
     selected_device_index: Arc<Mutex<Option<usize>>>,
     is_bluetooth_detected: Arc<AtomicBool>,
     switching: Arc<AtomicBool>,
@@ -126,6 +133,11 @@ pub struct AudioOutput {
     available_devices: Arc<Mutex<Vec<AudioDevice>>>,
     output_state: Arc<AtomicU32>,
     decoder_eof: Arc<AtomicBool>,
+    // AB loop atomics (set by engine, read by audio thread)
+    pub stream_ab_loop_a: Arc<AtomicU64>,
+    pub stream_ab_loop_b: Arc<AtomicU64>,
+    pub stream_ab_loop_active: Arc<AtomicBool>,
+    pub stream_ab_loop_seek_sample: Arc<AtomicU64>,
 }
 
 impl Default for AudioOutput {
@@ -170,10 +182,11 @@ impl AudioOutput {
              resume_frame_counter: Arc::new(AtomicU32::new(0)),
              shared_consumer: Arc::new(Mutex::new(None)),
              old_track_consumer: Arc::new(Mutex::new(None)),
-             normalizer_enabled: Arc::new(AtomicBool::new(false)),
+             normalizer_enabled: Arc::new(AtomicBool::new(true)),
              normalizer: Arc::new(Mutex::new(
                  crate::audio::dsp::normalizer::AudioNormalizer::new(true, -14.0),
              )),
+             limiter: Arc::new(Mutex::new(Limiter::new())),
              selected_device_index: Arc::new(Mutex::new(None)),
              is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
              switching: Arc::new(AtomicBool::new(false)),
@@ -183,8 +196,13 @@ reconnecting: Arc::new(AtomicBool::new(false)),
              available_devices: Arc::new(Mutex::new(Vec::new())),
              output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
              decoder_eof: Arc::new(AtomicBool::new(false)),
+             // AB loop atomics for audio thread
+             stream_ab_loop_a: Arc::new(AtomicU64::new(0)),
+             stream_ab_loop_b: Arc::new(AtomicU64::new(0)),
+             stream_ab_loop_active: Arc::new(AtomicBool::new(false)),
+             stream_ab_loop_seek_sample: Arc::new(AtomicU64::new(0)),
          }
-    }
+     }
 
     pub fn request_loop_reset(&self) {
         self.loop_reset.store(true, Ordering::SeqCst);
@@ -484,6 +502,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     dsp_enabled: self.dsp_enabled.clone(),
                     normalizer_enabled: self.normalizer_enabled.clone(),
                     normalizer: self.normalizer.clone(),
+                    limiter: self.limiter.clone(),
                     samples_played: self.samples_played.clone(),
                     empty_callback_count: self.empty_callback_count.clone(),
                     device_name: device_name.map(|s| s.to_string()),
@@ -492,6 +511,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     is_bluetooth_detected: self.is_bluetooth_detected.clone(),
                     reconnecting: self.reconnecting.clone(),
                     reconnect_attempts: self.reconnect_attempts.clone(),
+                    ab_loop_a: self.stream_ab_loop_a.clone(),
+                    ab_loop_b: self.stream_ab_loop_b.clone(),
+                    ab_loop_active: self.stream_ab_loop_active.clone(),
+                    ab_loop_seek_sample: self.stream_ab_loop_seek_sample.clone(),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
@@ -536,6 +559,18 @@ reconnecting: Arc::new(AtomicBool::new(false)),
 
     pub fn set_seek_mode(&self, seeking: bool) {
         self.seek_mode.store(seeking, Ordering::SeqCst);
+    }
+
+    /// Replace internal seek_mode Arc with a shared one (unifies with decoder is_seeking)
+    pub fn set_seek_mode_arc(&mut self, arc: Arc<AtomicBool>) {
+        self.seek_mode = arc;
+    }
+
+    pub fn reset_ab_loop(&self) {
+        self.stream_ab_loop_a.store(0, Ordering::SeqCst);
+        self.stream_ab_loop_b.store(0, Ordering::SeqCst);
+        self.stream_ab_loop_active.store(false, Ordering::SeqCst);
+        self.stream_ab_loop_seek_sample.store(0, Ordering::SeqCst);
     }
 
     pub fn trigger_delayed_resume(&self) {
@@ -612,6 +647,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     dsp_enabled,
                     normalizer_enabled,
                     normalizer,
+                    limiter,
                     samples_played,
                     empty_callback_count,
                     device_name: _device_name,
@@ -620,6 +656,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     is_bluetooth_detected,
                     reconnecting,
                     reconnect_attempts,
+                    ab_loop_a,
+                    ab_loop_b,
+                    ab_loop_active,
+                    ab_loop_seek_sample,
                 }) => {
                     Self::push_loop_owned(
                         handle,
@@ -636,6 +676,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                         dsp_enabled,
                         normalizer_enabled,
                         normalizer,
+                        limiter,
                         samples_played,
                         empty_callback_count,
                         output_state,
@@ -643,6 +684,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                         is_bluetooth_detected,
                         reconnecting,
                         reconnect_attempts,
+                        ab_loop_a,
+                        ab_loop_b,
+                        ab_loop_active,
+                        ab_loop_seek_sample,
                     );
                 }
                 Ok(AudioCommand::Stop) => {}
@@ -706,6 +751,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
         dsp_enabled: Arc<AtomicBool>,
         normalizer_enabled: Arc<AtomicBool>,
         normalizer: Arc<Mutex<crate::audio::dsp::normalizer::AudioNormalizer>>,
+        limiter: Arc<Mutex<Limiter>>,
         samples_played: Arc<AtomicU64>,
         empty_callback_count: Arc<AtomicU32>,
         output_state: Arc<AtomicU32>,
@@ -713,6 +759,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
         is_bluetooth_detected: Arc<AtomicBool>,
         reconnecting: Arc<AtomicBool>,
         reconnect_attempts: Arc<AtomicU32>,
+        ab_loop_a: Arc<AtomicU64>,
+        ab_loop_b: Arc<AtomicU64>,
+        ab_loop_active: Arc<AtomicBool>,
+        ab_loop_seek_sample: Arc<AtomicU64>,
     ) {
         let channels = 2;
         let frames_per_write = 1024usize;
@@ -759,61 +809,30 @@ reconnecting: Arc::new(AtomicBool::new(false)),
             let state = output_state.load(Ordering::SeqCst);
             let is_eof = decoder_eof.load(Ordering::SeqCst);
 
-            if is_seeking {
-                read_buffer.fill(0.0);
-                let silence = unsafe {
-                    std::slice::from_raw_parts(
-                        read_buffer.as_ptr() as *const u8,
-                        samples_per_write * 4,
-                    )
-                };
-                match handle.write(silence) {
-                    Ok(_) => {
-                        reconnect_attempts.store(0, Ordering::Relaxed);
-                    }
-                    Err(e) => {
-                        eprintln!("[AudioOutput] Write error during seek: {}", e);
-                        Self::handle_write_error(&read_buffer, samples_per_write);
-                    }
-                }
-                std::thread::sleep(Duration::from_millis(2));
-                continue;
-            }
-
-            if is_paused {
-                read_buffer.fill(0.0);
-                let silence = unsafe {
-                    std::slice::from_raw_parts(
-                        read_buffer.as_ptr() as *const u8,
-                        samples_per_write * 4,
-                    )
-                };
-                match handle.write(silence) {
-                    Ok(_) => {
-                        reconnect_attempts.store(0, Ordering::Relaxed);
-                    }
-                    Err(e) => {
-                        eprintln!("[AudioOutput] Write error during pause: {}", e);
-                        Self::handle_write_error(&read_buffer, samples_per_write);
-                    }
-                }
-                continue;
-            }
-
+            // ALWAYS pop from ring buffer first — prevents decoder deadlock
+            // Even during seek/pause, we drain the buffer so decoder can push
             read_buffer.fill(0.0);
             let samples_read = consumer.pop_slice(&mut read_buffer);
 
             if samples_read == 0 {
                 empty_callback_count.fetch_add(1, Ordering::Relaxed);
+            } else {
+                empty_callback_count.store(0, Ordering::Relaxed);
+            }
 
-                // Clean exit condition: EOF AND buffer empty AND in RUNNING state
-                if is_eof && state == OUTPUT_STATE_RUNNING {
-                    break;
-                }
-
-                // During PRIMING state: keep writing silence, don't exit
-                // Buffer starvation during startup is NORMAL, not an error
+            // Gating: replace with silence if seeking/paused
+            // Decoder can still push into ring buffer (preventing deadlock)
+            if is_seeking || is_paused {
                 read_buffer.fill(0.0);
+            }
+
+            // EOF + empty buffer = end of track
+            if is_eof && state == OUTPUT_STATE_RUNNING && samples_read == 0 {
+                break;
+            }
+
+            // During PRIMING with empty buffer: output silence, keep waiting
+            if samples_read == 0 && !is_seeking && !is_paused {
                 let silence = unsafe {
                     std::slice::from_raw_parts(
                         read_buffer.as_ptr() as *const u8,
@@ -829,6 +848,9 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                         Self::handle_write_error(&read_buffer, samples_per_write);
                     }
                 }
+                if is_seeking {
+                    std::thread::sleep(Duration::from_millis(2));
+                }
                 continue;
             }
 
@@ -843,7 +865,23 @@ reconnecting: Arc::new(AtomicBool::new(false)),
             samples_played.fetch_add(samples_read as u64, Ordering::SeqCst);
 
             let process_len = samples_read.min(read_buffer.len());
-            if dsp_enabled.load(Ordering::SeqCst) {
+
+            // 1. Normalizer (engine core, processes BEFORE DSP rack)
+            if normalizer_enabled.load(Ordering::SeqCst) {
+                if let Ok(mut norm) = normalizer.try_lock() {
+                    norm_input[..process_len].copy_from_slice(&read_buffer[..process_len]);
+                    norm.process(&norm_input[..process_len], &mut norm_output[..process_len]);
+
+                    if dsp_enabled.load(Ordering::SeqCst) {
+                        dsp_chain.process(
+                            &norm_output[..process_len],
+                            &mut processed_buffer[..process_len],
+                        );
+                    } else {
+                        processed_buffer[..process_len].copy_from_slice(&norm_output[..process_len]);
+                    }
+                }
+            } else if dsp_enabled.load(Ordering::SeqCst) {
                 dsp_chain.process(
                     &read_buffer[..process_len],
                     &mut processed_buffer[..process_len],
@@ -852,13 +890,10 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                 processed_buffer[..process_len].copy_from_slice(&read_buffer[..process_len]);
             }
 
-
-            if normalizer_enabled.load(Ordering::SeqCst) {
-                if let Ok(mut norm) = normalizer.try_lock() {
-                    norm_input[..process_len].copy_from_slice(&processed_buffer[..process_len]);
-                    norm.process(&norm_input[..process_len], &mut norm_output[..process_len]);
-                    processed_buffer[..process_len].copy_from_slice(&norm_output[..process_len]);
-                }
+            // 2. Limiter (engine core, always ON, AFTER DSP rack)
+            if let Ok(mut lim) = limiter.try_lock() {
+                lim.process(&processed_buffer[..process_len], &mut norm_output[..process_len]);
+                processed_buffer[..process_len].copy_from_slice(&norm_output[..process_len]);
             }
 
             let vol = f32::from_bits(volume_bits.load(Ordering::Relaxed));
@@ -957,6 +992,26 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     eprintln!("[AudioOutput] Waiting {}ms before retry...", delay_ms);
                     std::thread::sleep(Duration::from_millis(delay_ms as u64));
                 }
+            }
+
+            // AB loop detection (sample-accurate, in audio callback)
+            if
+                ab_loop_active.load(Ordering::SeqCst) &&
+                !seek_mode.load(Ordering::SeqCst)
+            {
+                let current = samples_played.load(Ordering::SeqCst);
+                let b = ab_loop_b.load(Ordering::SeqCst);
+                if current >= b {
+                    let a = ab_loop_a.load(Ordering::SeqCst);
+                    samples_played.store(a, Ordering::SeqCst);
+                    seek_mode.store(true, Ordering::SeqCst);
+                    flush_flag.store(true, Ordering::SeqCst);
+                    ab_loop_seek_sample.store(a, Ordering::SeqCst);
+                }
+            }
+
+            if is_seeking {
+                std::thread::sleep(Duration::from_millis(2));
             }
         }
     }

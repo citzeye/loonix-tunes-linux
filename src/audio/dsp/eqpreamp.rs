@@ -19,6 +19,22 @@ fn bits_to_f32(bits: u32) -> f32 {
     f32::from_bits(bits)
 }
 
+/// Safety clipper to prevent overshoot after preamp gain.
+#[inline(always)]
+fn soft_clip(sample: f32) -> f32 {
+    let threshold = 0.99;
+    let abs_s = sample.abs();
+    if abs_s <= threshold {
+        sample // Bit-perfect transparency for transients
+    } else {
+        // Cubic clipping (more transparent than tanh for drums)
+        let sign = sample.signum();
+        let normalized = (abs_s - threshold) / (1.0 - threshold);
+        let clipped = threshold + (1.0 - threshold) * (normalized - (normalized.powi(3) / 3.0));
+        sign * clipped.clamp(0.0, 0.99)
+    }
+}
+
 pub struct EqPreamp {}
 
 impl EqPreamp {
@@ -44,8 +60,16 @@ impl DspProcessor for EqPreamp {
             return;
         }
 
+        // Apply gain, then soft-clip if exceeds threshold
+        // No headroom restriction - let user control gain freely
         for (i, &sample) in input.iter().enumerate() {
-            output[i] = sample * gain;
+            let amplified = sample * gain;
+            // Soft clip at 0.95 to prevent harsh digital clipping
+            output[i] = if amplified.abs() > 0.95 {
+                soft_clip(amplified)
+            } else {
+                amplified
+            };
         }
     }
 

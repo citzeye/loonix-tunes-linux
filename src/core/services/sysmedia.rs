@@ -2,7 +2,9 @@
 /* MPRIS Media Controls via souvlaki */
 
 use qmetaobject::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -61,11 +63,14 @@ impl SysMediaManager {
     #[cfg(target_os = "linux")]
     fn spawn_mpris_listener(&mut self) {
         let (event_tx, event_rx) = mpsc::channel::<MediaControlEvent>();
+        let running = Arc::new(AtomicBool::new(true));
 
         EVENT_RX.with(|cell| {
             *cell.borrow_mut() = Some(event_rx);
         });
 
+        let tx_for_attach = event_tx.clone();
+        let running_for_attach = running.clone();
         thread::spawn(move || {
             let config = PlatformConfig {
                 display_name: "Loonix Tunes",
@@ -82,8 +87,10 @@ impl SysMediaManager {
             };
 
             let result = controls.attach(move |event| {
-                if let Err(e) = event_tx.send(event) {
-                    eprintln!("[SysMedia] Failed to send event: {:?}", e);
+                if running_for_attach.load(Ordering::Relaxed) {
+                    if let Err(e) = tx_for_attach.send(event) {
+                        eprintln!("[SysMedia] Failed to send event: {:?}", e);
+                    }
                 }
             });
 
@@ -95,8 +102,16 @@ impl SysMediaManager {
                 }
             }
 
+            let mut tick_count = 0;
             loop {
-                thread::sleep(Duration::from_secs(60));
+                thread::sleep(Duration::from_secs(1));
+                tick_count += 1;
+                if !running.load(Ordering::Relaxed) {
+                    break;
+                }
+                if tick_count >= 60 {
+                    tick_count = 0;
+                }
             }
         });
     }
