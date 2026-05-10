@@ -1282,46 +1282,7 @@ Window {
         }
     }
 
-    // ==========================================
-    // SECTION: KEYBOARD SHORTCUTS
-    // ==========================================
-    function adjustVolume(delta) {
-        var step = 0.05;
-        var newVal = Math.max(0.0, Math.min(1.0, musicModel.volume + (delta * step)));
-        volSlider.value = newVal;
-        musicModel.set_volume(newVal);
-        volTimer.restart();
-    }
-
-    Shortcut {
-        sequence: "+"
-        onActivated: adjustVolume(1)
-    }
-    Shortcut {
-        sequence: "="
-        onActivated: adjustVolume(1)
-    }
-    Shortcut {
-        sequence: "-"
-        onActivated: adjustVolume(-1)
-    }
-    Shortcut {
-        sequence: "_"
-        onActivated: adjustVolume(-1)
-    }
-    Shortcut {
-        sequence: "M"
-        onActivated: {
-            musicModel.toggle_mute();
-            volTimer.restart();
-        }
-    }
-    Shortcut {
-        sequence: "Escape"
-        onActivated: {
-            root.renameDialogVisible = false;
-        } // Atau tambahin settingsPopup.close() kalau perlu
-    }
+    AppShortcuts {}
 
     // ==========================================
     // SECTION: WINDOW RESIZE HANDLERS (BORDERS)

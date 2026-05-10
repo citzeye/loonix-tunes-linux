@@ -25,5 +25,7 @@
         <file>ui/contextmenu/TabContextMenu.qml</file>
         <file>ui/contextmenu/PlaylistContextMenu.qml</file>
         <file>ui/contextmenu/AppearanceContextMenu.qml</file>
+        <file>ui/components/AppShortcuts.qml</file>
+        <file>ui/pref/PrefShortcuts.qml</file>
     </qresource>
 </RCC>

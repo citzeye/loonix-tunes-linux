@@ -214,6 +214,11 @@ Item {
                             isActive: prefPage.currentTabIndex === 3
                             onClicked: prefPage.currentTabIndex = 3
                         }
+                        PrefTab {
+                            text: "Shortcuts"
+                            isActive: prefPage.currentTabIndex === 4
+                            onClicked: prefPage.currentTabIndex = 4
+                        }
                     }
                 }
 
@@ -264,6 +269,13 @@ Item {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             PrefReportBug {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefShortcuts {
                                 anchors.fill: parent
                             }
                         }

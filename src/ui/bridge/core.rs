@@ -77,6 +77,9 @@ pub struct MusicModel {
     pub current_title: qt_property!(QString; NOTIFY title_changed),
     pub title_changed: qt_signal!(),
 
+    pub current_path: qt_property!(QString; READ get_current_path NOTIFY current_path_changed),
+    pub current_path_changed: qt_signal!(),
+
     pub current_index: qt_property!(i32; NOTIFY current_index_changed),
     pub current_index_changed: qt_signal!(),
 
@@ -256,6 +259,15 @@ impl QAbstractListModel for MusicModel {
 impl MusicModel {
     pub fn get_is_playing(&self) -> bool {
         self.playback.is_playing()
+    }
+
+    pub fn get_current_path(&self) -> QString {
+        if let Ok(ff) = self.ffmpeg.lock() {
+            if let Some(path) = ff.get_current_path() {
+                return QString::from(path.as_str());
+            }
+        }
+        QString::from("")
     }
 
     pub fn get_ffmpeg(&self) -> std::sync::Arc<std::sync::Mutex<crate::audio::engine::FfmpegEngine>> {
@@ -606,6 +618,7 @@ impl MusicModel {
 
         self.current_index_changed();
         self.title_changed();
+        self.current_path_changed();
         self.is_playing = true;
         self.playing_changed();
         self.position_changed();
@@ -645,6 +658,7 @@ impl MusicModel {
 
             self.current_index_changed();
             self.title_changed();
+            self.current_path_changed();
             self.is_playing = true;
             self.playing_changed();
             self.position_changed();
@@ -666,6 +680,7 @@ impl MusicModel {
 
             self.current_index_changed();
             self.title_changed();
+            self.current_path_changed();
             self.is_playing = true;
             self.playing_changed();
             self.position_changed();
@@ -795,6 +810,7 @@ impl MusicModel {
                 if let Ok(mut ff) = self.ffmpeg.lock() { ff.load(&path); }
                 self.current_index_changed();
                 self.title_changed();
+                self.current_path_changed();
                 // Sync ABLoop state after track change (reset in load())
                 self.sync_abloop();
             }
