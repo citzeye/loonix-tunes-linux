@@ -178,7 +178,7 @@ impl Engine {
             playback_state: PlaybackState::Stopped,
 
             samples_played: 0,
-            sample_rate: 48000,
+            sample_rate: crate::audio::samplerate::DEFAULT_SAMPLE_RATE as u64,
             channels: 2,
             duration_ms: 0,
             duration_mode: DurationMode::Metadata,
@@ -190,7 +190,7 @@ impl Engine {
             event_rx: None,
             end_of_track: false,
             decoder_eof: false,
-            audio_clock: AudioClock::new(48000, 2),
+            audio_clock: AudioClock::new(crate::audio::samplerate::DEFAULT_SAMPLE_RATE, 2),
         }
     }
 
@@ -221,7 +221,7 @@ impl Engine {
         ab_loop_seek_sample.store(0, Ordering::SeqCst);
 
         // 1. Setup Ring Buffer - 120ms for low latency
-        let sample_rate = 48000; // frames per second
+        let sample_rate = crate::audio::samplerate::DEFAULT_SAMPLE_RATE; // frames per second
         let channels = 2; // Output always forced to STEREO by resampler (see decoder.rs)
         self.channels = channels;
         let buffer_ms = 120;
@@ -250,8 +250,8 @@ impl Engine {
         // 4. Store receiver in Engine
         self.event_rx = Some(rx);
 
-        // 5. Force 48kHz sample rate
-        let actual_sample_rate = 48000;
+        // 5. Force sample rate
+        let actual_sample_rate = crate::audio::samplerate::DEFAULT_SAMPLE_RATE;
         self.sample_rate = actual_sample_rate as u64;
         self.samples_played = 0;
         self.duration_ms = 0; // Reset so get_duration() uses metadata initially
@@ -1008,7 +1008,7 @@ impl FfmpegEngine {
     /// Sync AB loop Mutex<ABLoop> values to atomics for lock-free audio callback access
     /// Uses dynamic sample rate from Engine
     fn sync_ab_loop_atomics(&self) {
-        let sample_rate = self.engine.as_ref().map_or(48000, |e| e.sample_rate);
+        let sample_rate = self.engine.as_ref().map_or(crate::audio::samplerate::DEFAULT_SAMPLE_RATE as u64, |e| e.sample_rate);
         if sample_rate == 0 {
             return;
         }

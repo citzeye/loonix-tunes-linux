@@ -32,7 +32,7 @@ impl AudioBus {
             producer: Arc::new(Mutex::new(prod)),
             is_running: Arc::new(AtomicBool::new(false)),
             is_paused: Arc::new(AtomicBool::new(false)),
-            sample_rate: 48000,
+            sample_rate: crate::audio::samplerate::DEFAULT_SAMPLE_RATE,
             channels: 2,
             buffer_size,
         }

@@ -2,6 +2,7 @@
 
 use crate::audio::dsp::biquad::BiquadHpf;
 use crate::audio::dsp::DspProcessor;
+use crate::audio::samplerate;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;
 
@@ -204,8 +205,9 @@ impl Reverb {
             AllpassFilter::new(ALLPASS_DELAYS[1] + ALLPASS_DELAYS[1] / 2),
         ];
 
+        let rate = samplerate::get_rate();
         Self {
-            sample_rate: 48000.0,
+            sample_rate: rate,
             comb_l,
             comb_r,
             allpass_l,
@@ -217,7 +219,7 @@ impl Reverb {
             stereo_spread: 23.0,
             hpf: {
                 let mut hpf = BiquadHpf::new();
-                hpf.update_coefficients(48000.0, 250.0, 0.707);
+                hpf.update_coefficients(rate, 250.0, 0.707);
                 hpf
             },
             current_mode: ReverbMode::Off,
@@ -295,6 +297,9 @@ impl DspProcessor for Reverb {
         let room = base.room_size * SCALE_ROOM + OFFSET_ROOM;
         let damp = base.damping * SCALE_DAMP;
 
+        if samplerate::consume_rate_changed() {
+            self.sample_rate = samplerate::get_rate();
+        }
         self.predelay_size = (base.predelay_ms * self.sample_rate / 1000.0) as usize;
         self.predelay_size = self.predelay_size.min(4096);
 

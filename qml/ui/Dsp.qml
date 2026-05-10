@@ -106,63 +106,75 @@ RowLayout {
                     // Row 2: Sliders (tengah) - bound to dspModel.eq_bands via reactive property
                     EqSliderBox {
                         id: eqPreamp
-                        controlValue: dspModel.get_preamp_gain()
+                        controlValue: dspModel.preamp_value
                         onSliderChanged: val => dspModel.set_preamp_gain(val)
+                        onDoubleClicked: dspModel.reset_preamp()
                     }
                     EqSliderBox {
                         id: eq31
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[0] : 0
                         onSliderChanged: val => dspModel.set_eq_band(0, val)
+                        onDoubleClicked: dspModel.reset_eq_band(0)
                     }
                     EqSliderBox {
                         id: eq62
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[1] : 0
                         onSliderChanged: val => dspModel.set_eq_band(1, val)
+                        onDoubleClicked: dspModel.reset_eq_band(1)
                     }
                     EqSliderBox {
                         id: eq125
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[2] : 0
                         onSliderChanged: val => dspModel.set_eq_band(2, val)
+                        onDoubleClicked: dspModel.reset_eq_band(2)
                     }
                     EqSliderBox {
                         id: eq250
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[3] : 0
                         onSliderChanged: val => dspModel.set_eq_band(3, val)
+                        onDoubleClicked: dspModel.reset_eq_band(3)
                     }
                     EqSliderBox {
                         id: eq500
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[4] : 0
                         onSliderChanged: val => dspModel.set_eq_band(4, val)
+                        onDoubleClicked: dspModel.reset_eq_band(4)
                     }
                     EqSliderBox {
                         id: eq1k
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[5] : 0
                         onSliderChanged: val => dspModel.set_eq_band(5, val)
+                        onDoubleClicked: dspModel.reset_eq_band(5)
                     }
                     EqSliderBox {
                         id: eq2k
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[6] : 0
                         onSliderChanged: val => dspModel.set_eq_band(6, val)
+                        onDoubleClicked: dspModel.reset_eq_band(6)
                     }
                     EqSliderBox {
                         id: eq4k
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[7] : 0
                         onSliderChanged: val => dspModel.set_eq_band(7, val)
+                        onDoubleClicked: dspModel.reset_eq_band(7)
                     }
                     EqSliderBox {
                         id: eq8k
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[8] : 0
                         onSliderChanged: val => dspModel.set_eq_band(8, val)
+                        onDoubleClicked: dspModel.reset_eq_band(8)
                     }
                     EqSliderBox {
                         id: eq16k
                         controlValue: dspModel.eq_bands && dspModel.eq_bands.length > 0 ? dspModel.eq_bands[9] : 0
                         onSliderChanged: val => dspModel.set_eq_band(9, val)
+                        onDoubleClicked: dspModel.reset_eq_band(9)
                     }
                     EqSliderBox {
                         id: eqFader
                         controlValue: dspModel.fader_offset
                         onSliderChanged: val => dspModel.set_fader(val)
+                        onDoubleClicked: dspModel.reset_fader()
                     }
 
                     // Row 3: Names (bawah)
@@ -172,36 +184,47 @@ RowLayout {
                         tooltipText: "Preamp"
                         fontFamily: symbols.name
                         fontSize: 14
+                        onDoubleClicked: dspModel.reset_preamp()
                     }
                     EqNameBox {
                         nameLabel: "31"
+                        onDoubleClicked: dspModel.reset_eq_band(0)
                     }
                     EqNameBox {
                         nameLabel: "62"
+                        onDoubleClicked: dspModel.reset_eq_band(1)
                     }
                     EqNameBox {
                         nameLabel: "125"
+                        onDoubleClicked: dspModel.reset_eq_band(2)
                     }
                     EqNameBox {
                         nameLabel: "250"
+                        onDoubleClicked: dspModel.reset_eq_band(3)
                     }
                     EqNameBox {
                         nameLabel: "500"
+                        onDoubleClicked: dspModel.reset_eq_band(4)
                     }
                     EqNameBox {
                         nameLabel: "1k"
+                        onDoubleClicked: dspModel.reset_eq_band(5)
                     }
                     EqNameBox {
                         nameLabel: "2k"
+                        onDoubleClicked: dspModel.reset_eq_band(6)
                     }
                     EqNameBox {
                         nameLabel: "4k"
+                        onDoubleClicked: dspModel.reset_eq_band(7)
                     }
                     EqNameBox {
                         nameLabel: "8k"
+                        onDoubleClicked: dspModel.reset_eq_band(8)
                     }
                     EqNameBox {
                         nameLabel: "16k"
+                        onDoubleClicked: dspModel.reset_eq_band(9)
                     }
                     // fader
                     EqNameBox {
@@ -209,6 +232,7 @@ RowLayout {
                         tooltipText: "Fader"
                         fontFamily: symbols.name
                         fontSize: 14
+                        onDoubleClicked: dspModel.reset_fader()
                     }
                 }
 
@@ -280,6 +304,7 @@ RowLayout {
                         id: surrSlider
                         enabled: surrToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.surround_width
+                        sliderRange: "surround"  // 1.0 to 2.0
                         onSliderChanged: val => {
                             dspModel.set_surround_width(val);
                         }
@@ -287,6 +312,7 @@ RowLayout {
                     FxValueBox {
                         enabled: surrToggle.isOn && dspModel.dsp_enabled
                         sliderValue: surrSlider.currentValue
+                        showSurround: true
                         linkSlider: surrSlider
                     }
                     FxResetButton {
@@ -1048,9 +1074,9 @@ RowLayout {
                 id: sld
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                from: rootItem.sliderRange === "db" ? -60.0 : 0.0
-                to: rootItem.sliderRange === "db" ? 0.0 : 1.0
-                stepSize: rootItem.sliderRange === "db" ? 1.0 : 0.01
+                from: rootItem.sliderRange === "db" ? -60.0 : rootItem.sliderRange === "surround" ? 1.0 : 0.0
+                to: rootItem.sliderRange === "db" ? 0.0 : rootItem.sliderRange === "surround" ? 2.0 : 1.0
+                stepSize: rootItem.sliderRange === "db" ? 1.0 : rootItem.sliderRange === "surround" ? 0.01 : 0.01
                 value: rootItem.controlValue
                 onMoved: rootItem.sliderChanged(sld.value)
 
@@ -1059,11 +1085,9 @@ RowLayout {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     orientation: Qt.Vertical
                     onWheel: function (event) {
-                        var step = rootItem.sliderRange === "db" ? 1.0 : 0.05;
-                        var minVal = rootItem.sliderRange === "db" ? -60.0 : 0.0;
-                        var maxVal = rootItem.sliderRange === "db" ? 0.0 : 1.0;
+                        var step = rootItem.sliderRange === "db" ? 1.0 : sld.stepSize * 5;
                         var delta = event.angleDelta.y > 0 ? step : -step;
-                        var newVal = Math.max(minVal, Math.min(maxVal, sld.value + delta));
+                        var newVal = Math.max(sld.from, Math.min(sld.to, sld.value + delta));
                         sld.value = newVal;
                         rootItem.sliderChanged(newVal);
                     }
@@ -1554,6 +1578,7 @@ RowLayout {
         property real hzMax: 10000.0
         property bool showSemitones: false
         property bool showDbCompressor: false
+        property bool showSurround: false
         property var linkSlider: null
 
         Layout.preferredWidth: 60
@@ -1576,6 +1601,8 @@ RowLayout {
                     if (sliderValue === 0)
                         return "0 ST";
                     return (sliderValue > 0 ? "+" : "") + Math.round(sliderValue) + " ST";
+                } else if (rootItem.showSurround) {
+                    return sliderValue.toFixed(2);
                 } else {
                     return Math.round(sliderValue * 100) + "%";
                 }
@@ -1758,6 +1785,7 @@ RowLayout {
         property real controlValue: 0.0
         property real currentValue: controlValue
         signal sliderChanged(real val)
+        signal doubleClicked()
 
         onControlValueChanged: {
             if (eqSld && !eqSld.pressed) {
@@ -1827,6 +1855,11 @@ RowLayout {
                     rootItem.sliderChanged(newVal);
                 }
             }
+
+            TapHandler {
+                gesturePolicy: TapHandler.DoubleTap
+                onDoubleTapped: rootItem.doubleClicked()
+            }
         }
     }
 
@@ -1837,6 +1870,7 @@ RowLayout {
         property string tooltipText: ""
         property string fontFamily: sansSerif.name
         property int fontSize: 11
+        signal doubleClicked()
 
         Layout.preferredWidth: 20
         Layout.fillWidth: false
@@ -1868,6 +1902,7 @@ RowLayout {
                 id: ma
                 anchors.fill: parent
                 hoverEnabled: true
+                onDoubleClicked: rootItem.doubleClicked()
             }
         }
     }

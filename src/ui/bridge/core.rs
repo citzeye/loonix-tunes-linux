@@ -371,6 +371,7 @@ impl MusicModel {
     pub fn switch_to_folder(&mut self, folder_path: String) {
         // Clean slate: clear display list and set root
         self.display_list.clear();
+        self.expanded_folders.clear();
         self.current_tab_root = QString::from(folder_path.clone());
         self.current_tab_root_changed();
         
@@ -420,7 +421,7 @@ impl MusicModel {
 
     pub fn rename_folder(&mut self, index: i32, new_name: String) {
         if index >= 0 && (index as usize) < self.library.custom_folders.len() {
-            let mut trimmed = new_name.trim().to_string();
+            let mut trimmed = new_name.trim().to_string().to_uppercase();
             trimmed.truncate(15);
             if !trimmed.is_empty() {
                 self.library.custom_folders[index as usize].0 = trimmed;
@@ -445,7 +446,7 @@ impl MusicModel {
         if index >= 0 && (index as usize) < self.library.custom_folders.len() {
             let folder_path = Path::new(&new_path);
             if let Some(name) = folder_path.file_name() {
-                let mut name_str = name.to_string_lossy().to_string();
+                let mut name_str = name.to_string_lossy().to_string().to_uppercase();
                 name_str.truncate(15);
                 self.library.custom_folders[index as usize] = (name_str, new_path.clone());
                 self.custom_folders_changed();
@@ -519,6 +520,7 @@ impl MusicModel {
     pub fn switch_to_favorites(&mut self) {
         // Clean slate: clear display list and set root
         self.display_list.clear();
+        self.expanded_folders.clear();
         self.current_tab_root = QString::from("FAVORITES");
         self.current_tab_root_changed();
         
@@ -534,6 +536,7 @@ impl MusicModel {
     pub fn switch_to_music(&mut self) {
         // Clean slate: clear display list and set root
         self.display_list.clear();
+        self.expanded_folders.clear();
         self.current_tab_root = QString::from("MUSIC");
         self.current_tab_root_changed();
         
@@ -588,6 +591,7 @@ impl MusicModel {
     pub fn switch_to_queue(&mut self) {
         // Clean slate: clear display list and set root
         self.display_list.clear();
+        self.expanded_folders.clear();
         self.current_tab_root = QString::from("QUEUE");
         self.current_tab_root_changed();
         
@@ -1003,6 +1007,7 @@ impl MusicModel {
     pub fn switch_to_external_files(&mut self) {
         // Clean slate: clear display list and set root
         self.display_list.clear();
+        self.expanded_folders.clear();
         self.current_tab_root = QString::from("EXTERNAL_FILES");
         self.current_tab_root_changed();
         

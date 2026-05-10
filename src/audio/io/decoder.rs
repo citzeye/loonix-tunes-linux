@@ -136,7 +136,7 @@ pub fn spawn_decoder(
     control: Arc<DecoderControl>,
     ab_loop: Arc<Mutex<crate::audio::engine::abloop::ABLoop>>,
 ) -> DecoderHandle {
-    spawn_decoder_with_sample_rate(path, producer, control, 48000, ab_loop)
+    spawn_decoder_with_sample_rate(path, producer, control, crate::audio::samplerate::get_rate_u32(), ab_loop)
 }
 
 pub fn spawn_decoder_with_sample_rate(

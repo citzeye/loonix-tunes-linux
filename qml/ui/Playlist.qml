@@ -7,6 +7,15 @@ import QtQuick.Controls
 Rectangle {
   id: playlistSection
 
+  property int dynamicMargin: 0
+
+  Connections {
+      target: musicModel
+      function onCurrent_tab_root_changed() {
+          dynamicMargin = musicModel.current_tab_root === "MUSIC" ? 15 : 0;
+      }
+  }
+
   // Reset right-clicked index when context menu closes
   Connections {
       target: root
@@ -150,17 +159,14 @@ Rectangle {
                                    (model.parent_folder === '' && musicModel.current_tab_root !== '')
 
 
-        // WRAPPER UNTUK PADDING DINAMIS
+        // WRAPPER UNTUK PADDING DINAMIS (Playlist as a Dumb Canvas)
         Item {
           anchors.fill: parent
            anchors.leftMargin: {
-               // Jika dia item paling luar (gak punya parent_folder), 
-               // atau jika kita bukan di Tab Music, margin WAJIB 0.
-               if (model.parent_folder === "" || musicModel.current_tab_root !== "MUSIC") {
+               if (model.parent_folder === "" || model.parent_folder === musicModel.current_tab_root) {
                    return 0;
                }
-               // Jika dia di Tab Music DAN dia punya parent (hasil expand), kasih 15.
-               return 15;
+               return playlistSection.dynamicMargin;
            }
 
           

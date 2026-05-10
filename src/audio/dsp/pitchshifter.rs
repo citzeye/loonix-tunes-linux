@@ -52,6 +52,7 @@ impl PitchShifter {
     }
 
     pub fn new() -> Self {
+        let rate = samplerate::get_rate_u32();
         let mut s = Self {
             handle: std::ptr::null_mut(),
             out_fifo: Vec::with_capacity(16384),
@@ -61,9 +62,9 @@ impl PitchShifter {
             r_out: Vec::with_capacity(4096),
             l_out_ptr: vec![std::ptr::null_mut(); 2],
             channels: 2,
-            sample_rate: 48000,
+            sample_rate: rate,
         };
-        s.recreate_handle(48000);
+        s.recreate_handle(rate);
         s
     }
 }

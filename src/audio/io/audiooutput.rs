@@ -170,7 +170,7 @@ impl AudioOutput {
              dsp_chain: DspChain::default(),
              dsp_enabled: Arc::new(AtomicBool::new(true)),
              samples_played: Arc::new(AtomicU64::new(0)),
-             sample_rate: 48000,
+             sample_rate: crate::audio::samplerate::DEFAULT_SAMPLE_RATE,
              ring_buffer_capacity: 0,
              empty_callback_count: Arc::new(AtomicU32::new(0)),
             loop_reset: Arc::new(AtomicBool::new(false)),
@@ -710,7 +710,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                         44100
                     } else {
                         // Wired/WiFi: standard rate
-                        48000
+                        crate::audio::samplerate::DEFAULT_SAMPLE_RATE
                     };
                     let mut new_handle = None;
                     let result = Self::create_pa_simple_with_latency(device_str, sample_rate)
@@ -725,7 +725,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                 }
 
                 Ok(AudioCommand::ReconnectDevice { device_name, retry_count }) => {
-                    if let Err(e) = Self::reconnect_device(device_name.as_deref(), 48000, retry_count) {
+                    if let Err(e) = Self::reconnect_device(device_name.as_deref(), crate::audio::samplerate::DEFAULT_SAMPLE_RATE, retry_count) {
                         eprintln!("[AudioOutput] Reconnect gagal: {}", e);
                     }
                 }
