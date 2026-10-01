@@ -98,6 +98,7 @@ pub struct DspController {
     pub pitch_semitones: qt_property!(f64; NOTIFY pitch_changed),
 
     pub preamp_active: qt_property!(bool; NOTIFY preamp_changed),
+    pub preamp_value: qt_property!(f64; NOTIFY preamp_changed),
     pub preamp_changed: qt_signal!(),
     pub limiter_active: qt_property!(bool; NOTIFY limiter_changed),
     pub limiter_changed: qt_signal!(),
@@ -273,6 +274,7 @@ impl DspController {
                 .store(false, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::preamp::get_preamp_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed);
+            self.preamp_value = 0.0;
             self.dsp_changed();
 
             // Load factory preset 0 (Loonix Default)
@@ -298,6 +300,7 @@ impl DspController {
             };
             crate::audio::dsp::eqpreamp::get_preamp_gain_arc()
                 .store(linear_gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+            self.preamp_value = dsp_config.preamp_db as f64;
             self.dsp_changed();
 
             // Load user preset data from JSON
@@ -1255,6 +1258,7 @@ impl DspController {
         dsp_cfg.preamp_db = clamped_db;
         let _ = dsp_cfg.save();
         
+        self.preamp_value = clamped_db as f64;
         self.preamp_changed();
     }
 
