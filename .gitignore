@@ -7,7 +7,9 @@ obj/
 Cargo.lock
 node_modules
 /target
-.skill
+# .skill sengaja TIDAK di-ignore. Documentation itu harus ada
+# di version control. Comment ini_radix dicatat karena dulu salah
+# ke-ignore dan 45 file hilang dari history.
 .backup
 .opencode
 
